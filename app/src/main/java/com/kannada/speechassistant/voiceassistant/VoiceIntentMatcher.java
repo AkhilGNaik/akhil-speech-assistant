@@ -572,41 +572,40 @@ public class VoiceIntentMatcher {
     }
 
     public static boolean isIsolatedNegativeToken(@NonNull String s) {
-        return s.equals("caregiver") || s.equals("carer") ||
-                s.equals("caretaker") || s.equals("care worker") ||
-                s.equals("helper") || s.equals("call") ||
+        // NOTE: "call", "emergency", "message", "caregiver" etc. are NOT blocked when they come
+        // after wake-word stripping in two-step mode. They are clear intent signals.
+        // Only block truly ambiguous single-token inputs that have NO actionable meaning alone.
+        return s.equals("carer") ||
+                s.equals("care worker") ||
+                s.equals("helper") ||
                 s.equals("phone") || s.equals("ring") ||
-                s.equals("dial") || s.equals("message") ||
+                s.equals("dial") ||
                 s.equals("messages") || s.equals("repeat") ||
-                s.equals("again") || s.equals("call my") ||
+                s.equals("again") ||
                 s.equals("phone my") ||
                 // Kannada
                 s.equals("ಆರೈಕೆದಾರ") || s.equals("ಆರೈಕೆದಾರರು") ||
                 s.equals("ಸಹಾಯಕ") || s.equals("ಸಹಾಯಕರು") ||
                 s.equals("ಪಾಲಕ") || s.equals("ಪಾಲಕರು") ||
                 s.equals("ಕೇರ್ಗಿವರ್") || s.equals("ಕೇರ್ಟೇಕರ್") ||
-                s.equals("ಕರೆ ಮಾಡಿ") || s.equals("ಕಾಲ್ ಮಾಡಿ") || s.equals("ಫೋನ್ ಮಾಡಿ") ||
-                s.equals("ಕರೆ ಮಾಡು") || s.equals("ಕಾಲ್ ಮಾಡು") || s.equals("ಫೋನ್ ಮಾಡು") ||
                 s.equals("ಕರೆ") || s.equals("ಕಾಲ್") || s.equals("ಫೋನ್") ||
                 s.equals("ಸಂದೇಶ") || s.equals("ಮೆಸೇಜ್") ||
                 s.equals("ಸಹಾಯ") ||
-                // Hindi Task 25
+                // Hindi
                 s.equals("देखभाल करने वाला") || s.equals("देखभाल करने वाले") ||
                 s.equals("सहायक") || s.equals("केयरगिवर") || s.equals("केयरटेकर") ||
-                s.equals("कॉल") || s.equals("फोन") || s.equals("कॉल करो") || s.equals("फोन करो") ||
+                s.equals("कॉल") || s.equals("फोन") ||
                 s.equals("संदेश") || s.equals("मैसेज") ||
-                // Malayalam Task 26
+                // Malayalam
                 s.equals("പരിചരിക്കുന്നയാൾ") || s.equals("പരിചരിക്കുന്നയാളെ") ||
                 s.equals("പരിചരിക്കുന്ന ആളെ") || s.equals("പരിചരിക്കുന്ന ആൾ") ||
                 s.equals("പരിചാരകൻ") || s.equals("പരിചാരകനെ") ||
                 s.equals("സഹായി") || s.equals("സഹായിയെ") ||
                 s.equals("കെയർഗിവർ") || s.equals("കെയർഗിവറെ") ||
                 s.equals("കെയർടേക്കർ") || s.equals("കെയർടേക്കറെ") ||
-                s.equals("വിളിക്കൂ") || s.equals("വിളിക്കുക") ||
-                s.equals("ഫോൺ ചെയ്യൂ") || s.equals("കോൾ ചെയ്യൂ") ||
                 s.equals("ഫോൺ") || s.equals("കോൾ") ||
                 s.equals("സന്ദേശം") || s.equals("മെസേജ്") ||
-                s.equals("വീണ്ടും") || s.equals("പറയൂ") || s.equals("കേൾപ്പിക്കൂ");
+                s.equals("വീണ്ടും") || s.equals("കേൾപ്പിക്കൂ");
     }
 
     /**
@@ -916,11 +915,19 @@ public class VoiceIntentMatcher {
     }
 
     private static boolean matchesEmergency(String s, Set<String> words) {
-        // Disallow generic single words such as "help", "emergency", "send", "alert" alone from triggering emergency
-        if (s.equals("help") || s.equals("emergency") || s.equals("send") || s.equals("alert") ||
-                s.equals("ಸಹಾಯ") || s.equals("ತುರ್ತು") || s.equals("ಮದದ") || s.equals("आपातकाल") ||
+        // Disallow generic single words such as "help", "send", "alert" alone from triggering emergency.
+        // NOTE: "emergency" alone IS allowed after wake-word stripping (blind user says "Assistant, emergency")
+        if (s.equals("help") || s.equals("send") || s.equals("alert") ||
+                s.equals("ಸಹಾಯ") || s.equals("ಮದದ") || s.equals("आपातकाल") ||
                 s.equals("സഹായം") || s.equals("അടിയന്തരം")) {
             return false;
+        }
+
+        // "emergency" alone (after wake-word strip) is a valid blind-user emergency command
+        if (s.equals("emergency") || s.equals("sos") || s.equals("ತುರ್ತು") ||
+                s.equals("इमरजेंसी") || s.equals("एसओएस") ||
+                s.equals("അടിയന്തരം") || s.equals("എമർജൻസി")) {
+            return true;
         }
 
         // Strict intent separation: Caregiver references are NEVER emergency triggers

@@ -646,62 +646,60 @@ public class AppVoiceAssistant {
         }
 
         String commandPortion = VoiceIntentMatcher.extractCommandText(detectedPhrase);
-        if (commandPortion.isEmpty()) {
-            // Style 2: Two-Step interaction (user spoke only "Assistant")
-            // For blind users: speak a brief audio cue so they know the assistant is listening
-            if (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity) {
-                String listeningCue = VoiceLanguageConfig.getListeningReadyCue(langCode);
-                setAssistantState(AssistantState.SPEAKING);
-                speakResponse(listeningCue, () -> {
-                    if (!activity.isFinishing() && !activity.isDestroyed()) {
-                        setAssistantState(AssistantState.WAITING_FOR_COMMAND);
-                        MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
-                        startListeningFlow(activity, btnAssistant, customCallback);
-                    }
-                });
-            } else {
+
+        // RELIABILITY FIX: Always route through Android STT for command recognition.
+        // Vosk uses a grammar-restricted offline model which is much less accurate than
+        // Android STT (Google Speech Recognition) for command matching. We use Vosk only
+        // to detect the wake word trigger. Android STT then captures the actual command.
+        //
+        // This covers both:
+        //   Style 1: User said "Assistant, open profile" in one breath (Vosk captured command)
+        //   Style 2: User said "Assistant" alone (Vosk captured only wake word)
+        //
+        // In both cases, we open Android STT so the user can speak their command clearly.
+
+        boolean isBlindOrDash = RoleManager.ROLE_BLIND_USER.equals(userRole)
+                || activity instanceof BlindUserDashboardActivity;
+
+        // For Style 1 where Vosk already captured a clear command, we still go through
+        // Android STT but give the user an audio hint of what was heard, allowing correction.
+        // For Style 2 (command is empty), just say "Yes?" and open mic.
+        String listeningCue = commandPortion.isEmpty()
+                ? VoiceLanguageConfig.getListeningReadyCue(langCode)
+                : null; // No cue for Style 1 - just open mic immediately
+
+        Runnable openMicAction = () -> {
+            if (!activity.isFinishing() && !activity.isDestroyed()) {
+                setAssistantState(AssistantState.WAITING_FOR_COMMAND);
                 MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
                 startListeningFlow(activity, btnAssistant, customCallback);
             }
-            return;
+        };
+
+        if (isBlindOrDash && listeningCue != null && !listeningCue.isEmpty()) {
+            // Speak cue then open mic (Style 2 for blind users)
+            setAssistantState(AssistantState.SPEAKING);
+            speakResponse(listeningCue, openMicAction);
+        } else {
+            // Open mic immediately (Style 1, or non-blind Style 2)
+            mainHandler.post(openMicAction);
         }
-
-        // Style 1: Single-Utterance (user spoke "Assistant, open profile" in one breath)
-        if (!commandHandled.compareAndSet(false, true)) {
-            Log.w(TAG, "Wake word command already handled for this cycle.");
-            return;
-        }
-
-        setAssistantState(AssistantState.EXECUTING);
-        Log.i(TAG, "COMMAND_EXECUTION_STARTED: '" + commandPortion + "'");
-
-        if (isDeafUser(userRole)) {
-            DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
-            if (deafResp != null) {
-                deafResp.showProcessingState();
-            }
-        }
-
-        if (customCallback != null) {
-            customCallback.onSpeechRecognized(detectedPhrase);
-        }
-
-        executeVoiceCommandFlow(activity, commandPortion, userRole, langCode, customCallback != null ? customCallback : new VoiceAssistantCallback() {
-            @Override public void onAssistantReady(@NonNull String userRole, @NonNull String languageCode) {}
-            @Override public void onListeningStarted() {}
-            @Override public void onListeningStopped() {}
-            @Override public void onSpeechRecognized(@NonNull String rawText) {}
-            @Override public void onIntentDetected(@NonNull VoiceIntent intent) {}
-            @Override public void onCommandResolved(@NonNull VoiceCommand command) {}
-            @Override public void onResponseSpoken(@NonNull String ttsResponse) {}
-            @Override public void onError(@NonNull String errorMessage, int errorCode) {}
-        });
     }
+
 
     public void startListeningFlow(@NonNull Activity activity,
                                    @Nullable MaterialButton button,
                                    @Nullable VoiceAssistantCallback customCallback) {
         this.activeActivityRef = new WeakReference<>(activity);
+
+        // 0. Release WakeWordManager AudioRecord first so it doesn't appear as a conflicting mic
+        try {
+            WakeWordManager.getInstance(appContext).pauseListening();
+        } catch (Throwable ignored) {}
+        // Also clear any stale isListening state from a previous failed session
+        if (isListening && speechRecognizer == null) {
+            isListening = false;
+        }
 
         // 1. Safe Microphone Conflict Protection: Active voice call
         if (isVoiceCallActive(activity)) {
@@ -712,7 +710,7 @@ public class AppVoiceAssistant {
             return;
         }
 
-        // 2. Safe Microphone Conflict Protection: Active voice recording
+        // 2. Safe Microphone Conflict Protection: Active voice recording (user's voice message mic)
         if (isVoiceRecordingActive(activity)) {
             notifyConflict(activity, VoiceCommandConstants.MESSAGE_CONFLICT_RECORDING);
             if (customCallback != null) {
@@ -721,7 +719,7 @@ public class AppVoiceAssistant {
             return;
         }
 
-        // 3. Safe Microphone Conflict Protection: Another microphone operation active
+        // 3. Safe Microphone Conflict Protection: Real competing mic use (voice call audio mode)
         if (isAnotherMicOperationActive(activity)) {
             notifyConflict(activity, VoiceCommandConstants.MESSAGE_CONFLICT_RECORDING);
             if (customCallback != null) {
@@ -823,6 +821,15 @@ public class AppVoiceAssistant {
     public void startListening(@NonNull Activity activity, @NonNull VoiceAssistantCallback callback) {
         this.activeActivityRef = new WeakReference<>(activity);
 
+        // 0. Release WakeWordManager AudioRecord before any conflict checks
+        try {
+            WakeWordManager.getInstance(appContext).pauseListening();
+        } catch (Throwable ignored) {}
+        // Clear stale isListening state if SpeechRecognizer was already destroyed
+        if (isListening && speechRecognizer == null) {
+            isListening = false;
+        }
+
         // 1. Authenticated User Check
         if (!isUserAuthenticated()) {
             callback.onError("Voice Assistant is available only to logged-in users.", ERROR_NOT_LOGGED_IN);
@@ -835,13 +842,13 @@ public class AppVoiceAssistant {
             return;
         }
 
-        // 3. Safe Microphone Conflict Protection: Voice Recording
+        // 3. Safe Microphone Conflict Protection: Voice Recording (user's voice message mic)
         if (isVoiceRecordingActive(activity)) {
             callback.onError(VoiceCommandConstants.MESSAGE_CONFLICT_RECORDING, ERROR_RECORDING_ACTIVE);
             return;
         }
 
-        // 4. Safe Microphone Conflict Protection: Another Microphone Operation Active
+        // 4. Safe Microphone Conflict Protection: Real competing mic use (voice call audio mode)
         if (isAnotherMicOperationActive(activity)) {
             callback.onError(VoiceCommandConstants.MESSAGE_CONFLICT_RECORDING, ERROR_MIC_BUSY);
             return;
@@ -3248,7 +3255,13 @@ public class AppVoiceAssistant {
     }
 
     public boolean isAnotherMicOperationActive(@Nullable Context context) {
+        // NOTE: We intentionally do NOT use AudioManager.getActiveRecordingConfigurations() here.
+        // That API returns WakeWordManager's own AudioRecord (Vosk wake-word listener) as an
+        // "active recording", which would cause the voice assistant to permanently block itself.
+        // WakeWordManager is paused before STT starts, so its AudioRecord is released by the time
+        // this check runs. We only check: (a) isListening flag, (b) real call AudioManager modes.
         if (isListening) {
+            // Assistant's own SpeechRecognizer is already active — don't double-start
             return true;
         }
         if (context != null) {
@@ -3258,12 +3271,6 @@ public class AppVoiceAssistant {
                     int mode = audioManager.getMode();
                     if (mode == AudioManager.MODE_IN_COMMUNICATION || mode == AudioManager.MODE_IN_CALL) {
                         return true;
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        List<AudioRecordingConfiguration> configs = audioManager.getActiveRecordingConfigurations();
-                        if (configs != null && !configs.isEmpty()) {
-                            return true;
-                        }
                     }
                 }
             } catch (Throwable ignored) {}
