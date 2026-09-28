@@ -648,8 +648,21 @@ public class AppVoiceAssistant {
         String commandPortion = VoiceIntentMatcher.extractCommandText(detectedPhrase);
         if (commandPortion.isEmpty()) {
             // Style 2: Two-Step interaction (user spoke only "Assistant")
-            MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
-            startListeningFlow(activity, btnAssistant, customCallback);
+            // For blind users: speak a brief audio cue so they know the assistant is listening
+            if (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity) {
+                String listeningCue = VoiceLanguageConfig.getListeningReadyCue(langCode);
+                setAssistantState(AssistantState.SPEAKING);
+                speakResponse(listeningCue, () -> {
+                    if (!activity.isFinishing() && !activity.isDestroyed()) {
+                        setAssistantState(AssistantState.WAITING_FOR_COMMAND);
+                        MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
+                        startListeningFlow(activity, btnAssistant, customCallback);
+                    }
+                });
+            } else {
+                MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
+                startListeningFlow(activity, btnAssistant, customCallback);
+            }
             return;
         }
 

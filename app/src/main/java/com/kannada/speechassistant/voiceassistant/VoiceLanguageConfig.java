@@ -273,6 +273,23 @@ public final class VoiceLanguageConfig {
         }
     }
 
+    /**
+     * Short audio cue spoken to blind user immediately after wake word ("Assistant") is detected
+     * in two-step mode, signalling that the mic is now open for their command.
+     * Keep this very short (&lt; 1 word if possible) so the STT session opens quickly.
+     */
+    @NonNull
+    public static String getListeningReadyCue(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ಹೇಳಿ.";          // "Tell me." / "Speak."
+            case LANG_HINDI:   return "बोलिए।";           // "Please speak."
+            case LANG_MALAYALAM: return "പറയൂ.";         // "Please say."
+            case LANG_ENGLISH:
+            default:           return "Yes?";
+        }
+    }
+
     @NonNull
     public static String getSpeakVoiceMessagePrompt(@Nullable String langCode) {
         String code = LanguageManager.normalizeLanguageCode(langCode);

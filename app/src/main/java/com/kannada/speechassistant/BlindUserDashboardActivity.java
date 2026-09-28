@@ -3015,20 +3015,35 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         // 1. Immediately inform background service to release hardware microphone
         com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.onAppForegrounded(this);
 
-        // 2. Start hands-free Wake-Word listening for Blind User
-        WakeWordManager.getInstance(this).setForegroundActivity(this);
-        WakeWordManager.getInstance(this).startListening(this);
+        // 2. Determine whether app was just launched via voice command.
+        //    If so, the BackgroundVoiceLaunchService TTS announcement ("Opening Speech Assistant...")
+        //    may still be playing. We must wait for it to finish before grabbing the mic.
+        //    A 1200ms initial delay covers the typical announcement duration and prevents mic conflict.
+        boolean launchedViaVoice = getIntent() != null
+                && com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.isAppInForeground()
+                && !com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).isListening();
+        long wakeWordStartDelay = launchedViaVoice ? 1200L : 0L;
 
-        // 3. Reinforce wake word start after 400ms to guarantee microphone acquisition after background release
+        WakeWordManager.getInstance(this).setForegroundActivity(this);
+
+        // 3. Start WakeWord listening after the appropriate delay
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                WakeWordManager.getInstance(this).startListening(this);
+            }
+        }, wakeWordStartDelay);
+
+        // 4. Reinforce wake word start after additional 600ms (total 1800ms for voice-launch, 600ms normal)
+        //    to guarantee microphone acquisition once any background audio has fully dissipated
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (!isFinishing() && !isDestroyed()) {
                 WakeWordManager wwm = WakeWordManager.getInstance(this);
                 if (!wwm.isListening()) {
-                    Log.i(TAG, "Reinforcing WakeWordManager startListening after hardware mic release.");
+                    Log.i(TAG, "Reinforcing WakeWordManager startListening after mic release.");
                     wwm.startListening(this);
                 }
             }
-        }, 400);
+        }, wakeWordStartDelay + 600);
     }
 
     @Override

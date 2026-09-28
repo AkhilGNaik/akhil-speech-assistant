@@ -638,6 +638,15 @@ public class BackgroundVoiceLaunchService extends Service {
 
     /**
      * Executes the sequence to launch the app into the foreground with voice confirmation.
+     *
+     * CORRECTED FLOW:
+     * 1. Stop background mic
+     * 2. Haptic vibration feedback
+     * 3. Speak TTS announcement ONCE
+     * 4. AFTER TTS finishes (or after a fixed timeout), attempt app launch via startActivity only
+     * 5. Use PendingIntent as true fallback ONLY if startActivity throws an exception
+     * 6. Full-screen notification only as last resort if both above fail
+     * This prevents triple-launch / overlay dialogs.
      */
     private void executeOpenAppFlow(@NonNull String recognizedPhrase) {
         // 1. Stop background audio immediately to release microphone
@@ -646,71 +655,130 @@ public class BackgroundVoiceLaunchService extends Service {
         // 2. Immediate Haptic Feedback so blind user feels the phone heard them
         triggerHapticVibration();
 
-        // 3. Spoken Audio Feedback in user's selected language
-        String langCode = sessionManager.getLanguage();
-        String announcement = VoiceLanguageConfig.getOpenAppResponse(langCode);
-        speakAnnouncement(announcement);
-
-        // 4. Determine target activity
-        Intent launchIntent;
+        // 3. Determine target activity intent NOW (before TTS delay)
+        final Intent launchIntent;
         String role = sessionManager.getUserRole();
         if (sessionManager.isLoggedIn() && RoleManager.ROLE_BLIND_USER.equals(role)) {
             launchIntent = new Intent(this, BlindUserDashboardActivity.class);
         } else if (sessionManager.isLoggedIn() && role != null && RoleManager.getDashboardClassForRole(role) != null) {
             launchIntent = new Intent(this, RoleManager.getDashboardClassForRole(role));
         } else {
-            launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-            if (launchIntent == null) {
-                launchIntent = new Intent(this, SplashActivity.class);
-            }
+            Intent pkg = getPackageManager().getLaunchIntentForPackage(getPackageName());
+            launchIntent = (pkg != null) ? pkg : new Intent(this, SplashActivity.class);
         }
 
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP
                 | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 
-        // Android 14 (API 34) Background Activity Start Exemption
-        Bundle optionsBundle = null;
+        // Android 14 (API 34) Background Activity Start Exemption options
+        final Bundle[] optionsBundleHolder = {null};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             try {
                 ActivityOptions opts = ActivityOptions.makeBasic();
                 opts.setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
-                optionsBundle = opts.toBundle();
+                optionsBundleHolder[0] = opts.toBundle();
             } catch (Throwable ignored) {}
         }
 
-        // 5. Try Direct startActivity
-        try {
-            if (optionsBundle != null) {
-                startActivity(launchIntent, optionsBundle);
-            } else {
-                startActivity(launchIntent);
+        // 4. Speak announcement once; launch the app after TTS finishes
+        String langCode = sessionManager.getLanguage();
+        final String announcement = VoiceLanguageConfig.getOpenAppResponse(langCode);
+
+        // Estimate speech duration for safety fallback (≈120ms/char, min 1s, max 4s)
+        long estimatedSpeechMs = Math.max(1000L, Math.min(4000L, announcement.length() * 120L));
+
+        final java.util.concurrent.atomic.AtomicBoolean launched = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        Runnable doLaunch = () -> {
+            if (!launched.compareAndSet(false, true)) return; // execute exactly once
+            Bundle optionsBundle = optionsBundleHolder[0];
+            boolean startActivitySucceeded = false;
+
+            // 5. Try Direct startActivity FIRST
+            try {
+                if (optionsBundle != null) {
+                    startActivity(launchIntent, optionsBundle);
+                } else {
+                    startActivity(launchIntent);
+                }
+                startActivitySucceeded = true;
+                Log.i(TAG, "Direct startActivity succeeded for voice launch.");
+            } catch (Throwable e) {
+                Log.w(TAG, "Direct startActivity restricted: " + e.getMessage());
             }
-            Log.i(TAG, "Direct startActivity executed successfully.");
-        } catch (Throwable e) {
-            Log.w(TAG, "Direct startActivity restricted: " + e.getMessage());
+
+            if (startActivitySucceeded) {
+                // startActivity worked — no need for notification or PendingIntent
+                return;
+            }
+
+            // 6. Fallback: Try PendingIntent (only if startActivity failed)
+            boolean pendingIntentSucceeded = false;
+            try {
+                PendingIntent directPi = PendingIntent.getActivity(
+                        this,
+                        NOTIFICATION_ID + 10,
+                        launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE,
+                        optionsBundle
+                );
+                directPi.send();
+                pendingIntentSucceeded = true;
+                Log.i(TAG, "Fallback PendingIntent.send() succeeded for voice launch.");
+            } catch (Throwable t) {
+                Log.w(TAG, "Fallback PendingIntent.send() error: " + t.getMessage());
+            }
+
+            if (pendingIntentSucceeded) {
+                return;
+            }
+
+            // 7. Last-resort: Full-Screen Notification (only if both above failed)
+            Log.w(TAG, "Both startActivity and PendingIntent failed. Using full-screen notification as last resort.");
+            showLaunchFullScreenNotification(launchIntent, announcement, optionsBundle);
+        };
+
+        // Speak the announcement; launch after it finishes (or after safety timeout)
+        if (tts != null && isTtsReady) {
+            Locale loc = VoiceLanguageConfig.getTtsLocale(langCode);
+            try { tts.setLanguage(loc); } catch (Exception ignored) {}
+
+            final String utteranceId = "VoiceLaunchAnnouncement_" + System.currentTimeMillis();
+            final Runnable safetyLaunch = () -> mainHandler.post(doLaunch);
+            // Safety timer: launch even if TTS callbacks never fire
+            mainHandler.postDelayed(safetyLaunch, estimatedSpeechMs + 500);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                tts.setOnUtteranceProgressListener(new android.speech.tts.UtteranceProgressListener() {
+                    @Override public void onStart(String id) {}
+                    @Override
+                    public void onDone(String id) {
+                        if (utteranceId.equals(id)) {
+                            mainHandler.removeCallbacks(safetyLaunch);
+                            mainHandler.post(doLaunch);
+                        }
+                    }
+                    @Override
+                    public void onError(String id) {
+                        if (utteranceId.equals(id)) {
+                            mainHandler.removeCallbacks(safetyLaunch);
+                            mainHandler.post(doLaunch);
+                        }
+                    }
+                });
+                Bundle params = new Bundle();
+                tts.speak(announcement, TextToSpeech.QUEUE_FLUSH, params, utteranceId);
+            } else {
+                tts.speak(announcement, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+            }
+        } else {
+            // TTS not ready: launch immediately without announcement
+            mainHandler.post(doLaunch);
         }
 
-        // 6. Try Direct PendingIntent send
-        try {
-            PendingIntent directPi = PendingIntent.getActivity(
-                    this,
-                    NOTIFICATION_ID + 10,
-                    launchIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE,
-                    optionsBundle
-            );
-            directPi.send();
-            Log.i(TAG, "Direct PendingIntent.send() executed.");
-        } catch (Throwable t) {
-            Log.w(TAG, "PendingIntent.send() error: " + t.getMessage());
-        }
-
-        // 7. High-Priority Heads-Up / Full-Screen Notification fallback (safely guarded)
-        showLaunchFullScreenNotification(launchIntent, announcement, optionsBundle);
-
-        // Reset trigger flag after 3 seconds
-        mainHandler.postDelayed(() -> isTriggerProcessing.set(false), 3000);
+        // Reset trigger lock after a generous window (5s) to prevent false duplicate triggers
+        mainHandler.postDelayed(() -> isTriggerProcessing.set(false), 5000);
     }
 
     private void showLaunchFullScreenNotification(@NonNull Intent launchIntent, @NonNull String announcement, @Nullable Bundle optionsBundle) {
