@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Speech Generation and Communication Assistant for Disabled People</string>
+    <string name="logo_desc">ಅಪ್ಲಿಕೇಶನ್ ಲೋಗೋ</string>
+    <string name="loading_desc">ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ</string>
+
+    <!-- General / Navigation -->
+    <string name="home">ಮುಖ್ಯ ಪುಟ</string>
+    <string name="caregiver">ಸಹಾಯಕರು</string>
+    <string name="dashboard">ಡ್ಯಾಶ್‌ಬೋರ್ಡ್</string>
+    <string name="emergency">ತುರ್ತು</string>
+    <string name="messages">ಸಂದೇಶಗಳು</string>
+    <string name="history">ಇತಿಹಾಸ</string>
+    <string name="profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="help">ಸಹಾಯ</string>
+    <string name="about">ಕುರಿತು</string>
+    <string name="logout">ಲಾಗ್‌ಔಟ್</string>
+    <string name="select_language">ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+
+    <!-- Authentication / Registration / Login -->
+    <string name="sign_in">ಸೈನ್ ಇನ್ ಮಾಡಿ</string>
+    <string name="sign_up">ಸೈನ್ ಅಪ್ ಮಾಡಿ</string>
+    <string name="email_address">ಇಮೇಲ್ ವಿಳಾಸ</string>
+    <string name="password">ಪಾಸ್‌ವರ್ಡ್</string>
+    <string name="confirm_password">ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ</string>
+    <string name="full_name">ಪೂರ್ಣ ಹೆಸರು</string>
+    <string name="user_role">ಬಳಕೆದಾರ ಪಾತ್ರ</string>
+    <string name="language">ಭಾಷೆ</string>
+    <string name="kannada">ಕನ್ನಡ</string>
+    <string name="hindi">ಹಿಂದಿ</string>
+    <string name="malayalam">ಮಲಯಾಳಂ</string>
+    <string name="remember_me">ನನ್ನನ್ನು ನೆನಪಿಡಿ</string>
+    <string name="forgot_password">ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿದ್ದೀರಾ?</string>
+    <string name="voice_help">ಧ್ವನಿ ಸಹಾಯ</string>
+    <string name="already_have_account">ಈಗಾಗಲೇ ಖಾತೆ ಹೊಂದಿದ್ದೀರಾ?</string>
+    <string name="dont_have_account">ಖಾತೆ ಇಲ್ಲವೇ?</string>
+    <string name="create_account_subtitle">ಪ್ರಾರಂಭಿಸಲು ಖಾತೆಯನ್ನು ರಚಿಸಿ</string>
+
+    <!-- Dashboard & Features (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="speech_assistant">ಮಾತು ಸಹಾಯಕ (Speech Assistant)</string>
+    <string name="quick_talk_title">ತ್ವರಿತ ಮಾತು ಮತ್ತು ಕೀಬೋರ್ಡ್ (Quick Talk &amp; Keyboard)</string>
+    <string name="english_translit">ಇಂಗ್ಲಿಷ್ ಟ್ರಾನ್ಸ್‌ಲಿಟ್</string>
+    <string name="kannada_keyboard">ಕನ್ನಡ ಕೀಬೋರ್ಡ್</string>
+    <string name="quick_text_hint">ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಮಾತನಾಡಲು ಮೈಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ...</string>
+    <string name="clear">ಅಳಿಸಿ</string>
+    <string name="speak">ಮಾತನಾಡಿ</string>
+    <string name="send">ಕಳುಹಿಸಿ</string>
+    <string name="recently_used">ಇತ್ತೀಚೆಗೆ ಬಳಸಲಾಗಿದೆ:</string>
+
+    <!-- Caregiver Communication (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="conversation_caregiver">ಸಹಾಯಕರೊಂದಿಗೆ ಸಂಭಾಷಣೆ (Conversation with Caregiver)</string>
+    <string name="online">ಆನ್‌ಲೈನ್</string>
+    <string name="offline">ಆಫ್‌ಲೈನ್</string>
+    <string name="no_messages_yet">ಇನ್ನೂ ಯಾವುದೇ ಸಂದೇಶಗಳಿಲ್ಲ. ನಿಮ್ಮ ಸಹಾಯಕರೊಂದಿಗೆ ಸಂಭಾಷಣೆ ಪ್ರಾರಂಭಿಸಿ.</string>
+
+    <!-- Emergency System -->
+    <string name="emergency_alert">ತುರ್ತು ಸಹಾಯ</string>
+    <string name="emergency_alert_desc">ಸೈರನ್ ಬಾರಿಸಲು ಮತ್ತು ಸಹಾಯಕರನ್ನು ಎಚ್ಚರಿಸಲು ಇಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="preset_fall">ಬಿದ್ದಿದ್ದೇನೆ</string>
+    <string name="preset_choke">ಉಸಿರಾಟ ತೊಂದರೆ</string>
+    <string name="preset_pain">ತೀವ್ರ ನೋವು</string>
+    <string name="sound_siren">ಸೈರನ್ ಬಾರಿಸಿ</string>
+    <string name="stop_siren">ಸೈರನ್ ನಿಲ್ಲಿಸಿ</string>
+
+    <!-- Quick Phrases (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="quick_phrases_title">ತ್ವರಿತ ಪದಗಳು (Quick Phrases)</string>
+    <string name="phrase_water">ನೀರು ಬೇಕು</string>
+    <string name="phrase_water_en">ನೀರು (Water)</string>
+    <string name="phrase_food">ಹಸಿವಾಗಿದೆ</string>
+    <string name="phrase_food_en">ಆಹಾರ (Food)</string>
+    <string name="phrase_help">ಸಹಾಯ ಬೇಕು</string>
+    <string name="phrase_help_en">ಸಹಾಯ (Help)</string>
+    <string name="phrase_rest">ವಿಶ್ರಾಂತಿ ಬೇಕು</string>
+    <string name="phrase_rest_en">ವಿಶ್ರಾಂತಿ (Rest)</string>
+    <string name="phrase_outside">ಹೊರಗೆ ಹೋಗಬೇಕು</string>
+    <string name="phrase_outside_en">ಹೊರಗೆ (Outside)</string>
+    <string name="phrase_toilet">ಶೌಚಾಲಯಕ್ಕೆ ಹೋಗಬೇಕು</string>
+    <string name="phrase_toilet_en">ಶೌಚಾಲಯ (Toilet)</string>
+    <string name="phrase_quiet">ದಯವಿಟ್ಟು ಮೌನವಾಗಿರಿ</string>
+    <string name="phrase_quiet_en">ಮೌನ (Quiet)</string>
+
+    <!-- Profile & Caregiver Details (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="my_profile">ನನ್ನ ಪ್ರೊಫೈಲ್ (My Profile)</string>
+    <string name="manage_account">ಖಾತೆ ವಿವರಗಳನ್ನು ನಿರ್ವಹಿಸಿ</string>
+    <string name="system_configuration">ವ್ಯವಸ್ಥೆ ಸಂರಚನೆ (System Configuration)</string>
+    <string name="account_details">ಖಾತೆ ವಿವರಗಳು</string>
+    <string name="caregiver_details">ಸಹಾಯಕರ ಸಂಪರ್ಕ ವಿವರಗಳು</string>
+    <string name="caregiver_name">ಸಹಾಯಕರ ಹೆಸರು</string>
+    <string name="caregiver_email">ಸಹಾಯಕರ ಇಮೇಲ್ ವಿಳಾಸ</string>
+    <string name="caregiver_phone">ಸಹಾಯಕರ ಫೋನ್ ಸಂಖ್ಯೆ</string>
+    <string name="edit_profile">ಪ್ರೊಫೈಲ್ ತಿದ್ದಿ</string>
+    <string name="save_changes">ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಿ</string>
+    <string name="logout_account">ಖಾತೆಯಿಂದ ಲಾಗ್ ಔಟ್ ಮಾಡಿ</string>
+
+    <!-- Common Dialog & Status -->
+    <string name="success">ಯಶಸ್ಸು</string>
+    <string name="error">ದೋಷ</string>
+    <string name="cancel">ರದ್ದುಮಾಡಿ</string>
+    <string name="ok">ಸರಿ</string>
+    <string name="save">ಉಳಿಸಿ</string>
+    <string name="loading">ಲೋಡ್ ಆಗುತ್ತಿದೆ...</string>
+
+    <!-- Caregiver Connection Page (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="caregiver_connection_title">ಸಹಾಯಕರ ಸಂಪರ್ಕ (Caregiver Connection)</string>
+    <string name="caregiver_connection_subtitle">ಸಂಪರ್ಕದಲ್ಲಿರಿ ಮತ್ತು ವಿನಂತಿಗಳನ್ನು ನಿರ್ವಹಿಸಿ</string>
+    <string name="search_user_by_email">ಇಮೇಲ್ ಮೂಲಕ ಬಳಕೆದಾರರನ್ನು ಹುಡುಕಿ</string>
+    <string name="search_user_subtitle">ಸಹಾಯಕರು ಮತ್ತು ಬಳಕೆದಾರರ ಪ್ರೊಫೈಲ್‌ಗಳನ್ನು ಸಂಪರ್ಕಿಸಿ</string>
+    <string name="enter_email_address">ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ</string>
+    <string name="search_button">ಹುಡುಕಿ</string>
+    <string name="search_result">ಹುಡುಕಾಟದ ಫಲಿತಾಂಶ</string>
+    <string name="send_connection_request">ಸಂಪರ್ಕ ವಿನಂತಿ ಕಳುಹಿಸಿ</string>
+    <string name="connected_caregiver_title">ಸಂಪರ್ಕಿತ ಸಹಾಯಕರು</string>
+    <string name="connected_patient_title">ಸಂಪರ್ಕಿತ ಬಳಕೆದಾರರು</string>
+    <string name="open_interactive_chat">ಸಂವಾದವನ್ನು ತೆರೆಯಿರಿ</string>
+    <string name="disconnect_caregiver">ಸಹಾಯಕರನ್ನು ಸಂಪರ್ಕ ಕಡಿತಗೊಳಿಸಿ</string>
+    <string name="role_speech_impaired">ಕಿವುಡ ಬಳಕೆದಾರ (Deaf User)</string>
+    <string name="role_speech_impaired_full">ಕಿವುಡ ಬಳಕೆದಾರರು (Deaf Users)</string>
+    <string name="role_speech_impaired_single">ಕಿವುಡ ಬಳಕೆದಾರ</string>
+    <string name="role_deaf_user">ಕಿವುಡ ಬಳಕೆದಾರ (Deaf User)</string>
+    <string name="role_deaf_user_full">ಕಿವುಡ ಬಳಕೆದಾರರು (Deaf Users)</string>
+    <string name="role_deaf_user_single">ಕಿವುಡ ಬಳಕೆದಾರ</string>
+    <string name="role_physically_disabled">ಶಾರೀರಿಕ ವಿಕಲಚೇತನ (Physically Disabled)</string>
+    <string name="role_physically_disabled_single">ಶಾರೀರಿಕ ವಿಕಲಚೇತನ ಬಳಕೆದಾರ</string>
+    <string name="role_blind_user">ದೃಷ್ಟಿಹೀನ ಬಳಕೆದಾರ (Blind User)</string>
+    <string name="role_blind_user_full">ದೃಷ್ಟಿಹೀನ ಬಳಕೆದಾರರು (Blind Users)</string>
+    <string name="role_blind_user_single">ದೃಷ್ಟಿಹೀನ ಬಳಕೆದಾರ</string>
+    <string name="role_caregiver">ಸಹಾಯಕರು (Caregiver)</string>
+    <string name="role_admin">ನಿರ್ವಾಹಕರು (Admin)</string>
+    <string name="pending_requests_title">ಬಾಕಿ ಇರುವ ವಿನಂತಿಗಳು</string>
+    <string name="status_pending_approval">ಸ್ಥಿತಿ: ಅನುಮೋದನೆಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ</string>
+    <string name="accept_request">ಸ್ವೀಕರಿಸಿ</string>
+    <string name="reject_request">ನಿರಾಕರಿಸಿ</string>
+    <string name="cancel_request">ವಿನಂತಿ ರದ್ದುಮಾಡಿ</string>
+
+    <!-- Additional Status & Recognition Keys (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="status_active">ಸಕ್ರಿಯ</string>
+    <string name="status_inactive">ನಿಷ್ಕ್ರಿಯ</string>
+    <string name="waiting_for_gesture">ಸಂಜ್ಞೆಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ...</string>
+    <string name="recognition_status">ಗುರುತಿಸುವಿಕೆ ಸ್ಥಿತಿ (Recognition Status)</string>
+    <string name="recognition_confidence">ಗುರುತಿಸುವಿಕೆ ವಿಶ್ವಾಸಾರ್ಹತೆ</string>
+    <string name="recognized_gesture">ಪತ್ತೆಯಾದ ಸಂಜ್ಞೆ</string>
+    <string name="gesture_simulator_title">ಸಂಜ್ಞೆ ಸಿಮ್ಯುಲೇಟರ್ (Gesture Simulator)</string>
+    <string name="message_status">ಸಂದೇಶ ಸ್ಥಿತಿ</string>
+    <string name="sent">ಕಳುಹಿಸಲಾಗಿದೆ</string>
+    <string name="not_sent">ಕಳುಹಿಸಿಲ್ಲ</string>
+    <string name="last_activity">ಕೊನೆಯ ಚಟುವಟಿಕೆ</string>
+
+    <!-- Blind User Home Features: Real-Time Voice Call, Voice Message & Emergency -->
+    <string name="emergency_sos_title">ತುರ್ತು / SOS (Emergency)</string>
+    <string name="emergency_sos_subtitle">ಸಹಾಯಕರಿಗೆ ತುರ್ತು ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="emergency_sos_btn">SOS</string>
+    <string name="real_time_voice_call_title">ಧ್ವನಿ ಕರೆ (Real-Time Voice Call)</string>
+    <string name="real_time_voice_call_subtitle">ನಿಮ್ಮ ಸಂಪರ್ಕಿತ ಸಹಾಯಕರೊಂದಿಗೆ ನೇರ 2-ವೇ ಆಡಿಯೋ ಕರೆ</string>
+    <string name="btn_start_voice_call">📞 ಧ್ವನಿ ಕರೆ ಪ್ರಾರಂಭಿಸಿ (Start Voice Call)</string>
+    <string name="voice_message_card_title">ಧ್ವನಿ ಸಂದೇಶ (Voice Message)</string>
+    <string name="voice_message_card_subtitle">ನಿಮ್ಮ ಸಂಪರ್ಕಿತ ಸಹಾಯಕರಿಗೆ ಧ್ವನಿ ಸಂದೇಶ ರೆಕಾರ್ಡ್ ಮಾಡಲು ಕೆಳಗಿನ ಮೈಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="tap_microphone_to_record">ರೆಕಾರ್ಡ್ ಮಾಡಲು ಮೈಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ (Tap to record)</string>
+</resources>

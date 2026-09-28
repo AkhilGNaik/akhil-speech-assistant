@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0F172A"
+    android:gravity="center_horizontal"
+    android:padding="24dp">
+
+    <!-- Top Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📞 INCOMING VOICE CALL"
+        android:textColor="#38BDF8"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:layout_marginTop="40dp" />
+
+    <!-- Caller Avatar -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/bg_call_avatar"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="👤"
+            android:textSize="56sp" />
+    </FrameLayout>
+
+    <!-- Caller Name -->
+    <TextView
+        android:id="@+id/txtIncomingCallerName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Incoming Call..."
+        android:textColor="#FFFFFF"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_marginTop="20dp" />
+
+    <!-- Caller Subtitle -->
+    <TextView
+        android:id="@+id/txtIncomingCallerRole"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="is calling you..."
+        android:textColor="#94A3B8"
+        android:textSize="16sp"
+        android:layout_marginTop="8dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Accept / Reject Actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="48dp">
+
+        <!-- Reject Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRejectCall"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:text="✕"
+                android:textSize="28sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="Reject incoming voice call"
+                app:cornerRadius="36dp"
+                app:backgroundTint="#EF4444" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reject"
+                android:textColor="#EF4444"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Accept Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAcceptCall"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:text="📞"
+                android:textSize="28sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="Accept incoming voice call"
+                app:cornerRadius="36dp"
+                app:backgroundTint="#10B981" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Accept"
+                android:textColor="#10B981"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

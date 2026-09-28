@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Speech Generation and Communication Assistant for Disabled People</string>
+    <string name="logo_desc">आवेदन का प्रतीक</string>
+    <string name="loading_desc">जांच की जा रही है</string>
+
+    <!-- General / Navigation -->
+    <string name="home">होम</string>
+    <string name="caregiver">केयरगिवर</string>
+    <string name="dashboard">डैशबोर्ड</string>
+    <string name="emergency">आपातकाल</string>
+    <string name="messages">संदेश</string>
+    <string name="history">इतिहास</string>
+    <string name="profile">प्रोफ़ाइल</string>
+    <string name="settings">सेटिंग्स</string>
+    <string name="help">सहायता</string>
+    <string name="about">के बारे में</string>
+    <string name="logout">लॉग आउट</string>
+    <string name="select_language">भाषा चुनें</string>
+
+    <!-- Authentication / Registration / Login -->
+    <string name="sign_in">साइन इन करें</string>
+    <string name="sign_up">साइन अप करें</string>
+    <string name="email_address">ईमेल पता</string>
+    <string name="password">पासवर्ड</string>
+    <string name="confirm_password">पासवर्ड की पुष्टि करें</string>
+    <string name="full_name">पूरा नाम</string>
+    <string name="user_role">उपयोगकर्ता की भूमिका</string>
+    <string name="language">भाषा</string>
+    <string name="kannada">कन्नड़</string>
+    <string name="hindi">हिंदी</string>
+    <string name="malayalam">मल्यालम</string>
+    <string name="remember_me">मुझे याद रखें</string>
+    <string name="forgot_password">पासवर्ड भूल गए?</string>
+    <string name="voice_help">वॉइस सहायता</string>
+    <string name="already_have_account">क्या आपका पहले से खाता है?</string>
+    <string name="dont_have_account">खाता नहीं है?</string>
+    <string name="create_account_subtitle">शुरू करने के लिए एक खाता बनाएं</string>
+
+    <!-- Dashboard & Features (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="speech_assistant">वाणी सहायक (Speech Assistant)</string>
+    <string name="quick_talk_title">त्वरित बातचीत और कीबोर्ड (Quick Talk &amp; Keyboard)</string>
+    <string name="english_translit">अंग्रेजी प्रतिलेखन</string>
+    <string name="kannada_keyboard">हिंदी कीबोर्ड</string>
+    <string name="quick_text_hint">संदेश टाइप करें या बोलने के लिए माइक पर टैप करें...</string>
+    <string name="clear">साफ़ करें</string>
+    <string name="speak">बोलें</string>
+    <string name="send">भेजें</string>
+    <string name="recently_used">हाल ही में प्रयुक्त:</string>
+
+    <!-- Caregiver Communication (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="conversation_caregiver">केयरगिवर के साथ बातचीत (Conversation with Caregiver)</string>
+    <string name="online">ऑनलाइन</string>
+    <string name="offline">ऑफ़लाइन</string>
+    <string name="no_messages_yet">अभी कोई संदेश नहीं है। अपने केयरगिवर के साथ बातचीत शुरू करें।</string>
+
+    <!-- Emergency System -->
+    <string name="emergency_alert">आपातकालीन सहायता</string>
+    <string name="emergency_alert_desc">साइरन बजाने और केयरगिवर को सचेत करने के लिए यहां टैप करें</string>
+    <string name="preset_fall">मैं गिर गया हूँ</string>
+    <string name="preset_choke">सांस लेने में तकलीफ</string>
+    <string name="preset_pain">तेज दर्द</string>
+    <string name="sound_siren">साइरन बजाएं</string>
+    <string name="stop_siren">साइरन बंद करें</string>
+
+    <!-- Quick Phrases (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="quick_phrases_title">त्वरित वाक्यांश (Quick Phrases)</string>
+    <string name="phrase_water">पानी चाहिए</string>
+    <string name="phrase_water_en">पानी (Water)</string>
+    <string name="phrase_food">भूख लगी है</string>
+    <string name="phrase_food_en">खाना (Food)</string>
+    <string name="phrase_help">मदद चाहिए</string>
+    <string name="phrase_help_en">सहायता (Help)</string>
+    <string name="phrase_rest">आराम चाहिए</string>
+    <string name="phrase_rest_en">आराम (Rest)</string>
+    <string name="phrase_outside">बाहर जाना है</string>
+    <string name="phrase_outside_en">बाहर (Outside)</string>
+    <string name="phrase_toilet">शौचालय जाना है</string>
+    <string name="phrase_toilet_en">शौचालय (Toilet)</string>
+    <string name="phrase_quiet">कृपया चुप रहें</string>
+    <string name="phrase_quiet_en">चुप रहें (Quiet)</string>
+
+    <!-- Profile & Caregiver Details (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="my_profile">मेरी प्रोफ़ाइल (My Profile)</string>
+    <string name="manage_account">खाता विवरण प्रबंधित करें</string>
+    <string name="system_configuration">सिस्टम कॉन्फ़िगरेशन (System Configuration)</string>
+    <string name="account_details">खाते का विवरण</string>
+    <string name="caregiver_details">केयरगिवर संपर्क विवरण</string>
+    <string name="caregiver_name">केयरगिवर का नाम</string>
+    <string name="caregiver_email">केयरगिवर ईमेल पता</string>
+    <string name="caregiver_phone">केयरगिवर का फोन नंबर</string>
+    <string name="edit_profile">प्रोफ़ाइल संपादित करें</string>
+    <string name="save_changes">परिवर्तन सहेजें</string>
+    <string name="logout_account">खाते से लॉग आउट करें</string>
+
+    <!-- Common Dialog & Status -->
+    <string name="success">सफलता</string>
+    <string name="error">त्रुटि</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="ok">ठीक है</string>
+    <string name="save">सहेजें</string>
+    <string name="loading">लोड हो रहा है...</string>
+
+    <!-- Caregiver Connection Page (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="caregiver_connection_title">केयरगिवर कनेक्शन (Caregiver Connection)</string>
+    <string name="caregiver_connection_subtitle">संपर्क में रहें और अनुरोधों का प्रबंधन करें</string>
+    <string name="search_user_by_email">ईमेल द्वारा उपयोगकर्ता खोजें</string>
+    <string name="search_user_subtitle">केयरगिवर और उपयोगकर्ता प्रोफ़ाइल कनेक्ट करें</string>
+    <string name="enter_email_address">ईमेल पता दर्ज करें</string>
+    <string name="search_button">खोजें</string>
+    <string name="search_result">खोज परिणाम</string>
+    <string name="send_connection_request">कनेक्शन अनुरोध भेजें</string>
+    <string name="connected_caregiver_title">जुड़े हुए केयरगिवर</string>
+    <string name="connected_patient_title">जुड़े हुए उपयोगकर्ता</string>
+    <string name="open_interactive_chat">संवाद खोलें</string>
+    <string name="disconnect_caregiver">केयरगिवर डिस्कनेक्ट करें</string>
+    <string name="role_speech_impaired">बधिर उपयोगकर्ता (Deaf User)</string>
+    <string name="role_speech_impaired_full">बधिर उपयोगकर्ता (Deaf Users)</string>
+    <string name="role_speech_impaired_single">बधिर उपयोगकर्ता</string>
+    <string name="role_deaf_user">बधिर उपयोगकर्ता (Deaf User)</string>
+    <string name="role_deaf_user_full">बधिर उपयोगकर्ता (Deaf Users)</string>
+    <string name="role_deaf_user_single">बधिर उपयोगकर्ता</string>
+    <string name="role_physically_disabled">शारीरिक रूप से अक्षम (Physically Disabled)</string>
+    <string name="role_physically_disabled_single">शारीरिक रूप से अक्षम उपयोगकर्ता</string>
+    <string name="role_blind_user">दृष्टिहीन उपयोगकर्ता (Blind User)</string>
+    <string name="role_blind_user_full">दृष्टिहीन उपयोगकर्ता (Blind Users)</string>
+    <string name="role_blind_user_single">दृष्टिहीन उपयोगकर्ता</string>
+    <string name="role_caregiver">केयरगिवर (Caregiver)</string>
+    <string name="role_admin">व्यवस्थापक (Admin)</string>
+    <string name="pending_requests_title">लंबित अनुरोध</string>
+    <string name="status_pending_approval">स्थिति: स्वीकृति के लिए लंबित</string>
+    <string name="accept_request">स्वीकार करें</string>
+    <string name="reject_request">अस्वीकार करें</string>
+    <string name="cancel_request">अनुरोध रद्द करें</string>
+
+    <!-- Additional Status & Recognition Keys (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="status_active">सक्रिय</string>
+    <string name="status_inactive">निष्क्रिय</string>
+    <string name="waiting_for_gesture">जेस्चर की प्रतीक्षा की जा रही है...</string>
+    <string name="recognition_status">पहचान स्थिति (Recognition Status)</string>
+    <string name="recognition_confidence">पहचान विश्वास</string>
+    <string name="recognized_gesture">पहचाना गया जेस्चर</string>
+    <string name="gesture_simulator_title">जेस्चर सिम्युलेटर (Gesture Simulator)</string>
+    <string name="message_status">संदेश स्थिति</string>
+    <string name="sent">भेजा गया</string>
+    <string name="not_sent">नहीं भेजा गया</string>
+    <string name="last_activity">अंतिम गतिविधि</string>
+
+    <!-- Blind User Home Features: Real-Time Voice Call, Voice Message & Emergency -->
+    <string name="emergency_sos_title">आपातकालीन / SOS (Emergency)</string>
+    <string name="emergency_sos_subtitle">केयरगिवर को आपातकालीन अलर्ट भेजने के लिए टैप करें</string>
+    <string name="emergency_sos_btn">SOS</string>
+    <string name="real_time_voice_call_title">वॉयस कॉल (Real-Time Voice Call)</string>
+    <string name="real_time_voice_call_subtitle">अपने जुड़े केयरगिवर के साथ लाइव 2-तरफा ऑडियो कॉल</string>
+    <string name="btn_start_voice_call">📞 वॉयस कॉल शुरू करें (Start Voice Call)</string>
+    <string name="voice_message_card_title">वॉयस संदेश (Voice Message)</string>
+    <string name="voice_message_card_subtitle">अपने जुड़े केयरगिवर के लिए वॉयस संदेश रिकॉर्ड करने हेतु नीचे दिए गए माइक पर टैप करें</string>
+    <string name="tap_microphone_to_record">रिकॉर्ड करने के लिए माइक पर टैप करें (Tap to record)</string>
+</resources>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardEmergencyRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/surface"
+    app:strokeWidth="1dp"
+    app:strokeColor="#FDA4AF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Title / Header -->
+        <TextView
+            android:id="@+id/txtEmergencyTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🚨 EMERGENCY"
+            android:textColor="#E11D48"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Patient Name -->
+        <TextView
+            android:id="@+id/txtPatientName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Patient: Akhil"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <!-- User ID -->
+        <TextView
+            android:id="@+id/txtPatientId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="User ID: USR001"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Message -->
+        <TextView
+            android:id="@+id/txtEmergencyMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Message: I need immediate help."
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Date -->
+        <TextView
+            android:id="@+id/txtEmergencyDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Date: 16 July 2026"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Time -->
+        <TextView
+            android:id="@+id/txtEmergencyTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Time: 10:42 AM"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/txtEmergencyStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="Status: NEW"
+            android:textColor="#E11D48"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E2E8F0"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="View"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                app:backgroundTint="@color/accent"
+                app:cornerRadius="6dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAcknowledgeAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Acknowledge"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                app:backgroundTint="#F59E0B"
+                app:cornerRadius="6dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResolveAlert"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Resolve"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                app:backgroundTint="#10B981"
+                app:cornerRadius="6dp"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

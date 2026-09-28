@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context="com.kannada.speechassistant.SpeechImpairedDashboardActivity">
+
+    <!-- Top Toolbar Header -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="3dp"
+        app:cardCornerRadius="0dp"
+        app:cardBackgroundColor="@color/surface"
+        app:strokeWidth="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <!-- App / Module Icon Badge -->
+            <FrameLayout
+                android:id="@+id/iconContainer"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_header_icon_container"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_speech"
+                    app:tint="@color/primary"
+                    android:contentDescription="@string/speech_assistant" />
+            </FrameLayout>
+
+            <!-- Title & Role Container -->
+            <LinearLayout
+                android:id="@+id/titleRoleContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintStart_toEndOf="@id/iconContainer"
+                app:layout_constraintEnd_toStartOf="@id/rightActionCluster"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:id="@+id/txtDashboardTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/speech_assistant"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <!-- Role Badge Pill -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_role_chip"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:layout_marginTop="3dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/txtUserRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/role_speech_impaired"
+                        android:textColor="@color/primary"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Right Action Cluster: Bell Settings Button & Status Pill -->
+            <LinearLayout
+                android:id="@+id/rightActionCluster"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- Bell Notification Settings Button -->
+                <ImageButton
+                    android:id="@+id/btnBellNotificationSettings"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_circle_button"
+                    android:src="@drawable/ic_bell"
+                    app:tint="@color/primary"
+                    android:padding="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:contentDescription="Notification Sound &amp; Volume Manager" />
+
+                <!-- Online/Offline Status Pill Chip -->
+                <LinearLayout
+                    android:id="@+id/layoutStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_status_pill_online"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <View
+                        android:id="@+id/viewStatusDot"
+                        android:layout_width="7dp"
+                        android:layout_height="7dp"
+                        android:background="@drawable/bg_status_dot_online"
+                        android:layout_marginEnd="5dp" />
+
+                    <TextView
+                        android:id="@+id/txtStatusLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/online"
+                        android:textColor="#047857"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Deaf Assistant Visual Response Card Overlay -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardDeafAssistantResponse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"
+        android:elevation="12dp"
+        app:cardElevation="6dp"
+        app:cardCornerRadius="16dp"
+        app:cardBackgroundColor="@color/surface"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="@color/primary"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp">
+
+            <!-- Card Header: Title & Close Button -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/imgDeafAssistantIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_speech"
+                    app:tint="@color/primary"
+                    android:contentDescription="Assistant" />
+
+                <TextView
+                    android:id="@+id/txtDeafAssistantTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="🎤 Assistant"
+                    android:textColor="@color/primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnDismissDeafAssistant"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_clear"
+                    app:tint="@color/text_secondary"
+                    android:padding="4dp"
+                    android:contentDescription="Dismiss" />
+            </LinearLayout>
+
+            <!-- State 2-8 Main Response Message -->
+            <TextView
+                android:id="@+id/txtDeafAssistantMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:text="Assistant activated" />
+
+            <!-- Subtitle / Prompt -->
+            <TextView
+                android:id="@+id/txtDeafAssistantSubMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone"
+                android:text="Speak your command" />
+
+            <!-- Indeterminate Progress for Listening/Processing -->
+            <ProgressBar
+                android:id="@+id/progressDeafAssistant"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_marginTop="8dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Main Content Frame -->
+    <FrameLayout
+        android:id="@+id/contentFrame"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavSpeechImpaired"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Tab 1: Home Page -->
+        <include layout="@layout/layout_speech_impaired_home" />
+
+
+
+        <!-- Tab 3: Profile Page -->
+        <include layout="@layout/layout_speech_impaired_profile" />
+
+        <!-- Tab 4: Caregiver Connection Page -->
+        <include layout="@layout/layout_speech_impaired_caregiver" />
+
+    </FrameLayout>
+
+    <!-- Bottom Navigation Bar -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavSpeechImpaired"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@color/surface"
+        app:menu="@menu/menu_speech_impaired"
+        app:labelVisibilityMode="labeled"
+        app:itemIconSize="22dp"
+        app:itemRippleColor="@color/primary"
+        app:elevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

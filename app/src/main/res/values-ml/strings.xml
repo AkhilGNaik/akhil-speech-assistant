@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Speech Generation and Communication Assistant for Disabled People</string>
+    <string name="logo_desc">ആപ്ലിക്കേഷൻ ലോഗോ</string>
+    <string name="loading_desc">പരിശോധിക്കുന്നു</string>
+
+    <!-- General / Navigation -->
+    <string name="home">ഹോം</string>
+    <string name="caregiver">കെയർഗിവർ</string>
+    <string name="dashboard">ഡാഷ്‌ബോർഡ്</string>
+    <string name="emergency">അടിയന്തരാവസ്ഥ</string>
+    <string name="messages">സന്ദേശങ്ങൾ</string>
+    <string name="history">ചരിത്രം</string>
+    <string name="profile">പ്രൊഫൈൽ</string>
+    <string name="settings">ക്രമീകരണങ്ങൾ</string>
+    <string name="help">സഹായം</string>
+    <string name="about">കുറിച്ച്</string>
+    <string name="logout">ലോഗ് ഔട്ട്</string>
+    <string name="select_language">ഭാഷ തിരഞ്ഞെടുക്കുക</string>
+
+    <!-- Authentication / Registration / Login -->
+    <string name="sign_in">സൈൻ ഇൻ ചെയ്യുക</string>
+    <string name="sign_up">സൈൻ അപ്പ് ചെയ്യുക</string>
+    <string name="email_address">ഇമെയിൽ വിലാസം</string>
+    <string name="password">പാസ്‌വേഡ്</string>
+    <string name="confirm_password">പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക</string>
+    <string name="full_name">മുഴുവൻ പേര്</string>
+    <string name="user_role">ഉപയോക്തൃ പങ്ക്</string>
+    <string name="language">ഭാഷ</string>
+    <string name="kannada">കന്നഡ</string>
+    <string name="hindi">ഹിന്ദി</string>
+    <string name="malayalam">മലയാളം</string>
+    <string name="remember_me">എന്നെ ഓർക്കുക</string>
+    <string name="forgot_password">പാസ്‌വേഡ് മറന്നോ?</string>
+    <string name="voice_help">ശബ്ദ സഹായം</string>
+    <string name="already_have_account">ഇനിയും അക്കൗണ്ട് ഉണ്ടോ?</string>
+    <string name="dont_have_account">അക്കൗണ്ട് ഇല്ലേ?</string>
+    <string name="create_account_subtitle">ആരംഭിക്കുന്നതിന് ഒരു അക്കൗണ്ട് സൃഷ്ടിക്കുക</string>
+
+    <!-- Dashboard & Features (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="speech_assistant">സംഭാഷണ സഹായി (Speech Assistant)</string>
+    <string name="quick_talk_title">ദ്രുത സംസാരവും കീബോർഡും (Quick Talk &amp; Keyboard)</string>
+    <string name="english_translit">ഇംഗ്ലീഷ് പരിഭാഷ</string>
+    <string name="kannada_keyboard">മലയാളം കീബോർഡ്</string>
+    <string name="quick_text_hint">സന്ദേശം ടൈപ്പ് ചെയ്യുക അല്ലെങ്കിൽ സംസാരിക്കാൻ മൈക്കിൽ തട്ടുക...</string>
+    <string name="clear">വ്യക്തമാക്കുക</string>
+    <string name="speak">സംസാരിക്കുക</string>
+    <string name="send">അയക്കുക</string>
+    <string name="recently_used">സമീപകാലത്ത് ഉപയോഗിച്ചവ:</string>
+
+    <!-- Caregiver Communication (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="conversation_caregiver">കെയർഗിവറുമായുള്ള സംഭാഷണം (Conversation with Caregiver)</string>
+    <string name="online">ഓൺലൈൻ</string>
+    <string name="offline">ഓഫ്‌ലൈൻ</string>
+    <string name="no_messages_yet">ഇതുവരെ സന്ദേശങ്ങളൊന്നുമില്ല. നിങ്ങളുടെ കെയർഗിവറുമായി സംഭാഷണം ആരംഭിക്കുക.</string>
+
+    <!-- Emergency System -->
+    <string name="emergency_alert">അടിയന്തര സഹായം</string>
+    <string name="emergency_alert_desc">സൈറൺ മുഴക്കാനും കെയർഗിവറിനെ അറിയിക്കാനും ഇവിടെ തട്ടുക</string>
+    <string name="preset_fall">ഞാൻ താഴെ വീണു</string>
+    <string name="preset_choke">ശ്വാസതടസ്സം</string>
+    <string name="preset_pain">കഠിനമായ വേദന</string>
+    <string name="sound_siren">സൈറൺ മുഴക്കുക</string>
+    <string name="stop_siren">സൈറൺ നിർത്തുക</string>
+
+    <!-- Quick Phrases (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="quick_phrases_title">ദ്രുത വാക്യങ്ങൾ (Quick Phrases)</string>
+    <string name="phrase_water">വെള്ളം വേണം</string>
+    <string name="phrase_water_en">വെള്ളം (Water)</string>
+    <string name="phrase_food">വിശക്കുന്നു</string>
+    <string name="phrase_food_en">ഭക്ഷണം (Food)</string>
+    <string name="phrase_help">സഹായം വേണം</string>
+    <string name="phrase_help_en">സഹായം (Help)</string>
+    <string name="phrase_rest">വിശ്രമം വേണം</string>
+    <string name="phrase_rest_en">വിശ്രമം (Rest)</string>
+    <string name="phrase_outside">പുറത്തു പോകണം</string>
+    <string name="phrase_outside_en">പുറത്ത് (Outside)</string>
+    <string name="phrase_toilet">ടോയ്‌ലറ്റിൽ പോകണം</string>
+    <string name="phrase_toilet_en">ടോയ്‌ലറ്റ് (Toilet)</string>
+    <string name="phrase_quiet">ദയവായി ശാന്തമായിരിക്കുക</string>
+    <string name="phrase_quiet_en">ശാന്തമായിരിക്കുക (Quiet)</string>
+
+    <!-- Profile & Caregiver Details (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="my_profile">എന്റെ പ്രൊഫൈൽ (My Profile)</string>
+    <string name="manage_account">അക്കൗണ്ട് വിവരങ്ങൾ നിയന്ത്രിക്കുക</string>
+    <string name="system_configuration">സിസ്റ്റം കോൺഫിഗറേഷൻ (System Configuration)</string>
+    <string name="account_details">അക്കൗണ്ട് വിവരങ്ങൾ</string>
+    <string name="caregiver_details">കെയർഗിവർ ബന്ധ വിവരങ്ങൾ</string>
+    <string name="caregiver_name">കെയർഗിവറുടെ പേര്</string>
+    <string name="caregiver_email">കെയർഗിവർ ഇമെയിൽ വിലാസം</string>
+    <string name="caregiver_phone">കെയർഗിവറുടെ ഫോൺ നമ്പർ</string>
+    <string name="edit_profile">പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക</string>
+    <string name="save_changes">മാറ്റങ്ങൾ സംരക്ഷിക്കുക</string>
+    <string name="logout_account">അക്കൗണ്ടിൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യുക</string>
+
+    <!-- Common Dialog & Status -->
+    <string name="success">വിജയം</string>
+    <string name="error">പിശക്</string>
+    <string name="cancel">റദ്ദാക്കുക</string>
+    <string name="ok">ശരി</string>
+    <string name="save">സംരക്ഷിക്കുക</string>
+    <string name="loading">ലോഡ് ചെയ്യുന്നു...</string>
+
+    <!-- Caregiver Connection Page (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="caregiver_connection_title">കെയർഗിവർ കണക്ഷൻ (Caregiver Connection)</string>
+    <string name="caregiver_connection_subtitle">ബന്ധപ്പെടുക, കെയർഗിവർ അഭ്യർത്ഥനകൾ കൈകാര്യം ചെയ്യുക</string>
+    <string name="search_user_by_email">ഇമെയിൽ വഴി ഉപയോക്താവിനെ തിരയുക</string>
+    <string name="search_user_subtitle">കെയർഗിവറുടെയും ഉപയോക്താവിന്റെയും പ്രൊഫൈലുകൾ ബന്ധിപ്പിക്കുക</string>
+    <string name="enter_email_address">ഇമെയിൽ വിലാസം നൽകുക</string>
+    <string name="search_button">തിരയുക</string>
+    <string name="search_result">തിരച്ചിൽ ഫലം</string>
+    <string name="send_connection_request">ബന്ധപ്പെടാനുള്ള അഭ്യർത്ഥന അയയ്ക്കുക</string>
+    <string name="connected_caregiver_title">ബന്ധിപ്പിച്ച കെയർഗിവർ</string>
+    <string name="connected_patient_title">ബന്ധിപ്പിച്ച ഉപയോക്താവ്</string>
+    <string name="open_interactive_chat">സംഭാഷണം ആരംഭിക്കുക</string>
+    <string name="disconnect_caregiver">കെയർഗിവറിനെ വിച്ഛേദിക്കുക</string>
+    <string name="role_speech_impaired">ബധിരനായ ഉപയോക്താവ് (Deaf User)</string>
+    <string name="role_speech_impaired_full">ബധിരരായ ഉപയോക്താക്കൾ (Deaf Users)</string>
+    <string name="role_speech_impaired_single">ബധിരനായ ഉപയോക്താവ്</string>
+    <string name="role_deaf_user">ബധിരനായ ഉപയോക്താവ് (Deaf User)</string>
+    <string name="role_deaf_user_full">ബധിരരായ ഉപയോക്താക്കൾ (Deaf Users)</string>
+    <string name="role_deaf_user_single">ബധിരനായ ഉപയോക്താവ്</string>
+    <string name="role_physically_disabled">ശാരീരിക വൈകല്യമുള്ളവർ (Physically Disabled)</string>
+    <string name="role_physically_disabled_single">ശാരീരിക വൈകല്യമുള്ള ഉപയോക്താവ്</string>
+    <string name="role_blind_user">കാഴ്ചാപരിമിത ഉപയോക്താവ് (Blind User)</string>
+    <string name="role_blind_user_full">കാഴ്ചാപരിമിത ഉപയോക്താക്കൾ (Blind Users)</string>
+    <string name="role_blind_user_single">കാഴ്ചാപരിമിത ഉപയോക്താവ്</string>
+    <string name="role_caregiver">കെയർഗിവർ (Caregiver)</string>
+    <string name="role_admin">അഡ്മിൻ (Admin)</string>
+    <string name="pending_requests_title">തീർപ്പാക്കാത്ത അഭ്യർത്ഥനകൾ</string>
+    <string name="status_pending_approval">അവസ്ഥ: അംഗീകാരത്തിനായി കാത്തിരിക്കുന്നു</string>
+    <string name="accept_request">സ്വീകരിക്കുക</string>
+    <string name="reject_request">നിരസിക്കുക</string>
+    <string name="cancel_request">അഭ്യർത്ഥന റദ്ദാക്കുക</string>
+
+    <!-- Additional Status & Recognition Keys (MAIN HEADINGS IN LOCAL (ENGLISH) FORMAT) -->
+    <string name="status_active">സജീവം</string>
+    <string name="status_inactive">നിഷ്ക്രിയം</string>
+    <string name="waiting_for_gesture">ജെസ്ചറിനായി കാത്തിരിക്കുന്നു...</string>
+    <string name="recognition_status">തിരിച്ചറിയൽ നില (Recognition Status)</string>
+    <string name="recognition_confidence">തിരിച്ചറിയൽ വിശ്വാസ്യത</string>
+    <string name="recognized_gesture">തിരിച്ചറിഞ്ഞ ജെസ്ചർ</string>
+    <string name="gesture_simulator_title">ജെസ്ചർ സിമുലേറ്റർ (Gesture Simulator)</string>
+    <string name="message_status">സന്ദേശ നില</string>
+    <string name="sent">അയച്ചു</string>
+    <string name="not_sent">അയച്ചില്ല</string>
+    <string name="last_activity">അവസാന പ്രവർത്തനം</string>
+
+    <!-- Blind User Home Features: Real-Time Voice Call, Voice Message & Emergency -->
+    <string name="emergency_sos_title">അടിയന്തരം / SOS (Emergency)</string>
+    <string name="emergency_sos_subtitle">കെയർഗിവർക്ക് അടിയന്തര മുന്നറിയിപ്പ് അയയ്ക്കാൻ തട്ടുക</string>
+    <string name="emergency_sos_btn">SOS</string>
+    <string name="real_time_voice_call_title">വോയ്‌സ് കോൾ (Real-Time Voice Call)</string>
+    <string name="real_time_voice_call_subtitle">നിങ്ങളുടെ ബന്ധിപ്പിച്ച കെയർഗിവറുമായി തത്സമയ 2-വേ ഓഡിയോ കോൾ</string>
+    <string name="btn_start_voice_call">📞 വോയ്‌സ് കോൾ ആരംഭിക്കുക (Start Voice Call)</string>
+    <string name="voice_message_card_title">വോയ്‌സ് സന്ദേശം (Voice Message)</string>
+    <string name="voice_message_card_subtitle">നിങ്ങളുടെ ബന്ധിപ്പിച്ച കെയർഗിവർക്കായി വോയ്‌സ് സന്ദേശം റെക്കോർഡ് ചെയ്യാൻ താഴെയുള്ള മൈക്കിൽ തട്ടുക</string>
+    <string name="tap_microphone_to_record">റെക്കോർഡ് ചെയ്യാൻ മൈക്കിൽ തട്ടുക (Tap to record)</string>
+</resources>

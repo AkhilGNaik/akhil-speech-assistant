@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".SpeechAssistantApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_logo"
+        android:roundIcon="@drawable/ic_logo"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SpeechAssistant">
+
+        <!-- Central Firestore Realtime Notification Listener Service -->
+        <service
+            android:name=".FirestoreRealtimeService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Background Voice Launch Service for Hands-Free App Opening -->
+        <service
+            android:name=".voiceassistant.BackgroundVoiceLaunchService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="microphone|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Hands-free voice launch assistant for blind accessibility" />
+        </service>
+
+        <!-- Device Boot Broadcast Receiver for Blind Voice Launch Service -->
+        <receiver
+            android:name=".voiceassistant.VoiceLaunchBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Firebase Cloud Messaging Notification Service -->
+        <service
+            android:name=".NotificationService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Splash Screen Activity: Configured as the main launcher activity -->
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/Theme.SpeechAssistant.Splash"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Native Android Voice Command Intent Filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.VOICE" />
+            </intent-filter>
+            <!-- Android System Assist Voice Filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Login Screen Activity -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+
+        <!-- Dashboard Screen Activity -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false" />
+
+        <!-- Speech-Impaired Dashboard Screen Activity -->
+        <activity
+            android:name=".SpeechImpairedDashboardActivity"
+            android:exported="false" />
+
+        <!-- Mute User Dashboard Screen Activity -->
+        <activity
+            android:name=".MuteUserDashboardActivity"
+            android:exported="false" />
+
+        <!-- Blind User Dashboard Screen Activity -->
+        <activity
+            android:name=".BlindUserDashboardActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <!-- Admin Dashboard Screen Activity -->
+        <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+
+        <!-- Registration Screen Activity -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+
+        <!-- User Profile Activity -->
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+
+        <!-- Chat Activity -->
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false" />
+
+        <!-- Emergency Activity -->
+        <activity
+            android:name=".EmergencyActivity"
+            android:exported="false" />
+
+        <!-- Real-Time Voice Call Activity -->
+        <activity
+            android:name=".VoiceCallActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true" />
+
+        <!-- Incoming Call Screen Activity for Caregivers -->
+        <activity
+            android:name=".IncomingCallActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true" />
+
+    </application>
+
+</manifest>

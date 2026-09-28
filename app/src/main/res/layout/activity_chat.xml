@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".ChatActivity">
+
+    <!-- Top Action Bar/Header -->
+    <RelativeLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@color/surface"
+        android:elevation="4dp"
+        android:padding="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:padding="0dp"
+            app:icon="?attr/actionModeCloseDrawable"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/text_primary" />
+
+        <LinearLayout
+            android:id="@+id/layoutHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/btnBack"
+            android:layout_toStartOf="@id/layoutHeaderActions"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtReceiverName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Caregiver Name"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/txtReceiverRole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Admin/Caregiver"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Right Side Header Action Buttons (Call & Emergency SOS) -->
+        <LinearLayout
+            android:id="@+id/layoutHeaderActions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCall"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📞 Call"
+                android:backgroundTint="#0284C7"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                app:cornerRadius="8dp" />
+
+            <!-- Optional In-Chat Emergency Alert Trigger for impaired users -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSendEmergency"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="SOS"
+                android:backgroundTint="#EF4444"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <!-- Bottom Input and Quick Phrases Area -->
+    <LinearLayout
+        android:id="@+id/layoutBottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/surface"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Standard Chat Input (Shown for other roles) -->
+        <LinearLayout
+            android:id="@+id/layoutStandardChatInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Translit status indicator -->
+            <LinearLayout
+                android:id="@+id/layoutHomeTranslitStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp"
+                android:visibility="visible">
+
+                <ProgressBar
+                    android:id="@+id/progressHomeTranslit"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/primary" />
+
+                <TextView
+                    android:id="@+id/txtHomeTranslitStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="English Translit active. (Auto-converting)"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="italic" />
+            </LinearLayout>
+
+            <!-- Quick Phrases Horizontal Scroll -->
+            <HorizontalScrollView
+                android:id="@+id/scrollQuickPhrases"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/layoutQuickPhrases"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+                    <!-- Programmatically populated or static buttons here -->
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Message Type / Send bar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editMessage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Type a message..."
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="16sp"
+                    android:minHeight="48dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:inputType="textShortMessage|textAutoCorrect" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMicInput"
+                    style="@style/Widget.MaterialComponents.Button.Icon"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:padding="0dp"
+                    app:backgroundTint="@color/surface"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_mic"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="@color/primary"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSend"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Send"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="@color/primary"
+                    app:cornerRadius="24dp" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Blind User Voice Message Input (Image 5 Function - Only Large Microphone 🎤) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/layoutBlindVoiceMessageInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="@color/primary"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/txtBlindVoiceTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/voice_message_card_title"
+                    android:textColor="@color/primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Large Microphone Button -->
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBlindMicVoiceMessage"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:text="🎤"
+                        android:textSize="48sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:contentDescription="Tap to record voice message"
+                        app:cornerRadius="60dp"
+                        app:backgroundTint="@color/primary"
+                        app:elevation="8dp" />
+                </FrameLayout>
+
+                <!-- Recording Status Label -->
+                <TextView
+                    android:id="@+id/txtBlindMicStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tap_microphone_to_record"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Live Timer Section -->
+                <LinearLayout
+                    android:id="@+id/layoutBlindRecordingTimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:visibility="gone"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/txtBlindTimerDisplay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textColor="#EF4444"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Maximum limit: 60 seconds"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Recording Action Buttons -->
+                <LinearLayout
+                    android:id="@+id/layoutBlindRecordingActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:layout_marginTop="4dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBlindStopRecording"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="⏹ Stop &amp; Send"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="#EF4444"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBlindCancelRecording"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="✕ Cancel"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="#CBD5E1"
+                        app:strokeWidth="1.5dp"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- Messages Container -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMessages"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/layoutBottom"
+        android:layout_below="@id/layoutHeader"
+        android:clipToPadding="false"
+        android:padding="12dp"
+        android:scrollbars="vertical" />
+
+</RelativeLayout>

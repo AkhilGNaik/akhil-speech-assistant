@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "420461135763",
+    "project_id": "kannadaspeechassistant",
+    "storage_bucket": "kannadaspeechassistant.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420461135763:android:7630497f9b9addd3724a66",
+        "android_client_info": {
+          "package_name": "com.kannada.speechassistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqz1Xlhd5NlrcvDQjUsGEy9l1xZUDsotU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

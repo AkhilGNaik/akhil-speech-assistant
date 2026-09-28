@@ -1,0 +1,17 @@
+{
+  "name": "firebase-development-reset",
+  "version": "1.0.0",
+  "description": "Development cleanup tool for Firebase Auth and Firestore data reset",
+  "main": "reset-all.js",
+  "scripts": {
+    "reset:auth": "node reset-auth.js",
+    "reset:firestore": "node reset-firestore.js",
+    "reset:all": "node reset-all.js"
+  },
+  "keywords": ["firebase", "cleanup", "reset", "admin-sdk"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light Mode Colors -->
+    <color name="primary">#4F46E5</color> <!-- Modern Indigo -->
+    <color name="primary_dark">#3730A3</color>
+    <color name="accent">#0D9488</color> <!-- Teal -->
+    <color name="background">#F8FAFC</color> <!-- Sleek off-white -->
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#1E1B4B</color> <!-- Dark Indigo-Slate -->
+    <color name="text_secondary">#475569</color>
+    <color name="progress_tint">#4F46E5</color>
+    <color name="selected_item_background">#EEF2FF</color>
+</resources>

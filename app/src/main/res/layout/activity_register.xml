@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/background"
+    tools:context="com.kannada.speechassistant.RegisterActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <!-- Header / Screen Title -->
+        <TextView
+            android:id="@+id/registerHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sign Up"
+            android:textColor="@color/text_primary"
+            android:textSize="28sp"
+            android:fontFamily="sans-serif-condensed-light"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <!-- Voice Help Button for Accessibility -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/voiceAssistCard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/accent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <LinearLayout
+                android:id="@+id/btnVoiceAssist"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:contentDescription="Voice Help: Reads out registration instructions">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_volume_up"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="Voice Help"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:importantForAccessibility="no" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Brand Logo -->
+        <ImageView
+            android:id="@+id/registerLogo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/ic_logo"
+            android:contentDescription="Application Logo"
+            android:importantForAccessibility="yes"
+            app:layout_constraintTop_toBottomOf="@id/registerHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/welcomeSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Create an account to get started"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:textAlignment="center"
+            app:layout_constraintTop_toBottomOf="@id/registerLogo"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Error Card Banner (shown dynamically when validation or Firebase fails) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/errorCardView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#FEE2E2"
+            app:cardCornerRadius="8dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#FCA5A5"
+            app:layout_constraintTop_toBottomOf="@id/welcomeSubtitle">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/errorTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="An error occurred."
+                    android:textColor="#991B1B"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:importantForAccessibility="yes" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Full Name Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nameInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Full Name"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:layout_constraintTop_toBottomOf="@id/errorCardView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Enter your first and last name" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Email Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/emailInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Email Address"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:layout_constraintTop_toBottomOf="@id/nameInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/emailEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Enter a valid email address" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Password Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/passwordInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Password"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="@color/accent"
+            app:layout_constraintTop_toBottomOf="@id/emailInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/passwordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Create a password, minimum six characters" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Confirm Password Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/confirmPasswordInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Confirm Password"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="@color/accent"
+            app:layout_constraintTop_toBottomOf="@id/passwordInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/confirmPasswordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Re-enter the password to confirm" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Select User Role Dropdown Menu -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/roleInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="User Role"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:layout_constraintTop_toBottomOf="@id/confirmPasswordInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <AutoCompleteTextView
+                android:id="@+id/roleAutoCompleteTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:focusable="false"
+                android:clickable="true"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Select your role: Mute User, Deaf User, Physically Disabled User, Blind User, or Admin Caregiver" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Select Preferred Language Dropdown Menu -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/languageInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Language"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary"
+            app:layout_constraintTop_toBottomOf="@id/roleInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <AutoCompleteTextView
+                android:id="@+id/languageAutoCompleteTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:textSize="16sp"
+                android:padding="16dp"
+                android:focusable="false"
+                android:clickable="true"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Select Language: Kannada, Hindi, or Malayalam" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Register Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:text="Sign Up"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="12dp"
+            android:elevation="4dp"
+            android:importantForAccessibility="yes"
+            app:layout_constraintTop_toBottomOf="@id/languageInputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Progress Indicator -->
+        <ProgressBar
+            android:id="@+id/registerProgressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/primary"
+            app:layout_constraintTop_toBottomOf="@id/btnRegister"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Redirect Link to Sign In -->
+        <LinearLayout
+            android:id="@+id/signInRedirectLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/registerProgressBar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Already have an account? "
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btnSignInRedirect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sign In"
+                android:textColor="@color/primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:importantForAccessibility="yes"
+                android:contentDescription="Already have an account? Navigate to Sign In page" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

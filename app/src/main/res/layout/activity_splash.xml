@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context="com.kannada.speechassistant.SplashActivity">
+
+    <!-- Container for logo and name to apply fade-in animation together -->
+    <LinearLayout
+        android:id="@+id/brandContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="@dimen/spacing_large"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/splashProgressBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="packed">
+
+        <!-- App Logo -->
+        <ImageView
+            android:id="@+id/logoImageView"
+            android:layout_width="@dimen/logo_size"
+            android:layout_height="@dimen/logo_size"
+            android:src="@drawable/ic_logo"
+            android:contentDescription="@string/logo_desc"
+            android:importantForAccessibility="yes"
+            android:elevation="4dp" />
+
+        <!-- App Title (Speech Generation and Communication Assistant for Disabled People) -->
+        <TextView
+            android:id="@+id/appNameTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_large"
+            android:text="@string/app_name"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/title_text_size"
+            android:fontFamily="sans-serif-medium"
+            android:textAlignment="center"
+            android:gravity="center"
+            android:lineSpacingExtra="@dimen/title_line_spacing"
+            android:importantForAccessibility="yes" />
+
+    </LinearLayout>
+
+    <!-- Indeterminate loading progress indicator -->
+    <ProgressBar
+        android:id="@+id/splashProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/progress_tint"
+        android:contentDescription="@string/loading_desc"
+        android:importantForAccessibility="yes"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/brandContainer" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

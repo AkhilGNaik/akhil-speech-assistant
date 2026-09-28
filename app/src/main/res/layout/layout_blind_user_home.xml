@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutHome"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+
+        <!-- Voice Assistant Accessible Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVoiceAssistant"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:minHeight="56dp"
+            android:layout_marginBottom="16dp"
+            android:text="🎤 Voice Assistant"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:textColor="@color/primary"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="2dp"
+            app:cornerRadius="16dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Voice Assistant. Tap to activate voice commands." />
+
+
+        <!-- Real-Time Voice Call Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardRealTimeVoiceCall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#0F172A"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="#38BDF8">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/real_time_voice_call_title"
+                    android:textColor="#38BDF8"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Voice Call Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVoiceCallCaregiver"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="@string/btn_start_voice_call"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:contentDescription="Start live real-time voice call with connected caregiver"
+                    app:cornerRadius="16dp"
+                    app:backgroundTint="#0284C7"
+                    app:elevation="6dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Main Voice Message Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardVoiceMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="@color/primary">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/voice_message_card_title"
+                    android:textColor="@color/primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Large Microphone Button -->
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMicVoiceMessage"
+                        android:layout_width="140dp"
+                        android:layout_height="140dp"
+                        android:text="🎤"
+                        android:textSize="54sp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:contentDescription="Tap to record voice message"
+                        app:cornerRadius="70dp"
+                        app:backgroundTint="@color/primary"
+                        app:elevation="8dp" />
+                </FrameLayout>
+
+                <!-- Recording Status Label -->
+                <TextView
+                    android:id="@+id/txtMicStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tap_microphone_to_record"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Live Timer Section -->
+                <LinearLayout
+                    android:id="@+id/layoutRecordingTimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:visibility="gone"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/txtTimerDisplay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textColor="#EF4444"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Maximum limit: 60 seconds"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <!-- Recording Action Buttons -->
+                <LinearLayout
+                    android:id="@+id/layoutRecordingActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopRecording"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="⏹ Stop &amp; Send"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="#EF4444"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelRecording"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="✕ Cancel"
+                        android:textColor="#475569"
+                        android:textSize="14sp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="#CBD5E1"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Section: Conversation with Caregiver / Voice Messages -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/txtCaregiverChatTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/conversation_caregiver"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtCaregiverStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offline"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCaregiverChatContainer"
+            android:layout_width="match_parent"
+            android:layout_height="340dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#F1F5F9"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E2E8F0">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/layoutCaregiverChatEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_caregiver"
+                        app:tint="#94A3B8"
+                        android:layout_marginBottom="12dp"
+                        android:contentDescription="No messages icon" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/no_messages_yet"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <!-- Messages List -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvCaregiverChatMessages"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:padding="12dp"
+                        android:scrollbars="vertical"
+                        android:nestedScrollingEnabled="true"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+            </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</ScrollView>

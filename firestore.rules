@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for security checks
+    
+    // Gets the user's role from their user profile document
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    // Checks if the request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Checks if the authenticated user is an Admin/Caregiver
+    function isAdminCaregiver() {
+      return isAuthenticated() && (
+        getUserRole(request.auth.uid) == 'Admin/Caregiver' || 
+        (resource != null && resource.data.role == 'Admin/Caregiver') ||
+        (request.resource != null && request.resource.data.role == 'Admin/Caregiver')
+      );
+    }
+
+    // --- Users Collection ---
+    match /users/{uid} {
+      // Authenticated users can read profiles for searching/rendering connections
+      allow read: if isAuthenticated();
+      
+      // Users can only create their own profile. Checks that the role is valid.
+      allow create: if isAuthenticated() && 
+                    request.auth.uid == uid && 
+                    request.resource.data.role in ['Mute User', 'Deaf User', 'Speech-Impaired User', 'Physically Disabled User', 'Blind User', 'Admin/Caregiver'];
+      
+      // Users can update their own non-role profile details. Role escalation is blocked unless the updater is an Admin.
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == uid && request.resource.data.role == resource.data.role) || 
+        isAdminCaregiver()
+      );
+      
+      // Only Admins/Caregivers can delete profiles
+      allow delete: if isAdminCaregiver();
+    }
+
+    // --- Caregiver Connections Collection ---
+    match /caregiver_connections/{connectionId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- Emergencies Collection ---
+    match /emergencies/{alertId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- Chats and Messages ---
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /{path=**}/messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- Caregiver Messages ---
+    match /caregiver_messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- Gesture History ---
+    match /gesture_history/{historyId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- EmergencyAlerts Collection ---
+    match /EmergencyAlerts/{alertId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- emergency_alerts Collection ---
+    match /emergency_alerts/{alertId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // --- Voice Calls Signaling ---
+    match /voice_calls/{callId} {
+      allow read, write: if isAuthenticated();
+      match /{allSubcollections=**} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+  }
+}

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0F172A"
+    android:gravity="center_horizontal"
+    android:padding="24dp">
+
+    <!-- Top Header -->
+    <TextView
+        android:id="@+id/txtCallTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📞 Voice Call"
+        android:textColor="#F8FAFC"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp" />
+
+    <!-- Remote Contact Avatar / Icon -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/bg_call_avatar"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/txtAvatarIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="👤"
+            android:textSize="56sp" />
+    </FrameLayout>
+
+    <!-- Remote Name -->
+    <TextView
+        android:id="@+id/txtCallRemoteName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Caregiver"
+        android:textColor="#FFFFFF"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_marginTop="20dp" />
+
+    <!-- Call Status -->
+    <TextView
+        android:id="@+id/txtCallStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calling connected caregiver..."
+        android:textColor="#94A3B8"
+        android:textSize="16sp"
+        android:layout_marginTop="8dp" />
+
+    <!-- Timer Display -->
+    <TextView
+        android:id="@+id/txtCallTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textColor="#38BDF8"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_marginTop="12dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Action Controls (Mute, Speaker, End Call) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="40dp">
+
+        <!-- Mute Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMuteCall"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="🎤"
+                android:textSize="24sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="Mute or unmute microphone"
+                app:cornerRadius="32dp"
+                app:backgroundTint="#334155" />
+
+            <TextView
+                android:id="@+id/txtMuteLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mute"
+                android:textColor="#CBD5E1"
+                android:textSize="12sp"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- End Call Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEndCall"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:text="📞"
+                android:textSize="32sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="End voice call"
+                app:cornerRadius="40dp"
+                app:backgroundTint="#EF4444" />
+
+            <TextView
+                android:id="@+id/txtEndCallLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="End Call"
+                android:textColor="#EF4444"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- Speaker Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSpeakerCall"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:text="🔊"
+                android:textSize="24sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="Toggle speaker or earpiece audio"
+                app:cornerRadius="32dp"
+                app:backgroundTint="#334155" />
+
+            <TextView
+                android:id="@+id/txtSpeakerLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Speaker"
+                android:textColor="#CBD5E1"
+                android:textSize="12sp"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

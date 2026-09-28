@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4. Communication Tab View -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutCommunicationTab"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    android:visibility="visible">
+
+    <!-- Responsive Split Layout -->
+    <LinearLayout
+        android:id="@+id/layoutCommunicationSplit"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:background="@color/background">
+
+        <!-- Left Pane: Patient List -->
+        <LinearLayout
+            android:id="@+id/layoutPatientListPane"
+            android:layout_width="280dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="@color/surface"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:text="Patients / Users"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Search Bar -->
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/searchViewPatients"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="12dp"
+                app:iconifiedByDefault="false"
+                app:queryHint="Search patients..."
+                app:queryBackground="@android:color/transparent"
+                android:background="@color/background"
+                app:cornerRadius="8dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/background" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCommunicationMessages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/background" />
+
+        <!-- Right Pane: Chat Window -->
+        <RelativeLayout
+            android:id="@+id/layoutChatPane"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/background">
+
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/layoutCaregiverChatEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="24dp"
+                android:visibility="visible">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_caregiver"
+                    app:tint="#94A3B8"
+                    android:layout_marginBottom="16dp"
+                    android:contentDescription="Chat logo" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select a patient to start messaging"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Real-time synchronized caregiver conversation stream."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Active Chat Window -->
+            <LinearLayout
+                android:id="@+id/layoutCaregiverChatWindow"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Chat Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@color/surface"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:elevation="1dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/txtChatHeaderName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Patient Name"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                         <TextView
+                             android:id="@+id/txtChatHeaderStatus"
+                             android:layout_width="wrap_content"
+                             android:layout_height="wrap_content"
+                             android:text="Offline"
+                             android:textColor="@color/text_secondary"
+                             android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCaregiverCallPatient"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="📞 Call"
+                        android:textColor="#0284C7"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        app:cornerRadius="8dp" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/background" />
+
+                <!-- Pinned Emergency Banner -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPinnedEmergency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="3dp"
+                    app:cardBackgroundColor="#FEF2F2"
+                    app:strokeWidth="1.5dp"
+                    app:strokeColor="#FCA5A5"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🚨"
+                            android:textSize="20sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="EMERGENCY ALERT"
+                                        android:textColor="#DC2626"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/txtPinnedEmergencyMsg"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="I need help immediately!"
+                                android:textColor="#991B1B"
+                                android:textSize="13sp"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAcknowledgeEmergency"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACKNOWLEDGE"
+                            android:textColor="#DC2626"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Messages List -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCaregiverChatMessages"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false"
+                    android:padding="16dp"
+                    android:scrollbars="vertical" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/background" />
+
+                <!-- Input Bar -->
+                <LinearLayout
+                    android:id="@+id/layoutInputBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@color/surface"
+                    android:padding="8dp">
+
+                    <!-- Emoji Toggle Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCaregiverChatEmoji"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        app:icon="@drawable/ic_mood"
+                        app:iconGravity="textStart"
+                        app:iconTint="#64748B"
+                        android:padding="0dp"
+                        android:layout_marginEnd="4dp" />
+
+                    <EditText
+                        android:id="@+id/editCaregiverChatMessage"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Type a message..."
+                        android:background="@android:color/transparent"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        android:inputType="textMultiLine"
+                        android:maxLines="4" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCaregiverChatMic"
+                        style="@style/Widget.MaterialComponents.Button.Icon"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        app:icon="@drawable/ic_mic"
+                        app:iconGravity="textStart"
+                        app:iconTint="@color/primary"
+                        app:backgroundTint="@color/surface"
+                        app:strokeColor="@color/primary"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="22dp"
+                        android:padding="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCaregiverChatSend"
+                        style="@style/Widget.MaterialComponents.Button.Icon"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="4dp"
+                        app:icon="@drawable/ic_send"
+                        app:iconGravity="textStart"
+                        app:iconTint="@android:color/white"
+                        app:backgroundTint="@color/primary"
+                        app:cornerRadius="22dp"
+                        android:padding="0dp" />
+                </LinearLayout>
+
+                <!-- Emoji Tray -->
+                <LinearLayout
+                    android:id="@+id/layoutEmojiTray"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:background="@color/surface"
+                    android:padding="8dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😊"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😂"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😀"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😉"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😍"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="👍"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="❤️"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🙏"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😮"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😢"
+                        android:textSize="24sp"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+                </LinearLayout>
+            </LinearLayout>
+        </RelativeLayout>
+    </LinearLayout>
+</LinearLayout>
