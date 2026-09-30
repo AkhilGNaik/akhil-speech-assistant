@@ -6,7 +6,6 @@ package com.kannada.speechassistant.voiceassistant;
 public class VoiceCommandConstants {
 
     // Command Identifiers
-    public static final String CMD_OPEN_APP = "CMD_OPEN_APP";
     public static final String CMD_OPEN_HOME = "CMD_OPEN_HOME";
     public static final String CMD_OPEN_PROFILE = "CMD_OPEN_PROFILE";
     public static final String CMD_OPEN_SETTINGS = "CMD_OPEN_SETTINGS";
@@ -37,7 +36,6 @@ public class VoiceCommandConstants {
     public static final String CMD_UNKNOWN = "CMD_UNKNOWN";
 
     // Intent Identifiers
-    public static final String INTENT_OPEN_APP = "INTENT_OPEN_APP";
     public static final String INTENT_OPEN_HOME = "INTENT_OPEN_HOME";
     public static final String INTENT_OPEN_PROFILE = "INTENT_OPEN_PROFILE";
     public static final String INTENT_OPEN_SETTINGS = "INTENT_OPEN_SETTINGS";
@@ -86,8 +84,6 @@ public class VoiceCommandConstants {
 
     // Standard Spoken Feedback Responses
     public static final String RESPONSE_UNKNOWN = "Sorry, I did not understand that command.";
-    public static final String RESPONSE_OPEN_APP = "Opening Speech Assistant app.";
-    public static final String RESPONSE_APP_ALREADY_OPEN = "Speech Assistant is already open.";
     public static final String RESPONSE_OPEN_HOME = "Home is open.";
     public static final String RESPONSE_OPEN_PROFILE = "Profile is open.";
     public static final String RESPONSE_OPEN_SETTINGS = "Settings is open.";

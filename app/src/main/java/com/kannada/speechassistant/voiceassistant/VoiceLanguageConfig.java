@@ -251,27 +251,6 @@ public final class VoiceLanguageConfig {
         }
     }
 
-    @NonNull
-    public static String getOpenAppResponse(@Nullable String langCode) {
-        String code = LanguageManager.normalizeLanguageCode(langCode);
-        switch (code) {
-            case LANG_KANNADA: return "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆ್ಯಪ್ ತೆರೆಯಲಾಗುತ್ತಿದೆ.";
-            case LANG_HINDI: return "स्पीच असिस्टेंट ऐप खोला जा रहा है।";
-            case LANG_MALAYALAM: return "സ്പീച്ച് അസിസ്റ്റന്റ് ആപ്പ് തുറക്കുന്നു.";
-            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_OPEN_APP;
-        }
-    }
-
-    @NonNull
-    public static String getAppAlreadyOpenResponse(@Nullable String langCode) {
-        String code = LanguageManager.normalizeLanguageCode(langCode);
-        switch (code) {
-            case LANG_KANNADA: return "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆ್ಯಪ್ ಈಗಾಗಲೇ ತೆರೆದಿದೆ.";
-            case LANG_HINDI: return "स्पीच असिस्टेंट ऐप पहले से खुला है।";
-            case LANG_MALAYALAM: return "സ്പീച്ച് അസിസ്റ്റന്റ് ആപ്പ് ഇതിനകം തുറന്നിരിക്കുന്നു.";
-            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_APP_ALREADY_OPEN;
-        }
-    }
 
     /**
      * Short audio cue spoken to blind user immediately after wake word ("Assistant") is detected

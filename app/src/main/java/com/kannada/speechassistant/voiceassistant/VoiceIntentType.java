@@ -8,7 +8,6 @@ import androidx.annotation.Nullable;
  * recognized by the In-App Voice Assistant without relying on fragile string equality.
  */
 public enum VoiceIntentType {
-    OPEN_APP(VoiceCommandConstants.INTENT_OPEN_APP, VoiceCommandConstants.CMD_OPEN_APP),
     OPEN_HOME(VoiceCommandConstants.INTENT_OPEN_HOME, VoiceCommandConstants.CMD_OPEN_HOME),
     OPEN_PROFILE(VoiceCommandConstants.INTENT_OPEN_PROFILE, VoiceCommandConstants.CMD_OPEN_PROFILE),
     OPEN_SETTINGS(VoiceCommandConstants.INTENT_OPEN_SETTINGS, VoiceCommandConstants.CMD_OPEN_SETTINGS),

@@ -572,40 +572,41 @@ public class VoiceIntentMatcher {
     }
 
     public static boolean isIsolatedNegativeToken(@NonNull String s) {
-        // NOTE: "call", "emergency", "message", "caregiver" etc. are NOT blocked when they come
-        // after wake-word stripping in two-step mode. They are clear intent signals.
-        // Only block truly ambiguous single-token inputs that have NO actionable meaning alone.
-        return s.equals("carer") ||
-                s.equals("care worker") ||
-                s.equals("helper") ||
+        return s.equals("caregiver") || s.equals("carer") ||
+                s.equals("caretaker") || s.equals("care worker") ||
+                s.equals("helper") || s.equals("call") ||
                 s.equals("phone") || s.equals("ring") ||
-                s.equals("dial") ||
+                s.equals("dial") || s.equals("message") ||
                 s.equals("messages") || s.equals("repeat") ||
-                s.equals("again") ||
+                s.equals("again") || s.equals("call my") ||
                 s.equals("phone my") ||
                 // Kannada
                 s.equals("ಆರೈಕೆದಾರ") || s.equals("ಆರೈಕೆದಾರರು") ||
                 s.equals("ಸಹಾಯಕ") || s.equals("ಸಹಾಯಕರು") ||
                 s.equals("ಪಾಲಕ") || s.equals("ಪಾಲಕರು") ||
                 s.equals("ಕೇರ್ಗಿವರ್") || s.equals("ಕೇರ್ಟೇಕರ್") ||
+                s.equals("ಕರೆ ಮಾಡಿ") || s.equals("ಕಾಲ್ ಮಾಡಿ") || s.equals("ಫೋನ್ ಮಾಡಿ") ||
+                s.equals("ಕರೆ ಮಾಡು") || s.equals("ಕಾಲ್ ಮಾಡು") || s.equals("ಫೋನ್ ಮಾಡು") ||
                 s.equals("ಕರೆ") || s.equals("ಕಾಲ್") || s.equals("ಫೋನ್") ||
                 s.equals("ಸಂದೇಶ") || s.equals("ಮೆಸೇಜ್") ||
                 s.equals("ಸಹಾಯ") ||
-                // Hindi
+                // Hindi Task 25
                 s.equals("देखभाल करने वाला") || s.equals("देखभाल करने वाले") ||
                 s.equals("सहायक") || s.equals("केयरगिवर") || s.equals("केयरटेकर") ||
-                s.equals("कॉल") || s.equals("फोन") ||
+                s.equals("कॉल") || s.equals("फोन") || s.equals("कॉल करो") || s.equals("फोन करो") ||
                 s.equals("संदेश") || s.equals("मैसेज") ||
-                // Malayalam
+                // Malayalam Task 26
                 s.equals("പരിചരിക്കുന്നയാൾ") || s.equals("പരിചരിക്കുന്നയാളെ") ||
                 s.equals("പരിചരിക്കുന്ന ആളെ") || s.equals("പരിചരിക്കുന്ന ആൾ") ||
                 s.equals("പരിചാരകൻ") || s.equals("പരിചാരകനെ") ||
                 s.equals("സഹായി") || s.equals("സഹായിയെ") ||
                 s.equals("കെയർഗിവർ") || s.equals("കെയർഗിവറെ") ||
                 s.equals("കെയർടേക്കർ") || s.equals("കെയർടേക്കറെ") ||
+                s.equals("വിളിക്കൂ") || s.equals("വിളിക്കുക") ||
+                s.equals("ഫോൺ ചെയ്യൂ") || s.equals("കോൾ ചെയ്യൂ") ||
                 s.equals("ഫോൺ") || s.equals("കോൾ") ||
                 s.equals("സന്ദേശം") || s.equals("മെസേജ്") ||
-                s.equals("വീണ്ടും") || s.equals("കേൾപ്പിക്കൂ");
+                s.equals("വീണ്ടും") || s.equals("പറയൂ") || s.equals("കേൾപ്പിക്കൂ");
     }
 
     /**
@@ -666,11 +667,6 @@ public class VoiceIntentMatcher {
                 s.equals("വേണ്ട") || s.equals("റദ്ദാക്കുക") ||
                 containsMatch(s, words, "never mind", "no cancel", "cancel action", "do not proceed", "don t proceed")) {
             return new VoiceIntent(VoiceIntentType.CONFIRM_NO, rawQuery, 1.0f, null);
-        }
-
-        // 0.5. Open Application (App Open Command - works outside the app to open it)
-        if (matchesOpenApp(s, words)) {
-            return new VoiceIntent(VoiceIntentType.OPEN_APP, rawQuery, 1.0f, null);
         }
 
         // 1. Accessibility: Stop Listening
@@ -857,77 +853,14 @@ public class VoiceIntentMatcher {
         return new VoiceIntent(VoiceIntentType.UNKNOWN, rawQuery, 0.0f, null);
     }
 
-    /**
-     * Checks if the spoken text is a command to open or launch the Speech Assistant app.
-     * Supports multilingual variations (English, Kannada, Hindi, Malayalam).
-     */
-    public static boolean matchesOpenApp(@NonNull String s, @NonNull Set<String> words) {
-        // Exclude specific sub-screens so "open settings", "open profile" etc. route properly
-        if (s.contains("home") || s.contains("profile") || s.contains("setting") ||
-                s.contains("message") || s.contains("caregiver") || s.contains("connection") ||
-                s.contains("emergency") || s.contains("recorder") || s.contains("chat") ||
-                s.contains("ಕಾಲ್") || s.contains("ಕರೆ") || s.contains("ಮನೆ") || s.contains("ಸೆಟ್ಟಿಂಗ್") ||
-                s.contains("ಪ್ರೊಫೈಲ್") || s.contains("ಸಂದೇಶ") || s.contains("ಕೇರ್") || s.contains("ತುರ್ತು")) {
-            return false;
-        }
-
-        // Direct phrase matches and substring checks
-        if (s.contains("open speech assistant") || s.contains("open app") ||
-                s.contains("open the app") || s.contains("open my app") ||
-                s.contains("launch speech assistant") || s.contains("launch app") ||
-                s.contains("start speech assistant") || s.contains("start app") ||
-                s.contains("speech assistant app") || s.contains("open application") ||
-                s.contains("assistant open app") || s.contains("assistant open speech") ||
-                s.contains("ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್") || s.contains("ಆ್ಯಪ್ ತೆರೆ") || s.contains("ಆಪ್ ತೆರೆ") ||
-                s.contains("ಆ್ಯಪ್ ಓಪನ್") || s.contains("ಆಪ್ ಓಪನ್") ||
-                s.contains("ऐप खोलो") || s.contains("ऐप चालू") || s.contains("स्पीच असिस्टेंट") ||
-                s.contains("ആപ്പ് തുറക്കുക") || s.contains("ആപ്പ് ഓപ്പൺ") || s.contains("സ്പീച്ച് അസിസ്റ്റന്റ്") ||
-                containsMatch(s, words,
-                "open speech assistant app", "open speech assistant", "open the speech assistant app",
-                "open my speech assistant app", "open speech assistant application",
-                "open app", "open the app", "open my app", "open application",
-                "launch speech assistant app", "launch speech assistant", "launch the app", "launch app", "launch application",
-                "start speech assistant app", "start speech assistant", "start the app", "start app", "start application",
-                "bring up app", "wake up app",
-                "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆ್ಯಪ್ ತೆರೆ", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆಪ್ ತೆರೆ", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆ್ಯಪ್ ಓಪನ್ ಮಾಡು",
-                "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆಪ್ ಓಪನ್ ಮಾಡು", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ತೆರೆ", "ಆ್ಯಪ್ ತೆರೆ", "ಆಪ್ ತೆರೆ",
-                "ಆ್ಯಪ್ ಓಪನ್ ಮಾಡು", "ಆಪ್ ಓಪನ್ ಮಾಡು", "ಆ್ಯಪ್ ಪ್ರಾರಂಭಿಸು", "ಆಪ್ ಪ್ರಾರಂಭಿಸು", "ಅಪ್ಲಿಕೇಶನ್ ತೆರೆ",
-                "ಆ್ಯಪ್ ತೆರೆಯಿರಿ", "ಆಪ್ ತೆರೆಯಿರಿ", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ತೆರೆಯಿರಿ", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ಆ್ಯಪ್ ತೆರೆಯಿರಿ",
-                "स्पीच असिस्टेंट ऐप खोलो", "स्पीच असिस्टेंट ऐप चालू करो", "स्पीच असिस्टेंट खोलो",
-                "ऐप खोलो", "ऐप चालू करो", "ऐप ओपन करो", "एप्लिकेशन खोलो", "ऐप खोलिए", "स्पीच असिस्टेंट ऐप खोलिए",
-                "സ്പീച്ച് അസിസ്റ്റന്റ് ആപ്പ് തുറക്കുക", "സ്പീച്ച് അസിസ്റ്റന്റ് ആപ്പ് തുറക്കൂ", "സ്പീച്ച് അസിസ്റ്റന്റ് തുറക്കുക",
-                "ആപ്പ് തുറക്കുക", "ആപ്പ് തുറക്കൂ", "ആപ്പ് ഓപ്പൺ ചെയ്യുക", "ആപ്ലിക്കേഷൻ തുറക്കുക")) {
-            return true;
-        }
-
-        // Token heuristic: (open/launch/start) + (app/application/speech assistant)
-        boolean hasAction = words.contains("open") || words.contains("launch") || words.contains("start") ||
-                s.contains("ತೆರೆ") || s.contains("ತೆರೆಯಿರಿ") || s.contains("ಓಪನ್") || s.contains("ಪ್ರಾರಂಭಿಸು") ||
-                s.contains("खोलो") || s.contains("खोलिए") || s.contains("चालू") ||
-                s.contains("തുറക്കുക") || s.contains("തുറക്കൂ");
-
-        boolean hasTarget = (words.contains("app") || words.contains("application") || s.contains("speech assistant") ||
-                s.contains("ಆ್ಯಪ್") || s.contains("ಆಪ್") || s.contains("ಅಪ್ಲಿಕೇಶನ್") ||
-                s.contains("ऐप") || s.contains("एप्लिकेशन") ||
-                s.contains("ആപ്പ്") || s.contains("ആപ്ലിക്കേഷൻ"));
-
-        return hasAction && hasTarget;
-    }
+    
 
     private static boolean matchesEmergency(String s, Set<String> words) {
-        // Disallow generic single words such as "help", "send", "alert" alone from triggering emergency.
-        // NOTE: "emergency" alone IS allowed after wake-word stripping (blind user says "Assistant, emergency")
-        if (s.equals("help") || s.equals("send") || s.equals("alert") ||
-                s.equals("ಸಹಾಯ") || s.equals("ಮದದ") || s.equals("आपातकाल") ||
+        // Disallow generic single words such as "help", "emergency", "send", "alert" alone from triggering emergency
+        if (s.equals("help") || s.equals("emergency") || s.equals("send") || s.equals("alert") ||
+                s.equals("ಸಹಾಯ") || s.equals("ತುರ್ತು") || s.equals("ಮದದ") || s.equals("आपातकाल") ||
                 s.equals("സഹായം") || s.equals("അടിയന്തരം")) {
             return false;
-        }
-
-        // "emergency" alone (after wake-word strip) is a valid blind-user emergency command
-        if (s.equals("emergency") || s.equals("sos") || s.equals("ತುರ್ತು") ||
-                s.equals("इमरजेंसी") || s.equals("एसओएस") ||
-                s.equals("അടിയന്തരം") || s.equals("എമർജൻസി")) {
-            return true;
         }
 
         // Strict intent separation: Caregiver references are NEVER emergency triggers

@@ -384,22 +384,6 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, FirestoreRealtimeService.class);
         startService(serviceIntent);
 
-        // Start Hands-Free Background Voice Launch Service for Blind Users
-        if (RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole())
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            try {
-                Intent launchServiceIntent = new Intent(this, com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.class);
-                launchServiceIntent.setAction(com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.ACTION_START);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(launchServiceIntent);
-                } else {
-                    startService(launchServiceIntent);
-                }
-            } catch (Exception e) {
-                Log.w(TAG, "Error starting BackgroundVoiceLaunchService: " + e.getMessage());
-            }
-        }
-
         // Connect back navigation to navigate from secondary tabs back to Home tab
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
@@ -2003,19 +1987,6 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             if (micGranted) {
                 Log.i(TAG, "Startup RECORD_AUDIO permission granted. Starting WakeWordManager hands-free listening.");
                 WakeWordManager.getInstance(this).startListening(this);
-                if (RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole())) {
-                    try {
-                        Intent launchServiceIntent = new Intent(this, com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.class);
-                        launchServiceIntent.setAction(com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.ACTION_START);
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            startForegroundService(launchServiceIntent);
-                        } else {
-                            startService(launchServiceIntent);
-                        }
-                    } catch (Exception e) {
-                        Log.w(TAG, "Error starting voice launch service after permission granted: " + e.getMessage());
-                    }
-                }
             }
         }
     }
@@ -2992,7 +2963,6 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
-        com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.stopService(this);
         WakeWordManager.getInstance(this).stopListening();
         sessionManager.logoutUser();
         FirebaseAuth.getInstance().signOut();
@@ -3012,49 +2982,14 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             startCaregiverChatListener(connectedCaregiverUid);
         }
 
-        // 1. Immediately inform background service to release hardware microphone
-        com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.onAppForegrounded(this);
-
-        // 2. Determine whether app was just launched via voice command.
-        //    If so, the BackgroundVoiceLaunchService TTS announcement ("Opening Speech Assistant...")
-        //    may still be playing. We must wait for it to finish before grabbing the mic.
-        //    A 1200ms initial delay covers the typical announcement duration and prevents mic conflict.
-        boolean launchedViaVoice = getIntent() != null
-                && com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.isAppInForeground()
-                && !com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).isListening();
-        long wakeWordStartDelay = launchedViaVoice ? 1200L : 0L;
-
         WakeWordManager.getInstance(this).setForegroundActivity(this);
-
-        // 3. Start WakeWord listening after the appropriate delay
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (!isFinishing() && !isDestroyed()) {
-                WakeWordManager.getInstance(this).startListening(this);
-            }
-        }, wakeWordStartDelay);
-
-        // 4. Reinforce wake word start after additional 600ms (total 1800ms for voice-launch, 600ms normal)
-        //    to guarantee microphone acquisition once any background audio has fully dissipated
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (!isFinishing() && !isDestroyed()) {
-                WakeWordManager wwm = WakeWordManager.getInstance(this);
-                if (!wwm.isListening()) {
-                    Log.i(TAG, "Reinforcing WakeWordManager startListening after mic release.");
-                    wwm.startListening(this);
-                }
-            }
-        }, wakeWordStartDelay + 600);
+        WakeWordManager.getInstance(this).startListening(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         WakeWordManager.getInstance(this).pauseListeningForActivity(this);
-
-        // Resume background voice launch listener when app is minimized or closed for Blind Users
-        if (RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole())) {
-            com.kannada.speechassistant.voiceassistant.BackgroundVoiceLaunchService.onAppBackgrounded(this);
-        }
         ChatAdapter.stopAudioPlayback();
         CaregiverChatAdapter.stopAudioPlayback();
         if (isRecording) {

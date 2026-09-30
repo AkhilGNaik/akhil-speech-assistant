@@ -520,8 +520,7 @@ public class WakeWordManager {
 
             String normalized = candidate.toLowerCase(java.util.Locale.ROOT);
             if (normalized.contains(WAKE_WORD_PRIMARY) || normalized.contains(WAKE_WORD_HEY)
-                    || VoiceIntentMatcher.hasWakeWord(normalized)
-                    || VoiceIntentMatcher.match(normalized) != VoiceIntentType.UNKNOWN) {
+                    || VoiceIntentMatcher.hasWakeWord(normalized)) {
                 return normalized;
             }
             return null;

@@ -58,11 +58,6 @@ public class VoiceActionDispatcher {
             String spokenResponse = "";
 
             switch (cmdId) {
-                case VoiceCommandConstants.CMD_OPEN_APP:
-                    handled = true;
-                    spokenResponse = VoiceLanguageConfig.getAppAlreadyOpenResponse(VoiceLanguageConfig.getAppLanguageCode(activity));
-                    break;
-
                 case VoiceCommandConstants.CMD_OPEN_HOME:
                     handled = handleOpenHome(activity);
                     spokenResponse = VoiceCommandConstants.RESPONSE_OPEN_HOME;

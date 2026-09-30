@@ -131,9 +131,6 @@ public class VoiceCommandProcessor {
     public VoiceCommand resolveCommand(@NonNull VoiceIntent intent, @Nullable String userRole) {
         VoiceIntentType type = intent.getIntentType();
         switch (type) {
-            case OPEN_APP:
-                return new VoiceCommand(VoiceCommandConstants.CMD_OPEN_APP, intent, ALL_ROLES, false);
-
             case OPEN_HOME:
                 return new VoiceCommand(VoiceCommandConstants.CMD_OPEN_HOME, intent, ALL_ROLES, false);
 
@@ -225,8 +222,6 @@ public class VoiceCommandProcessor {
     @NonNull
     public String getProposedResponse(@NonNull String commandId) {
         switch (commandId) {
-            case VoiceCommandConstants.CMD_OPEN_APP:
-                return VoiceCommandConstants.RESPONSE_OPEN_APP;
             case VoiceCommandConstants.CMD_OPEN_HOME:
                 return VoiceCommandConstants.RESPONSE_OPEN_HOME;
             case VoiceCommandConstants.CMD_OPEN_PROFILE:

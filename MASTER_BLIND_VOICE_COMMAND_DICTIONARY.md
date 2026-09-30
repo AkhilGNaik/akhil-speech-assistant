@@ -84,7 +84,6 @@ The following table documents every existing voice-controlled or related functio
 | 20 | **RESUME_ASSISTANT** | `VoiceIntentType.START_LISTENING` / `CMD_START_LISTENING` | `AppVoiceAssistant.startListeningFlow()` | All roles | `SpeechRecognizer` | Immediate | No | Yes | Re-opens microphone for commands. |
 | 21 | **CONFIRM_YES** | `VoiceIntentType.CONFIRM_YES` / `CMD_CONFIRM_YES` | `AppVoiceAssistant.handleConfirmationResponseFlow()` | All roles | Internal confirmation latch | Immediate | N/A | Yes | Evaluated only when `pendingConfirmationCommand != null`. |
 | 22 | **CONFIRM_NO** | `VoiceIntentType.CONFIRM_NO` / `CMD_CONFIRM_NO` | `AppVoiceAssistant.handleConfirmationResponseFlow()` | All roles | Internal confirmation latch | Immediate | N/A | Yes | Cancels pending confirmation action. |
-| 23 | **OPEN_APP** | `VoiceIntentType.OPEN_APP` / `CMD_OPEN_APP` | `BackgroundVoiceLaunchService` / `VoiceActionDispatcher` | All roles / `ROLE_BLIND_USER` | `BackgroundVoiceLaunchService`, Vosk offline recognizer, Full-Screen Intent | Immediate | No | Yes | **Works Outside App / Closed State**: Spoken in background ("Hey Assistant, open speech assistant app") launches app. ONLY this command works outside the app; all other commands are ignored while closed. |
 
 ---
 
