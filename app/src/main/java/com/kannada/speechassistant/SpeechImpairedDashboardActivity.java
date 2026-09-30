@@ -375,8 +375,8 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         // Bind Deaf Assistant Visual Response Manager
         deafAssistantResponseManager = new com.kannada.speechassistant.voiceassistant.DeafAssistantResponseManager();
         deafAssistantResponseManager.bind(this, findViewById(android.R.id.content));
-        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
-                .setDeafAssistantResponseManager(deafAssistantResponseManager);
+        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
+                .setResponseManager(deafAssistantResponseManager);
 
         // Load Persistent Settings
         loadSettings();
@@ -578,7 +578,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         editHomeQuickText = findViewById(R.id.editHomeQuickText);
         com.google.android.material.button.MaterialButton btnVoiceAssistant = findViewById(R.id.btnVoiceAssistant);
         if (btnVoiceAssistant != null) {
-            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
+            com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
                     .attachVoiceAssistantButton(this, btnVoiceAssistant, null);
         }
         cardEmergency = findViewById(R.id.cardEmergency);
@@ -2317,6 +2317,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this).stopListening();
         com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).pauseListening();
         if (isRecording) {
             stopSpeechRecognition();
@@ -2326,6 +2327,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this).stopListening();
         com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).stopListening();
         if (deafAssistantResponseManager != null) {
             deafAssistantResponseManager.dismiss();
@@ -2405,8 +2407,8 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
                     scheduleStatusReset();
                 });
             }
-        } else if (requestCode == com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.REQUEST_CODE_VOICE_ASSISTANT_PERMISSION) {
-            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
+        } else if (requestCode == com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.REQUEST_CODE_VOICE_ASSISTANT_PERMISSION) {
+            com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
                     .handlePermissionsResult(this, requestCode, grantResults, findViewById(R.id.btnVoiceAssistant));
         }
     }

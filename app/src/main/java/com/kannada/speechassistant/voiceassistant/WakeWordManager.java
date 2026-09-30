@@ -314,14 +314,25 @@ public class WakeWordManager {
             return;
         }
 
-        // 4. Check if existing Assistant is currently triggered/active
-        AppVoiceAssistant va = AppVoiceAssistant.getInstance(appContext);
-        if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
-            Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
-            setState(State.PAUSED);
-            mainHandler.removeCallbacks(retryRunnable);
-            mainHandler.postDelayed(retryRunnable, 1000);
-            return;
+        // 4. Check if appropriate Assistant is currently triggered/active
+        if (activity instanceof SpeechImpairedDashboardActivity) {
+            DeafVoiceAssistant dva = DeafVoiceAssistant.getInstance(appContext);
+            if (isTriggered.get() || dva.isListening()) {
+                Log.d(TAG, "WakeWordManager: Deaf Assistant session already in progress. Holding wake word.");
+                setState(State.PAUSED);
+                mainHandler.removeCallbacks(retryRunnable);
+                mainHandler.postDelayed(retryRunnable, 1000);
+                return;
+            }
+        } else {
+            AppVoiceAssistant va = AppVoiceAssistant.getInstance(appContext);
+            if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
+                Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
+                setState(State.PAUSED);
+                mainHandler.removeCallbacks(retryRunnable);
+                mainHandler.postDelayed(retryRunnable, 1000);
+                return;
+            }
         }
 
         // 5. Check if model is ready
@@ -559,11 +570,16 @@ public class WakeWordManager {
             listener.onWakeWordDetected(detectedPhrase);
         }
 
-        // 2. Delegate directly to existing AppVoiceAssistant with candidate phrase
-        AppVoiceAssistant voiceAssistant = AppVoiceAssistant.getInstance(appContext);
-        Log.i(TAG, "WakeWordManager: Transferring control to AppVoiceAssistant with phrase: '" + detectedPhrase + "'");
+        // 2. Delegate to the appropriate standalone assistant
+        if (activity instanceof SpeechImpairedDashboardActivity) {
+            DeafVoiceAssistant deafAssistant = DeafVoiceAssistant.getInstance(appContext);
+            Log.i(TAG, "WakeWordManager: Transferring control to DeafVoiceAssistant with phrase: '" + detectedPhrase + "'");
+            deafAssistant.executeWakeWordCommand(activity, detectedPhrase, null);
+        } else {
+            AppVoiceAssistant voiceAssistant = AppVoiceAssistant.getInstance(appContext);
+            Log.i(TAG, "WakeWordManager: Transferring control to AppVoiceAssistant with phrase: '" + detectedPhrase + "'");
 
-        voiceAssistant.executeWakeWordCommand(activity, detectedPhrase, new VoiceAssistantCallback() {
+            voiceAssistant.executeWakeWordCommand(activity, detectedPhrase, new VoiceAssistantCallback() {
             @Override
             public void onAssistantReady(@NonNull String userRole, @NonNull String languageCode) {}
 
@@ -600,6 +616,7 @@ public class WakeWordManager {
                 }
             }
         });
+        }
     }
 
     /**
@@ -693,9 +710,15 @@ public class WakeWordManager {
             return true;
         }
 
-        // 3. Existing Voice Assistant is actively listening
-        if (AppVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
-            return true;
+        // 3. Check if active assistant is listening
+        if (activity instanceof SpeechImpairedDashboardActivity) {
+            if (DeafVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
+                return true;
+            }
+        } else {
+            if (AppVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
+                return true;
+            }
         }
 
         // 4. Audio mode in communication or in-call

@@ -293,28 +293,17 @@ public class AppVoiceAssistant {
     }
 
     public boolean isDeafUser(@Nullable String role) {
-        if (RoleManager.ROLE_DEAF_USER.equals(role) || RoleManager.ROLE_SPEECH_IMPAIRED.equals(role)
-                || "Mute, Deaf & Blind User".equals(role) || "Mute, Deaf & Blind Users".equals(role)) {
-            return true;
-        }
-        Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
-        return active instanceof SpeechImpairedDashboardActivity;
+        // AppVoiceAssistant is dedicated 100% to Blind Users.
+        // Deaf users are handled by the standalone DeafVoiceAssistant class.
+        return false;
     }
 
     public void setDeafAssistantResponseManager(@Nullable DeafAssistantResponseManager manager) {
-        this.deafResponseManagerRef = (manager != null) ? new WeakReference<>(manager) : null;
+        // No-op in AppVoiceAssistant; visual cards are managed by DeafVoiceAssistant.
     }
 
     @Nullable
     public DeafAssistantResponseManager getDeafAssistantResponseManager() {
-        if (deafResponseManagerRef != null) {
-            DeafAssistantResponseManager mgr = deafResponseManagerRef.get();
-            if (mgr != null) return mgr;
-        }
-        Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
-        if (active instanceof SpeechImpairedDashboardActivity) {
-            return ((SpeechImpairedDashboardActivity) active).getDeafAssistantResponseManager();
-        }
         return null;
     }
 
