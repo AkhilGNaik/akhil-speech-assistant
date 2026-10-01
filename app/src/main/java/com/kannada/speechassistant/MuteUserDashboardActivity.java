@@ -263,6 +263,8 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
     // Gesture UI Widgets (Bottom of Home Tab)
     private GestureOverlayView gestureOverlayView = null;
     private SwitchMaterial switchGestureDetection;
+    private View gridOutputs;
+    private View cardDeveloperSandbox;
     private TextView txtGestureName;
     private TextView txtGestureConfidence;
     private TextView txtGestureAction;
@@ -766,6 +768,8 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
      */
     private void setupGestureWidgets() {
         switchGestureDetection = findViewById(R.id.switchGestureDetection);
+        gridOutputs = findViewById(R.id.gridOutputs);
+        cardDeveloperSandbox = findViewById(R.id.cardDeveloperSandbox);
         txtGestureName = findViewById(R.id.txtGestureName);
         txtGestureConfidence = findViewById(R.id.txtGestureConfidence);
         txtGestureAction = findViewById(R.id.txtGestureAction);
@@ -782,8 +786,10 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         txtDetectionTime = findViewById(R.id.txtDetectionTime);
 
         if (switchGestureDetection != null) {
+            updateGestureModuleVisibility(switchGestureDetection.isChecked());
             switchGestureDetection.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 isTrackingEnabled = isChecked;
+                updateGestureModuleVisibility(isChecked);
                 if (txtDetectionStatus != null) {
                     txtDetectionStatus.setText(isChecked ? "ACTIVE" : "INACTIVE");
                 }
@@ -1179,6 +1185,16 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         trackingGestureStartTime = 0;
         consecutiveStableFrames = 0;
         isGestureConfirmed = false;
+    }
+
+    private void updateGestureModuleVisibility(boolean isVisible) {
+        int visibility = isVisible ? View.VISIBLE : View.GONE;
+        if (gridOutputs != null) {
+            gridOutputs.setVisibility(visibility);
+        }
+        if (cardDeveloperSandbox != null) {
+            cardDeveloperSandbox.setVisibility(visibility);
+        }
     }
 
     private void resetTrackingStatus() {

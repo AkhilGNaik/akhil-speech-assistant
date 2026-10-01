@@ -293,17 +293,28 @@ public class AppVoiceAssistant {
     }
 
     public boolean isDeafUser(@Nullable String role) {
-        // AppVoiceAssistant is dedicated 100% to Blind Users.
-        // Deaf users are handled by the standalone DeafVoiceAssistant class.
-        return false;
+        if (RoleManager.ROLE_DEAF_USER.equals(role) || RoleManager.ROLE_SPEECH_IMPAIRED.equals(role)
+                || "Mute, Deaf & Blind User".equals(role) || "Mute, Deaf & Blind Users".equals(role)) {
+            return true;
+        }
+        Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
+        return active instanceof SpeechImpairedDashboardActivity;
     }
 
     public void setDeafAssistantResponseManager(@Nullable DeafAssistantResponseManager manager) {
-        // No-op in AppVoiceAssistant; visual cards are managed by DeafVoiceAssistant.
+        this.deafResponseManagerRef = (manager != null) ? new WeakReference<>(manager) : null;
     }
 
     @Nullable
     public DeafAssistantResponseManager getDeafAssistantResponseManager() {
+        if (deafResponseManagerRef != null) {
+            DeafAssistantResponseManager mgr = deafResponseManagerRef.get();
+            if (mgr != null) return mgr;
+        }
+        Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
+        if (active instanceof SpeechImpairedDashboardActivity) {
+            return ((SpeechImpairedDashboardActivity) active).getDeafAssistantResponseManager();
+        }
         return null;
     }
 
@@ -550,6 +561,14 @@ public class AppVoiceAssistant {
         if (button == null) return;
 
         button.setOnClickListener(v -> {
+            if (activity instanceof SpeechImpairedDashboardActivity) {
+                boolean active = activity.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                        .getBoolean("pref_deaf_voice_assistant_enabled", true);
+                if (!active) {
+                    Toast.makeText(activity, "Voice Assistant is inactive. Switch to Active to use.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
             if (isListening) {
                 stopListening();
                 button.setText("🎤 Voice Assistant");
@@ -688,6 +707,17 @@ public class AppVoiceAssistant {
         // Also clear any stale isListening state from a previous failed session
         if (isListening && speechRecognizer == null) {
             isListening = false;
+        }
+
+        if (activity instanceof SpeechImpairedDashboardActivity) {
+            boolean active = activity.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                    .getBoolean("pref_deaf_voice_assistant_enabled", true);
+            if (!active) {
+                DeafAssistantResponseManager mgr = getDeafAssistantResponseManager();
+                if (mgr != null) mgr.showError("Voice Assistant is inactive.");
+                if (customCallback != null) customCallback.onError("Voice Assistant is inactive.", ERROR_MIC_BUSY);
+                return;
+            }
         }
 
         // 1. Safe Microphone Conflict Protection: Active voice call

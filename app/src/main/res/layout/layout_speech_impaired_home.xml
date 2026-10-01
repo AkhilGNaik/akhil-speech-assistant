@@ -18,27 +18,49 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Voice Assistant Accessible Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVoiceAssistant"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="42dp"
-            android:minHeight="42dp"
-            android:layout_marginBottom="14dp"
-            android:text="🎤 Voice Assistant"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textAllCaps="false"
-            android:textColor="@color/primary"
-            app:strokeColor="@color/primary"
-            app:strokeWidth="1.5dp"
-            app:cornerRadius="21dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:contentDescription="Voice Assistant" />
+        <!-- Voice Assistant Section Header & Control -->
+        <RelativeLayout
+            android:id="@+id/layoutVoiceAssistantRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
+
+            <!-- Voice Assistant Accessible Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVoiceAssistant"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:minHeight="42dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="🎤 Voice Assistant"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:textColor="@color/primary"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1.5dp"
+                app:cornerRadius="21dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:contentDescription="Voice Assistant" />
+
+            <!-- Active Toggle Switch -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchVoiceAssistant"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:checked="true"
+                android:text="Active"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+        </RelativeLayout>
 
         <!-- 1. Text-to-Speech Quick Card with Dual Keyboard Support -->
         <com.google.android.material.card.MaterialCardView
@@ -319,66 +341,7 @@
             </RelativeLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 2. Emergency Alert Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardEmergency"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="18dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="#FEF2F2"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#FCA5A5">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:src="@drawable/ic_help"
-                    android:contentDescription="Warning Icon"
-                    app:tint="#DC2626" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="14dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/emergency_alert"
-                        android:textColor="#991B1B"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/emergency_alert_desc"
-                        android:textColor="#7F1D1D"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_volume_up"
-                    app:tint="#DC2626"
-                    android:contentDescription="Sound Icon" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 </ScrollView>

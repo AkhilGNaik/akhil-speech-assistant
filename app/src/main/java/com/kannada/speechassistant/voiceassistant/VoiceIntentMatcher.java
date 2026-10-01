@@ -850,6 +850,11 @@ public class VoiceIntentMatcher {
             return new VoiceIntent(VoiceIntentType.OPEN_HOME, rawQuery, 1.0f, null);
         }
 
+        // 14. Open App (Blind User hands-free app opener)
+        if (matchesOpenApp(s, words)) {
+            return new VoiceIntent(VoiceIntentType.OPEN_APP, rawQuery, 1.0f, null);
+        }
+
         return new VoiceIntent(VoiceIntentType.UNKNOWN, rawQuery, 0.0f, null);
     }
 
@@ -2342,6 +2347,39 @@ public class VoiceIntentMatcher {
         }
 
         return words.contains("home") || words.contains("dashboard");
+    }
+
+    private static boolean matchesOpenApp(String s, Set<String> words) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+
+        // Explicit negative protection: Do not match other commands or other screens
+        if (s.contains("profile") || s.contains("setting") || s.contains("caregiver")
+                || s.contains("caretaker") || s.contains("message") || s.contains("call")
+                || s.contains("emergency") || s.contains("sos") || s.contains("recorder")
+                || s.contains("voice") || s.contains("notification") || s.contains("back")
+                || s.contains("home") || s.contains("chat") || s.contains("communication")) {
+            return false;
+        }
+
+        if (containsMatch(s, words,
+                "open app", "launch app", "start app", "open the app", "open my app",
+                "open speech assistant", "open speech assistant app", "launch speech assistant",
+                "start speech assistant", "open application", "launch application", "start application",
+                "open kannada speech assistant", "launch kannada speech assistant",
+                "open speach assistant",
+                // Kannada
+                "ಆ್ಯಪ್ ತೆರೆ", "ಆ್ಯಪ್ ತೆರೆಯಿರಿ", "ಆ್ಯಪ್ ಓಪನ್ ಮಾಡು", "ಆ್ಯಪ್ ಓಪನ್ ಮಾಡಿ", "ಆ್ಯಪ್ ಓಪನ್",
+                "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ತೆರೆ", "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ತೆರೆಯಿರಿ", "ಅಪ್ಲಿಕೇಶನ್ ತೆರೆ", "ಅಪ್ಲಿಕೇಶನ್ ತೆರೆಯಿರಿ",
+                // Hindi
+                "ऐप खोलो", "ऐप ओपन करो", "ऐप शुरू करो", "स्पीच असिस्टेंट खोलो", "एप्लिकेशन खोलो", "ऐप ओपन",
+                // Malayalam
+                "ആപ്പ് തുറക്കുക", "ആപ്പ് തുറക്കൂ", "സ്പീച്ച് അസിസ്റ്റന്റ് തുറക്കൂ", "ആപ്പ് ആരംഭിക്കുക", "ആപ്പ് ഓപ്പൺ")) {
+            return true;
+        }
+
+        return false;
     }
 
     private static boolean containsMatch(String input, Set<String> words, String... candidates) {

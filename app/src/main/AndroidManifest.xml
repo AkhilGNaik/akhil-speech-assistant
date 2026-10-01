@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <queries>
         <intent>
@@ -28,6 +30,13 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.SpeechAssistant">
+
+        <!-- Dedicated Background Wake Word Service for Blind Users (Hey Assistant, open app) -->
+        <service
+            android:name=".voiceassistant.BlindWakeWordService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
 
         <!-- Central Firestore Realtime Notification Listener Service -->
         <service
@@ -89,9 +98,16 @@
         <!-- Blind User Dashboard Screen Activity -->
         <activity
             android:name=".BlindUserDashboardActivity"
-            android:exported="false"
+            android:exported="true"
+            android:launchMode="singleTask"
             android:showWhenLocked="true"
-            android:turnScreenOn="true" />
+            android:turnScreenOn="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.VOICE" />
+            </intent-filter>
+        </activity>
 
         <!-- Admin Dashboard Screen Activity -->
         <activity

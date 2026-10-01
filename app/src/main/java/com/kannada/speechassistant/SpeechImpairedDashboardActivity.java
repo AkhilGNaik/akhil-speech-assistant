@@ -114,10 +114,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     private LinearLayout layoutStatus;
     private View viewStatusDot;
     private TextView txtStatusLabel;
-    private android.widget.ImageButton btnBellNotificationSettings;
-    private TextView txtActiveRingtoneDialogName;
-    private com.google.android.material.button.MaterialButton btnDialogSilentToggle;
-    private static final int REQUEST_CODE_PICK_RINGTONE = 505;
 
     // Navigation and Container Layouts
     private BottomNavigationView bottomNav;
@@ -362,10 +358,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         layoutStatus = findViewById(R.id.layoutStatus);
         viewStatusDot = findViewById(R.id.viewStatusDot);
         txtStatusLabel = findViewById(R.id.txtStatusLabel);
-        btnBellNotificationSettings = findViewById(R.id.btnBellNotificationSettings);
-        if (btnBellNotificationSettings != null) {
-            btnBellNotificationSettings.setOnClickListener(v -> showNotificationSettingsDialog());
-        }
         bottomNav = findViewById(R.id.bottomNavSpeechImpaired);
 
         layoutHome = findViewById(R.id.layoutHome);
@@ -375,8 +367,8 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         // Bind Deaf Assistant Visual Response Manager
         deafAssistantResponseManager = new com.kannada.speechassistant.voiceassistant.DeafAssistantResponseManager();
         deafAssistantResponseManager.bind(this, findViewById(android.R.id.content));
-        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
-                .setResponseManager(deafAssistantResponseManager);
+        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
+                .setDeafAssistantResponseManager(deafAssistantResponseManager);
 
         // Load Persistent Settings
         loadSettings();
@@ -577,9 +569,23 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     private void setupHomeWidgets() {
         editHomeQuickText = findViewById(R.id.editHomeQuickText);
         com.google.android.material.button.MaterialButton btnVoiceAssistant = findViewById(R.id.btnVoiceAssistant);
+        com.google.android.material.switchmaterial.SwitchMaterial switchVoiceAssistant = findViewById(R.id.switchVoiceAssistant);
         if (btnVoiceAssistant != null) {
-            com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
+            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
                     .attachVoiceAssistantButton(this, btnVoiceAssistant, null);
+        }
+        if (switchVoiceAssistant != null) {
+            boolean isEnabled = isVoiceAssistantActive();
+            switchVoiceAssistant.setChecked(isEnabled);
+            applyVoiceAssistantEnabledState(isEnabled, btnVoiceAssistant, false);
+
+            switchVoiceAssistant.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                getSharedPreferences("app_prefs", MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("pref_deaf_voice_assistant_enabled", isChecked)
+                        .apply();
+                applyVoiceAssistantEnabledState(isChecked, btnVoiceAssistant, true);
+            });
         }
         cardEmergency = findViewById(R.id.cardEmergency);
 
@@ -709,7 +715,9 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         btnHomeClear.setOnClickListener(v -> editHomeQuickText.setText(""));
         btnHomeSend.setOnClickListener(v -> triggerHomeSendMessage());
 
-        cardEmergency.setOnClickListener(v -> triggerEmergencySOS());
+        if (cardEmergency != null) {
+            cardEmergency.setOnClickListener(v -> triggerEmergencySOS());
+        }
 
         // Initialize Caregiver Chat
         rvCaregiverChatMessages = findViewById(R.id.rvCaregiverChatMessages);
@@ -1533,20 +1541,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
 
         Toast.makeText(this, "EMERGENCY ALARM TRIGGERED!", Toast.LENGTH_LONG).show();
 
-        // 0. Maximize System Media Volume for Loud External Output
-        try {
-            android.media.AudioManager am = (android.media.AudioManager) getSystemService(android.content.Context.AUDIO_SERVICE);
-            if (am != null) {
-                int maxVol = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
-                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVol, 0);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Failed setting maximum volume for emergency alert", e);
-        }
-
-        // 1. System Emergency Alert Trigger (Siren sound deleted)
-
-        // 2. Trigger Strong Emergency Vibration Pattern
+        // Trigger Strong Emergency Vibration Pattern (Silent emergency alert for Deaf User)
         try {
             if (vibrator != null && vibrator.hasVibrator()) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -1559,16 +1554,14 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
             Log.e(TAG, "Failed playing emergency vibration", e);
         }
 
-        // 3. Speak Out Emergency Message Loudly in User's Selected Language (Kannada / Hindi / Malayalam)
+        // Send Emergency Message to Connected Caregiver Immediately (Silently without voice output)
         String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
         String normLang = LanguageManager.normalizeLanguageCode(userLang);
 
         if (emergencyMessage == null || emergencyMessage.trim().isEmpty() || LanguageManager.isDefaultSosMessage(emergencyMessage)) {
             emergencyMessage = LanguageManager.getDefaultSosMessage(normLang);
         }
-        speakText(emergencyMessage);
 
-        // 4. Send Emergency Message to Connected Caregiver Immediately
         if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty()) {
             sendEmergencyChatMessage(emergencyMessage);
         }
@@ -2317,7 +2310,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this).stopListening();
+        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).stopListening();
         com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).pauseListening();
         if (isRecording) {
             stopSpeechRecognition();
@@ -2327,7 +2320,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this).stopListening();
+        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).stopListening();
         com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).stopListening();
         if (deafAssistantResponseManager != null) {
             deafAssistantResponseManager.dismiss();
@@ -2407,8 +2400,8 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
                     scheduleStatusReset();
                 });
             }
-        } else if (requestCode == com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.REQUEST_CODE_VOICE_ASSISTANT_PERMISSION) {
-            com.kannada.speechassistant.voiceassistant.DeafVoiceAssistant.getInstance(this)
+        } else if (requestCode == com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.REQUEST_CODE_VOICE_ASSISTANT_PERMISSION) {
+            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
                     .handlePermissionsResult(this, requestCode, grantResults, findViewById(R.id.btnVoiceAssistant));
         }
     }
@@ -3036,153 +3029,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to send emergency message", e));
     }
 
-    private void showNotificationSettingsDialog() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_notification_settings, null);
-        builder.setView(dialogView);
-
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
-        }
-
-        txtActiveRingtoneDialogName = dialogView.findViewById(R.id.txtCurrentRingtoneName);
-        com.google.android.material.button.MaterialButton btnSelectFileRingtone = dialogView.findViewById(R.id.btnSelectFileRingtone);
-        com.google.android.material.button.MaterialButton btnTestPlayRingtone = dialogView.findViewById(R.id.btnTestPlayRingtone);
-        com.google.android.material.button.MaterialButton btnResetDefaultRingtone = dialogView.findViewById(R.id.btnResetDefaultRingtone);
-        btnDialogSilentToggle = btnResetDefaultRingtone;
-        SeekBar sbNotificationVolume = dialogView.findViewById(R.id.sbNotificationVolume);
-        TextView txtVolumePercentage = dialogView.findViewById(R.id.txtVolumePercentage);
-
-        com.google.android.material.button.MaterialButton btnSaveNotificationSettings = dialogView.findViewById(R.id.btnSaveNotificationSettings);
-
-        txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(this, currentUid));
-        int currentVol = CaregiverSoundManager.getNotificationVolumePercent(this, currentUid);
-        sbNotificationVolume.setProgress(currentVol);
-        txtVolumePercentage.setText(currentVol + "%");
-
-        boolean isSilent = CaregiverSoundManager.isSilentMode(this, currentUid);
-        if (isSilent) {
-            btnResetDefaultRingtone.setText("🔔 Enable Sound");
-        } else {
-            btnResetDefaultRingtone.setText("🔇 Clear (Silent)");
-        }
-
-        sbNotificationVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                txtVolumePercentage.setText(progress + "%");
-                if (fromUser) {
-                    CaregiverSoundManager.saveNotificationVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, progress);
-                    txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(SpeechImpairedDashboardActivity.this, currentUid));
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                CaregiverSoundManager.saveNotificationVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, seekBar.getProgress());
-                txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(SpeechImpairedDashboardActivity.this, currentUid));
-                CaregiverSoundManager.testPlaySound(SpeechImpairedDashboardActivity.this, currentUid);
-            }
-        });
-
-        btnSelectFileRingtone.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("audio/*");
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                startActivityForResult(Intent.createChooser(intent, "Select Notification Sound from File Manager"), REQUEST_CODE_PICK_RINGTONE);
-            } catch (Exception e) {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.setType("audio/*");
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    startActivityForResult(intent, REQUEST_CODE_PICK_RINGTONE);
-                } catch (Exception ex) {
-                    Toast.makeText(SpeechImpairedDashboardActivity.this, "File Manager not found on device", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
-        btnTestPlayRingtone.setOnClickListener(v -> {
-            CaregiverSoundManager.testPlaySound(SpeechImpairedDashboardActivity.this, currentUid);
-        });
-
-        btnResetDefaultRingtone.setOnClickListener(v -> {
-            CaregiverSoundManager.toggleSilentMode(SpeechImpairedDashboardActivity.this, currentUid);
-            boolean nowSilent = CaregiverSoundManager.isSilentMode(SpeechImpairedDashboardActivity.this, currentUid);
-            if (nowSilent) {
-                btnResetDefaultRingtone.setText("🔔 Enable Sound");
-                Toast.makeText(SpeechImpairedDashboardActivity.this, "🔇 Silent Mode ON (Sound OFF, Vibration ON)", Toast.LENGTH_SHORT).show();
-            } else {
-                btnResetDefaultRingtone.setText("🔇 Clear (Silent)");
-                Toast.makeText(SpeechImpairedDashboardActivity.this, "🔔 Notification Sound Enabled", Toast.LENGTH_SHORT).show();
-                CaregiverSoundManager.testPlaySound(SpeechImpairedDashboardActivity.this, currentUid);
-            }
-            txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(SpeechImpairedDashboardActivity.this, currentUid));
-        });
-
-        View layoutTtsVolumeSection = dialogView.findViewById(R.id.layoutTtsVolumeSection);
-        SeekBar sbTtsVolume = dialogView.findViewById(R.id.sbTtsVolume);
-        TextView txtTtsVolumePercentage = dialogView.findViewById(R.id.txtTtsVolumePercentage);
-
-        if (layoutTtsVolumeSection != null && sbTtsVolume != null && txtTtsVolumePercentage != null) {
-            layoutTtsVolumeSection.setVisibility(View.VISIBLE);
-            int currentTtsVol = CaregiverSoundManager.getTtsVolumePercent(this, currentUid);
-            sbTtsVolume.setProgress(currentTtsVol);
-            txtTtsVolumePercentage.setText(currentTtsVol + "%");
-
-            sbTtsVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    txtTtsVolumePercentage.setText(progress + "%");
-                    if (fromUser) {
-                        CaregiverSoundManager.saveTtsVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, progress);
-                    }
-                }
-                @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-                @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                    CaregiverSoundManager.saveTtsVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, seekBar.getProgress());
-                    CaregiverSoundManager.testPlayTts(SpeechImpairedDashboardActivity.this, currentUid);
-                }
-            });
-        }
-
-        btnSaveNotificationSettings.setOnClickListener(v -> {
-            CaregiverSoundManager.saveNotificationVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, sbNotificationVolume.getProgress());
-            if (sbTtsVolume != null) {
-                CaregiverSoundManager.saveTtsVolumePercent(SpeechImpairedDashboardActivity.this, currentUid, sbTtsVolume.getProgress());
-            }
-            CaregiverSoundManager.stopNotificationSound(SpeechImpairedDashboardActivity.this);
-            Toast.makeText(SpeechImpairedDashboardActivity.this, "Notification sound & volume saved successfully!", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
-        });
-
-        dialog.setOnDismissListener(d -> CaregiverSoundManager.stopNotificationSound(SpeechImpairedDashboardActivity.this));
-        dialog.show();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_PICK_RINGTONE && resultCode == RESULT_OK && data != null) {
-            Uri selectedAudioUri = data.getData();
-            if (selectedAudioUri != null) {
-                boolean success = CaregiverSoundManager.saveCustomRingtone(this, selectedAudioUri, currentUid);
-                if (success) {
-                    Toast.makeText(this, "🔔 Custom Notification Ringtone saved from File Manager!", Toast.LENGTH_LONG).show();
-                    if (txtActiveRingtoneDialogName != null) {
-                        txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(this, currentUid));
-                    }
-                    if (btnDialogSilentToggle != null) {
-                        btnDialogSilentToggle.setText("🔇 Clear (Silent)");
-                    }
-                    CaregiverSoundManager.testPlaySound(this, currentUid);
-                } else {
-                    Toast.makeText(this, "Failed to load audio file from File Manager", Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-    }
 
     @Override
     protected void onResume() {
@@ -3193,6 +3039,36 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         updateKeyboardLabels();
 
         // Hands-free Wake Word listening for Deaf User
-        com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).startListening(this);
+        if (isVoiceAssistantActive()) {
+            com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).startListening(this);
+        }
+    }
+
+    private void applyVoiceAssistantEnabledState(boolean isEnabled,
+                                                 com.google.android.material.button.MaterialButton btnVoiceAssistant,
+                                                 boolean showFeedback) {
+        if (btnVoiceAssistant != null) {
+            btnVoiceAssistant.setAlpha(isEnabled ? 1.0f : 0.45f);
+        }
+        if (isEnabled) {
+            com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).startListening(this);
+            if (showFeedback) {
+                Toast.makeText(this, "Voice Assistant: Active", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).stopListening();
+            if (btnVoiceAssistant != null) {
+                btnVoiceAssistant.setText("🎤 Voice Assistant");
+            }
+            com.kannada.speechassistant.voiceassistant.WakeWordManager.getInstance(this).pauseListening();
+            if (showFeedback) {
+                Toast.makeText(this, "Voice Assistant: Inactive", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private boolean isVoiceAssistantActive() {
+        return getSharedPreferences("app_prefs", MODE_PRIVATE)
+                .getBoolean("pref_deaf_voice_assistant_enabled", true);
     }
 }

@@ -672,8 +672,7 @@
 
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp">
+                    android:layout_height="wrap_content">
 
                     <TextView
                         android:id="@+id/lblRecognitionStatus"
@@ -709,6 +708,7 @@
                     android:id="@+id/gridOutputs"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
                     android:columnCount="2"
                     android:rowCount="7"
                     android:useDefaultMargins="true">
@@ -852,6 +852,7 @@
 
         <!-- Sandbox Simulation Overlay Panel -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardDeveloperSandbox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"

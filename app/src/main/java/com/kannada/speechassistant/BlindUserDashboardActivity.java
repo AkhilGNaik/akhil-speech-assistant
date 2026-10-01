@@ -1,6 +1,8 @@
 package com.kannada.speechassistant;
 
 import android.Manifest;
+import android.app.KeyguardManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +19,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.view.WindowManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
@@ -308,6 +311,22 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         }
         SecurityGuard.verifyRole(this, RoleManager.ROLE_BLIND_USER, null);
 
+        // Turn screen on & show over lock screen for accessible launch
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            if (km != null) {
+                km.requestDismissKeyguard(this, null);
+            }
+        }
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+        );
+
         setContentView(R.layout.activity_blind_user_dashboard);
 
         // Initialize TTS for accessible audio feedback
@@ -380,6 +399,9 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, requiredPermissions.toArray(new String[0]), REQUEST_CODE_STARTUP_PERMISSIONS);
         }
 
+        // Check overlay permission to allow opening app by voice when closed
+        checkOverlayPermission();
+
         // Start Central Real-Time Background Notification Service
         Intent serviceIntent = new Intent(this, FirestoreRealtimeService.class);
         startService(serviceIntent);
@@ -404,6 +426,26 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            if (km != null) {
+                km.requestDismissKeyguard(this, null);
+            }
+        }
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+        );
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.cancel(com.kannada.speechassistant.voiceassistant.BlindWakeWordService.LAUNCH_NOTIFICATION_ID);
+            }
+        } catch (Exception ignored) {}
         handleTargetTabIntent(intent);
     }
 
@@ -416,6 +458,40 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             bottomNav.setSelectedItemId(R.id.nav_profile);
         } else if ("caregiver".equalsIgnoreCase(targetTab)) {
             openCaregiverTab();
+        }
+
+        if (intent.getBooleanExtra("EXTRA_FROM_VOICE_OPEN_APP", false)) {
+            speakAccessibleFeedback(com.kannada.speechassistant.voiceassistant.VoiceCommandConstants.RESPONSE_OPEN_APP, null);
+        }
+    }
+
+    private void checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                SharedPreferences sp = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
+                boolean alreadyPrompted = sp.getBoolean("hasPromptedOverlayPerm", false);
+                if (!alreadyPrompted) {
+                    sp.edit().putBoolean("hasPromptedOverlayPerm", true).apply();
+                    new AlertDialog.Builder(this)
+                            .setTitle(R.string.app_name)
+                            .setMessage("To allow opening Speech Assistant automatically by voice when the app is closed, please turn on 'Appear on top' permission.")
+                            .setPositiveButton("Enable", (dialog, which) -> {
+                                try {
+                                    Intent intent = new Intent(
+                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            Uri.parse("package:" + getPackageName())
+                                    );
+                                    startActivity(intent);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Cannot open overlay settings", e);
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+
+                    speakAccessibleFeedback("To allow opening Speech Assistant by voice when closed, please enable Appear on top permission.", null);
+                }
+            }
         }
     }
 
@@ -507,16 +583,26 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
                 });
             }
 
-            Log.i("BlindVoiceMessage", "Speaking accessible feedback via TTS: '" + spokenText + "'");
+            int volPercent = CaregiverSoundManager.getTtsVolumePercent(this, currentUid);
+            if (volPercent <= 0) {
+                Log.i("BlindVoiceMessage", "Voice assistant volume is muted (0%), skipping spoken feedback.");
+                if (onDoneAction != null) {
+                    new Handler(Looper.getMainLooper()).post(onDoneAction);
+                }
+                return;
+            }
+
+            float volFloat = volPercent / 100.0f;
+            Log.i("BlindVoiceMessage", "Speaking accessible feedback via TTS (vol=" + volPercent + "%): '" + spokenText + "'");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 Bundle params = new Bundle();
-                params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f);
+                params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volFloat);
                 params.putString(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_MUSIC));
                 tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, params, utteranceId);
             } else {
                 HashMap<String, String> map = new HashMap<>();
                 map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
-                map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, "1.0");
+                map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, String.valueOf(volFloat));
                 map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_MUSIC));
                 tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, map);
             }
@@ -529,7 +615,13 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     }
 
     private String getLocalizedFeedbackText(String englishText, String langCode) {
-        if ("No caregiver is connected. Please connect to a caregiver first.".equals(englishText)) {
+        if (com.kannada.speechassistant.voiceassistant.VoiceCommandConstants.RESPONSE_OPEN_APP.equals(englishText) || "Speech Assistant is open.".equals(englishText)) {
+            switch (langCode) {
+                case LanguageManager.LANG_MALAYALAM: return "സ്പീച്ച് അസിസ്റ്റന്റ് തുറന്നു.";
+                case LanguageManager.LANG_HINDI: return "स्पीच असिस्टेंट खुल गया है।";
+                case LanguageManager.LANG_KANNADA: default: return "ಸ್ಪೀಚ್ ಅಸಿಸ್ಟೆಂಟ್ ತೆರೆಯಲಾಗಿದೆ.";
+            }
+        } else if ("No caregiver is connected. Please connect to a caregiver first.".equals(englishText)) {
             switch (langCode) {
                 case LanguageManager.LANG_MALAYALAM: return "കെയർഗിവർ കണക്റ്റ് ചെയ്തിട്ടില്ല. ദയവായി ആദ്യം ഒരു കെയർഗിവറുമായി ബന്ധപ്പെടുക.";
                 case LanguageManager.LANG_HINDI: return "कोई देखभालकर्ता कनेक्ट नहीं है। कृपया पहले किसी देखभालकर्ता से कनेक्ट करें।";
@@ -1975,6 +2067,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
                     .handlePermissionsResult(this, requestCode, grantResults, findViewById(R.id.btnVoiceAssistant));
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 WakeWordManager.getInstance(this).startListening(this);
+                com.kannada.speechassistant.voiceassistant.BlindWakeWordService.startService(this);
             }
         } else if (requestCode == REQUEST_CODE_STARTUP_PERMISSIONS) {
             boolean micGranted = false;
@@ -1987,6 +2080,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             if (micGranted) {
                 Log.i(TAG, "Startup RECORD_AUDIO permission granted. Starting WakeWordManager hands-free listening.");
                 WakeWordManager.getInstance(this).startListening(this);
+                com.kannada.speechassistant.voiceassistant.BlindWakeWordService.startService(this);
             }
         }
     }
@@ -2851,14 +2945,26 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         sbNotificationVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                txtVolumePercentage.setText(progress + "%");
+                if (progress <= 0) {
+                    txtVolumePercentage.setText("0% (Muted)");
+                } else {
+                    txtVolumePercentage.setText(progress + "%");
+                }
                 if (fromUser) {
+                    if (progress > 0 && CaregiverSoundManager.isSilentMode(BlindUserDashboardActivity.this, currentUid)) {
+                        CaregiverSoundManager.enableSoundMode(BlindUserDashboardActivity.this, currentUid);
+                        btnResetDefaultRingtone.setText("🔇 Clear (Silent)");
+                    }
                     CaregiverSoundManager.saveNotificationVolumePercent(BlindUserDashboardActivity.this, currentUid, progress);
                     txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(BlindUserDashboardActivity.this, currentUid));
                 }
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                if (seekBar.getProgress() > 0 && CaregiverSoundManager.isSilentMode(BlindUserDashboardActivity.this, currentUid)) {
+                    CaregiverSoundManager.enableSoundMode(BlindUserDashboardActivity.this, currentUid);
+                    btnResetDefaultRingtone.setText("🔇 Clear (Silent)");
+                }
                 CaregiverSoundManager.saveNotificationVolumePercent(BlindUserDashboardActivity.this, currentUid, seekBar.getProgress());
                 txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(BlindUserDashboardActivity.this, currentUid));
                 CaregiverSoundManager.testPlaySound(BlindUserDashboardActivity.this, currentUid);
@@ -2899,20 +3005,45 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(BlindUserDashboardActivity.this, currentUid));
         });
 
+        // Long-click to clear custom ringtone back to Default System Ringtone
+        btnResetDefaultRingtone.setOnLongClickListener(v -> {
+            CaregiverSoundManager.resetToDefaultRingtone(BlindUserDashboardActivity.this, currentUid);
+            txtActiveRingtoneDialogName.setText(CaregiverSoundManager.getActiveRingtoneName(BlindUserDashboardActivity.this, currentUid));
+            btnResetDefaultRingtone.setText("🔇 Clear (Silent)");
+            Toast.makeText(BlindUserDashboardActivity.this, "🔔 Reset to Default System Ringtone", Toast.LENGTH_SHORT).show();
+            CaregiverSoundManager.testPlaySound(BlindUserDashboardActivity.this, currentUid);
+            return true;
+        });
+
+        // Voice Assistant Volume Section
         View layoutTtsVolumeSection = dialogView.findViewById(R.id.layoutTtsVolumeSection);
+        TextView lblVoiceAssistantVolume = dialogView.findViewById(R.id.lblVoiceAssistantVolume);
         SeekBar sbTtsVolume = dialogView.findViewById(R.id.sbTtsVolume);
         TextView txtTtsVolumePercentage = dialogView.findViewById(R.id.txtTtsVolumePercentage);
+        MaterialButton btnTestVoiceAssistant = dialogView.findViewById(R.id.btnTestVoiceAssistant);
+
+        if (lblVoiceAssistantVolume != null) {
+            lblVoiceAssistantVolume.setText("🔊 Voice Assistant Volume");
+        }
 
         if (layoutTtsVolumeSection != null && sbTtsVolume != null && txtTtsVolumePercentage != null) {
             layoutTtsVolumeSection.setVisibility(View.VISIBLE);
             int currentTtsVol = CaregiverSoundManager.getTtsVolumePercent(this, currentUid);
             sbTtsVolume.setProgress(currentTtsVol);
-            txtTtsVolumePercentage.setText(currentTtsVol + "%");
+            if (currentTtsVol <= 0) {
+                txtTtsVolumePercentage.setText("0% (Muted)");
+            } else {
+                txtTtsVolumePercentage.setText(currentTtsVol + "%");
+            }
 
             sbTtsVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    txtTtsVolumePercentage.setText(progress + "%");
+                    if (progress <= 0) {
+                        txtTtsVolumePercentage.setText("0% (Muted)");
+                    } else {
+                        txtTtsVolumePercentage.setText(progress + "%");
+                    }
                     if (fromUser) {
                         CaregiverSoundManager.saveTtsVolumePercent(BlindUserDashboardActivity.this, currentUid, progress);
                     }
@@ -2925,13 +3056,19 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             });
         }
 
+        if (btnTestVoiceAssistant != null) {
+            btnTestVoiceAssistant.setOnClickListener(v -> {
+                CaregiverSoundManager.testPlayTts(BlindUserDashboardActivity.this, currentUid);
+            });
+        }
+
         btnSaveNotificationSettings.setOnClickListener(v -> {
             CaregiverSoundManager.saveNotificationVolumePercent(BlindUserDashboardActivity.this, currentUid, sbNotificationVolume.getProgress());
             if (sbTtsVolume != null) {
                 CaregiverSoundManager.saveTtsVolumePercent(BlindUserDashboardActivity.this, currentUid, sbTtsVolume.getProgress());
             }
             CaregiverSoundManager.stopNotificationSound(BlindUserDashboardActivity.this);
-            Toast.makeText(BlindUserDashboardActivity.this, "Notification sound & volume saved successfully!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(BlindUserDashboardActivity.this, "Sound & Voice Assistant volume saved successfully!", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
@@ -2978,10 +3115,18 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         CaregiverSoundManager.stopEmergencySound(this);
         updateHomeCaregiverCard();
 
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.cancel(com.kannada.speechassistant.voiceassistant.BlindWakeWordService.LAUNCH_NOTIFICATION_ID);
+            }
+        } catch (Exception ignored) {}
+
         if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && caregiverChatListener == null) {
             startCaregiverChatListener(connectedCaregiverUid);
         }
 
+        com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppForegrounded();
         WakeWordManager.getInstance(this).setForegroundActivity(this);
         WakeWordManager.getInstance(this).startListening(this);
     }
@@ -2990,6 +3135,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         WakeWordManager.getInstance(this).pauseListeningForActivity(this);
+        com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppBackgrounded(this);
         ChatAdapter.stopAudioPlayback();
         CaregiverChatAdapter.stopAudioPlayback();
         if (isRecording) {

@@ -206,6 +206,9 @@ public class VoiceCommandProcessor {
             case STOP_LISTENING:
                 return new VoiceCommand(VoiceCommandConstants.CMD_STOP_LISTENING, intent, ALL_ROLES, false);
 
+            case OPEN_APP:
+                return new VoiceCommand(VoiceCommandConstants.CMD_OPEN_APP, intent, BLIND_ONLY_ROLES, false);
+
             default:
                 return new VoiceCommand(VoiceCommandConstants.CMD_UNKNOWN, intent, ALL_ROLES, false);
         }
@@ -272,6 +275,8 @@ public class VoiceCommandProcessor {
                 return VoiceCommandConstants.RESPONSE_CALL_CONFIRMED;
             case VoiceCommandConstants.CMD_CONFIRM_NO:
                 return VoiceCommandConstants.RESPONSE_ACTION_CANCELLED;
+            case VoiceCommandConstants.CMD_OPEN_APP:
+                return VoiceCommandConstants.RESPONSE_OPEN_APP;
             default:
                 return VoiceCommandConstants.RESPONSE_UNKNOWN;
         }

@@ -338,6 +338,10 @@ public class CaregiverSoundManager {
         return (float) (1.0 - (Math.log(101 - volPercent) / Math.log(101)));
     }
 
+    public static boolean isSoundPlaying() {
+        return isNotificationPlaying || (activeMediaPlayer != null && activeMediaPlayer.isPlaying());
+    }
+
     public static String getActiveRingtoneName(Context context) {
         return getActiveRingtoneName(context, getCurrentUserId(context));
     }
@@ -347,9 +351,10 @@ public class CaregiverSoundManager {
         SharedPreferences pref = context.getSharedPreferences(getPrefName(userId), Context.MODE_PRIVATE);
 
         String name = "Default System Ringtone";
-        boolean useCustom = pref.getBoolean(KEY_USE_CUSTOM, false);
+        String mode = getSoundMode(context, userId);
         File customFile = new File(context.getFilesDir(), getCustomRingtoneFileName(userId));
-        if (useCustom && customFile.exists()) {
+        boolean useCustom = MODE_CUSTOM.equals(mode) && customFile.exists();
+        if (useCustom) {
             String customName = pref.getString(KEY_CUSTOM_NAME, null);
             if (customName != null && !customName.trim().isEmpty()) {
                 name = customName;
@@ -358,7 +363,7 @@ public class CaregiverSoundManager {
             }
         }
 
-        if (isSilentMode(context, userId)) {
+        if (MODE_SILENT.equals(mode)) {
             return name + " (Silent)";
         }
 
@@ -517,17 +522,24 @@ public class CaregiverSoundManager {
         boolean isEmergency = "emergency".equalsIgnoreCase(messageType) || "sos".equalsIgnoreCase(messageType);
 
         if (isEmergency) {
-            // Emergency Alert: Loop sound continuously until acknowledged/opened
-            playEmergencyAlertSoundAndVibration(context, currentUserId);
+            // Emergency Alert: If Deaf User, vibrate only silently. For other roles, play emergency sound & vibration loop.
+            if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(userRole)) {
+                vibrateNotification(context);
+            } else {
+                playEmergencyAlertSoundAndVibration(context, currentUserId);
+            }
         } else {
-            // Regular Message: Play notification sound EXACTLY 2 TIMES
+            // Regular Message:
             if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(userRole)) {
                 // Physically Disabled User: Play sound 2 times -> Speak received message using TTS in user's saved language
                 playNotificationSound2Times(context, currentUserId, messageId, () -> {
                     speakIncomingMessageTts(context, messageText, currentUserId, sm.getLanguage());
                 });
+            } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(userRole)) {
+                // Deaf User: Notification sound is disabled, vibrate only
+                vibrateNotification(context);
             } else {
-                // Speech-Impaired User OR Caregiver/Admin: Play sound 2 times -> STOP (No TTS)
+                // Caregiver/Admin & Mute User: Play sound 2 times -> STOP (No TTS)
                 playNotificationSound2Times(context, currentUserId, messageId, null);
             }
         }
@@ -699,7 +711,19 @@ public class CaregiverSoundManager {
     public static void testPlaySound(Context context, String userId) {
         if (context == null) return;
         try {
+            if (isSoundPlaying()) {
+                stopNotificationSound(context);
+                Toast.makeText(context, "Notification sound test stopped", Toast.LENGTH_SHORT).show();
+                return;
+            }
             stopNotificationSound(context);
+
+            String mode = getSoundMode(context, userId);
+            if (MODE_SILENT.equals(mode)) {
+                Toast.makeText(context, "🔇 Silent mode is active (Sound muted, vibration only)", Toast.LENGTH_SHORT).show();
+                vibrateNotification(context);
+                return;
+            }
 
             int volPercent = getNotificationVolumePercent(context, userId);
             if (volPercent <= 0) {
@@ -708,10 +732,8 @@ public class CaregiverSoundManager {
                 return;
             }
 
-            String mode = getSoundMode(context, userId);
             File customFile = new File(context.getFilesDir(), getCustomRingtoneFileName(userId));
-            SharedPreferences pref = context.getSharedPreferences(getPrefName(userId), Context.MODE_PRIVATE);
-            boolean useCustom = (MODE_CUSTOM.equals(mode) || pref.getBoolean(KEY_USE_CUSTOM, false)) && customFile.exists();
+            boolean useCustom = MODE_CUSTOM.equals(mode) && customFile.exists();
 
             if (useCustom) {
                 playCustomAudioFile(context, customFile, volPercent, null);
@@ -724,26 +746,41 @@ public class CaregiverSoundManager {
     }
 
     /**
-     * Plays sample test speech via TTS at current TTS volume setting.
+     * Plays sample test speech via TTS at current Voice Assistant volume setting.
      */
     public static void testPlayTts(Context context, String userId) {
         if (context == null) return;
+        int ttsVol = getTtsVolumePercent(context, userId);
+        if (ttsVol <= 0) {
+            Toast.makeText(context, "Voice Assistant volume is 0% (Muted)", Toast.LENGTH_SHORT).show();
+            vibrateNotification(context);
+            return;
+        }
         SessionManager sm = new SessionManager(context);
-        speakIncomingMessageTts(context, "Testing Text to Speech volume level.", userId, sm.getLanguage());
+        String lang = sm.getLanguage();
+        String normLang = LanguageManager.normalizeLanguageCode(lang);
+        String testPhrase;
+        if ("kn".equalsIgnoreCase(normLang)) {
+            testPhrase = "ಧ್ವನಿ ಸಹಾಯಕರ ವಾಲ್ಯೂಮ್ ಪರೀಕ್ಷೆ.";
+        } else if ("hi".equalsIgnoreCase(normLang)) {
+            testPhrase = "वॉयस असिस्टेंट आवाज़ परीक्षण।";
+        } else if ("ml".equalsIgnoreCase(normLang)) {
+            testPhrase = "വോയ്‌സ് അസിസ്റ്റന്റ് ശബ്ദം പരിശോധന.";
+        } else {
+            testPhrase = "Testing Voice Assistant sound volume.";
+        }
+        speakIncomingMessageTts(context, testPhrase, userId, lang);
     }
 
     public static void testPlayTts(Context context, android.speech.tts.TextToSpeech tts, String userId) {
         if (context == null) return;
         int ttsVol = getTtsVolumePercent(context, userId);
         if (ttsVol <= 0) {
-            Toast.makeText(context, "TTS Speech is currently muted (0%)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Voice Assistant volume is 0% (Muted)", Toast.LENGTH_SHORT).show();
+            vibrateNotification(context);
             return;
         }
-        if (tts != null) {
-            speakWithVolume(tts, "Testing Text to Speech volume level.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, "TestTTS_" + System.currentTimeMillis(), context, userId);
-        } else {
-            testPlayTts(context, userId);
-        }
+        testPlayTts(context, userId);
     }
 
     /**

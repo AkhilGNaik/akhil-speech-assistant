@@ -63,6 +63,11 @@ public class VoiceActionDispatcher {
                     spokenResponse = VoiceCommandConstants.RESPONSE_OPEN_HOME;
                     break;
 
+                case VoiceCommandConstants.CMD_OPEN_APP:
+                    handled = handleOpenApp(activity);
+                    spokenResponse = VoiceCommandConstants.RESPONSE_OPEN_APP;
+                    break;
+
                 case VoiceCommandConstants.CMD_OPEN_PROFILE:
                     handled = handleOpenProfile(activity);
                     spokenResponse = VoiceCommandConstants.RESPONSE_OPEN_PROFILE;
@@ -246,6 +251,17 @@ public class VoiceActionDispatcher {
         }
 
         return false;
+    }
+
+    private static boolean handleOpenApp(@NonNull Activity activity) {
+        if (activity instanceof BlindUserDashboardActivity) {
+            return handleOpenHome(activity);
+        }
+        Intent intent = new Intent(activity, BlindUserDashboardActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("EXTRA_TARGET_TAB", "home");
+        activity.startActivity(intent);
+        return true;
     }
 
     private static boolean handleOpenProfile(@NonNull Activity activity) {

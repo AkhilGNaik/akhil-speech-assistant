@@ -93,7 +93,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Right Action Cluster: Bell Settings Button & Status Pill -->
+            <!-- Right Action Cluster: SOS Button (Replaced Online/Offline Status for Deaf User) -->
             <LinearLayout
                 android:id="@+id/rightActionCluster"
                 android:layout_width="wrap_content"
@@ -104,45 +104,35 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
-                <!-- Bell Notification Settings Button -->
-                <ImageButton
-                    android:id="@+id/btnBellNotificationSettings"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_circle_button"
-                    android:src="@drawable/ic_bell"
-                    app:tint="@color/primary"
-                    android:padding="8dp"
-                    android:layout_marginEnd="6dp"
-                    android:contentDescription="Notification Sound &amp; Volume Manager" />
-
-                <!-- Online/Offline Status Pill Chip -->
-                <LinearLayout
-                    android:id="@+id/layoutStatus"
+                <!-- SOS Emergency Alert Button -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardEmergency"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_status_pill_online"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:layout_height="34dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardCornerRadius="17dp"
+                    app:cardElevation="3dp"
+                    app:cardBackgroundColor="#EF4444"
+                    app:strokeWidth="0dp">
 
-                    <View
-                        android:id="@+id/viewStatusDot"
-                        android:layout_width="7dp"
-                        android:layout_height="7dp"
-                        android:background="@drawable/bg_status_dot_online"
-                        android:layout_marginEnd="5dp" />
-
-                    <TextView
-                        android:id="@+id/txtStatusLabel"
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/online"
-                        android:textColor="#047857"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="SOS"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.06" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>

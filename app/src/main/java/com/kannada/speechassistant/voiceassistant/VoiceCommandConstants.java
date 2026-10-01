@@ -33,10 +33,12 @@ public class VoiceCommandConstants {
     public static final String CMD_GO_BACK = "CMD_GO_BACK";
     public static final String CMD_CONFIRM_YES = "CMD_CONFIRM_YES";
     public static final String CMD_CONFIRM_NO = "CMD_CONFIRM_NO";
+    public static final String CMD_OPEN_APP = "CMD_OPEN_APP";
     public static final String CMD_UNKNOWN = "CMD_UNKNOWN";
 
     // Intent Identifiers
     public static final String INTENT_OPEN_HOME = "INTENT_OPEN_HOME";
+    public static final String INTENT_OPEN_APP = "INTENT_OPEN_APP";
     public static final String INTENT_OPEN_PROFILE = "INTENT_OPEN_PROFILE";
     public static final String INTENT_OPEN_SETTINGS = "INTENT_OPEN_SETTINGS";
     public static final String INTENT_OPEN_MESSAGES = "INTENT_OPEN_MESSAGES";
@@ -85,6 +87,7 @@ public class VoiceCommandConstants {
     // Standard Spoken Feedback Responses
     public static final String RESPONSE_UNKNOWN = "Sorry, I did not understand that command.";
     public static final String RESPONSE_OPEN_HOME = "Home is open.";
+    public static final String RESPONSE_OPEN_APP = "Speech Assistant is open.";
     public static final String RESPONSE_OPEN_PROFILE = "Profile is open.";
     public static final String RESPONSE_OPEN_SETTINGS = "Settings is open.";
     public static final String RESPONSE_OPEN_MESSAGES = "Messages is open.";

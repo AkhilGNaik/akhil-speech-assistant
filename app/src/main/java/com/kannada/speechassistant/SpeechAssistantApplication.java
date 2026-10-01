@@ -34,6 +34,16 @@ public class SpeechAssistantApplication extends Application {
         Log.i(TAG, "SpeechAssistantApplication initialized.");
 
         registerLifecycleTracker();
+
+        // Start background wake-word listener for logged-in Blind Users
+        try {
+            SessionManager sm = new SessionManager(this);
+            if (sm.isLoggedIn() && RoleManager.ROLE_BLIND_USER.equals(sm.getUserRole())) {
+                com.kannada.speechassistant.voiceassistant.BlindWakeWordService.startService(this);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing BlindWakeWordService in Application: " + e.getMessage());
+        }
     }
 
     private void registerLifecycleTracker() {
@@ -45,6 +55,7 @@ public class SpeechAssistantApplication extends Application {
             public void onActivityStarted(@NonNull Activity activity) {
                 int count = activeActivities.incrementAndGet();
                 Log.d(TAG, "Activity started: " + activity.getClass().getSimpleName() + " (Active: " + count + ")");
+                com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppForegrounded();
             }
 
             @Override
@@ -61,6 +72,9 @@ public class SpeechAssistantApplication extends Application {
                     count = 0;
                 }
                 Log.d(TAG, "Activity stopped: " + activity.getClass().getSimpleName() + " (Active: " + count + ")");
+                if (count == 0) {
+                    com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppBackgrounded(SpeechAssistantApplication.this);
+                }
             }
 
             @Override

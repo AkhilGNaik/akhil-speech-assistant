@@ -110,6 +110,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private final Handler typingHandler = new Handler(Looper.getMainLooper());
     private boolean isTyping = false;
+    private boolean isDeaf = false;
     private final Runnable typingTimeoutRunnable = () -> {
         isTyping = false;
         updateTypingStatus(false);
@@ -240,16 +241,8 @@ public class ChatActivity extends AppCompatActivity {
         rvMessages = findViewById(R.id.rvMessages);
         layoutQuickPhrases = findViewById(R.id.layoutQuickPhrases);
 
-        if (btnMicInput != null) {
-            btnMicInput.setOnClickListener(v -> toggleVoiceMessageRecording());
-            btnMicInput.setOnLongClickListener(v -> {
-                toggleVoiceInput();
-                return true;
-            });
-        }
-
         myRole = sessionManager.getUserRole();
-        boolean isDeaf = RoleManager.ROLE_DEAF_USER.equals(myRole)
+        isDeaf = RoleManager.ROLE_DEAF_USER.equals(myRole)
                 || RoleManager.ROLE_SPEECH_IMPAIRED.equals(myRole)
                 || "Mute, Deaf & Blind User".equals(myRole)
                 || "Mute, Deaf & Blind Users".equals(myRole);
@@ -258,6 +251,21 @@ public class ChatActivity extends AppCompatActivity {
                 || RoleManager.ROLE_SPEECH_IMPAIRED.equals(receiverRole)
                 || "Mute, Deaf & Blind User".equals(receiverRole)
                 || "Mute, Deaf & Blind Users".equals(receiverRole);
+
+        if (btnMicInput != null) {
+            if (isDeaf) {
+                // Deaf User Module: Voice recording sending removed.
+                // Tapping the mic button activates STT (Speech to Text) into the message box directly.
+                btnMicInput.setOnClickListener(v -> toggleVoiceInput());
+                btnMicInput.setOnLongClickListener(null);
+            } else {
+                btnMicInput.setOnClickListener(v -> toggleVoiceMessageRecording());
+                btnMicInput.setOnLongClickListener(v -> {
+                    toggleVoiceInput();
+                    return true;
+                });
+            }
+        }
 
         if (btnCall != null) {
             btnCall.setOnClickListener(v -> {
@@ -1383,6 +1391,10 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void toggleVoiceMessageRecording() {
+        if (isDeaf) {
+            toggleVoiceInput();
+            return;
+        }
         if (isChatAudioRecording) {
             stopAndSendVoiceRecording();
         } else {
@@ -1501,6 +1513,10 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void uploadVoiceMessage(File audioFile, int durationSeconds) {
+        if (isDeaf) {
+            Log.w(TAG, "Voice recording upload disabled for Deaf user module.");
+            return;
+        }
         if (audioFile == null || !audioFile.exists()) return;
         if (receiverId == null || receiverId.isEmpty()) return;
 

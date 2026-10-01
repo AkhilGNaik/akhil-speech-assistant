@@ -55,7 +55,7 @@ public class WakeWordManager {
     // Centralized Wake Word and In-App Voice Command Configuration for Vosk
     public static final String WAKE_WORD_PRIMARY = "assistant";
     public static final String WAKE_WORD_HEY = "hey assistant";
-    private static final String VOSK_GRAMMAR = "[\"assistant\", \"hey\", \"ok\", \"okay\", \"open\", \"app\", \"speech\", \"application\", \"profile\", \"caregiver\", \"caretaker\", \"call\", \"emergency\", \"sos\", \"settings\", \"home\", \"message\", \"messages\", \"voice\", \"send\", \"read\", \"stop\", \"back\", \"help\", \"cancel\", \"hey assistant\", \"ok assistant\", \"okay assistant\", \"open app\", \"hey assistant open app\", \"assistant open app\", \"open speech assistant\", \"hey assistant open speech assistant\", \"assistant open speech assistant\", \"open speech assistant app\", \"hey assistant open speech assistant app\", \"assistant open speech assistant app\", \"launch app\", \"hey assistant launch app\", \"start app\", \"hey assistant start app\", \"open the app\", \"open my app\", \"open profile\", \"assistant open profile\", \"hey assistant open profile\", \"show profile\", \"go to profile\", \"profile\", \"profile page\", \"my profile page\", \"open profile page\", \"assistant open profile page\", \"hey assistant open profile page\", \"open my profile page\", \"call caregiver\", \"assistant call caregiver\", \"hey assistant call caregiver\", \"call my caregiver\", \"assistant call my caregiver\", \"hey assistant call my caregiver\", \"call caretaker\", \"assistant call caretaker\", \"call my caretaker\", \"caregiver page\", \"open caregiver page\", \"assistant open caregiver page\", \"hey assistant caregiver page\", \"open caregiver\", \"assistant open caregiver\", \"hey assistant open caregiver\", \"caregiver connection\", \"emergency\", \"assistant emergency\", \"hey assistant emergency\", \"emergency help\", \"assistant emergency help\", \"hey assistant emergency help\", \"send emergency\", \"assistant send emergency\", \"sos\", \"assistant sos\", \"hey assistant sos\", \"send sos\", \"assistant send sos\", \"open settings\", \"assistant open settings\", \"hey assistant open settings\", \"show settings\", \"go to settings\", \"settings\", \"open home\", \"assistant open home\", \"hey assistant open home\", \"go home\", \"home\", \"home page\", \"open home page\", \"send message\", \"assistant send message\", \"hey assistant send message\", \"send a message\", \"assistant send a message\", \"message caregiver\", \"send voice message\", \"assistant send voice message\", \"read messages\", \"assistant read messages\", \"hey assistant read messages\", \"read my messages\", \"assistant read my messages\", \"read caregiver message\", \"read caregiver messages\", \"check messages\", \"count messages\", \"how many messages\", \"repeat message\", \"repeat the message\", \"say that again\", \"go back\", \"assistant go back\", \"hey assistant go back\", \"back\", \"assistant back\", \"return\", \"previous page\", \"stop\", \"assistant stop\", \"hey assistant stop\", \"stop listening\", \"accept call\", \"assistant accept call\", \"receive call\", \"end call\", \"assistant end call\", \"hang up\", \"disconnect call\", \"[unk]\"]";
+    static final String VOSK_GRAMMAR = "[\"assistant\", \"hey\", \"ok\", \"okay\", \"open\", \"app\", \"speech\", \"application\", \"profile\", \"caregiver\", \"caretaker\", \"call\", \"emergency\", \"sos\", \"settings\", \"home\", \"message\", \"messages\", \"voice\", \"send\", \"read\", \"stop\", \"back\", \"help\", \"cancel\", \"hey assistant\", \"ok assistant\", \"okay assistant\", \"open app\", \"hey assistant open app\", \"assistant open app\", \"open speech assistant\", \"hey assistant open speech assistant\", \"assistant open speech assistant\", \"open speech assistant app\", \"hey assistant open speech assistant app\", \"assistant open speech assistant app\", \"launch app\", \"hey assistant launch app\", \"start app\", \"hey assistant start app\", \"open the app\", \"open my app\", \"open profile\", \"assistant open profile\", \"hey assistant open profile\", \"show profile\", \"go to profile\", \"profile\", \"profile page\", \"my profile page\", \"open profile page\", \"assistant open profile page\", \"hey assistant open profile page\", \"open my profile page\", \"call caregiver\", \"assistant call caregiver\", \"hey assistant call caregiver\", \"call my caregiver\", \"assistant call my caregiver\", \"hey assistant call my caregiver\", \"call caretaker\", \"assistant call caretaker\", \"call my caretaker\", \"caregiver page\", \"open caregiver page\", \"assistant open caregiver page\", \"hey assistant caregiver page\", \"open caregiver\", \"assistant open caregiver\", \"hey assistant open caregiver\", \"caregiver connection\", \"emergency\", \"assistant emergency\", \"hey assistant emergency\", \"emergency help\", \"assistant emergency help\", \"hey assistant emergency help\", \"send emergency\", \"assistant send emergency\", \"sos\", \"assistant sos\", \"hey assistant sos\", \"send sos\", \"assistant send sos\", \"open settings\", \"assistant open settings\", \"hey assistant open settings\", \"show settings\", \"go to settings\", \"settings\", \"open home\", \"assistant open home\", \"hey assistant open home\", \"go home\", \"home\", \"home page\", \"open home page\", \"send message\", \"assistant send message\", \"hey assistant send message\", \"send a message\", \"assistant send a message\", \"message caregiver\", \"send voice message\", \"assistant send voice message\", \"read messages\", \"assistant read messages\", \"hey assistant read messages\", \"read my messages\", \"assistant read my messages\", \"read caregiver message\", \"read caregiver messages\", \"check messages\", \"count messages\", \"how many messages\", \"repeat message\", \"repeat the message\", \"say that again\", \"go back\", \"assistant go back\", \"hey assistant go back\", \"back\", \"assistant back\", \"return\", \"previous page\", \"stop\", \"assistant stop\", \"hey assistant stop\", \"stop listening\", \"accept call\", \"assistant accept call\", \"receive call\", \"end call\", \"assistant end call\", \"hang up\", \"disconnect call\", \"[unk]\"]";
 
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
@@ -316,23 +316,22 @@ public class WakeWordManager {
 
         // 4. Check if appropriate Assistant is currently triggered/active
         if (activity instanceof SpeechImpairedDashboardActivity) {
-            DeafVoiceAssistant dva = DeafVoiceAssistant.getInstance(appContext);
-            if (isTriggered.get() || dva.isListening()) {
-                Log.d(TAG, "WakeWordManager: Deaf Assistant session already in progress. Holding wake word.");
+            boolean active = activity.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                    .getBoolean("pref_deaf_voice_assistant_enabled", true);
+            if (!active) {
+                Log.d(TAG, "WakeWordManager: Deaf Assistant is disabled by user. Holding wake word.");
                 setState(State.PAUSED);
-                mainHandler.removeCallbacks(retryRunnable);
-                mainHandler.postDelayed(retryRunnable, 1000);
                 return;
             }
-        } else {
-            AppVoiceAssistant va = AppVoiceAssistant.getInstance(appContext);
-            if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
-                Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
-                setState(State.PAUSED);
-                mainHandler.removeCallbacks(retryRunnable);
-                mainHandler.postDelayed(retryRunnable, 1000);
-                return;
-            }
+        }
+
+        AppVoiceAssistant va = AppVoiceAssistant.getInstance(appContext);
+        if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
+            Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
+            setState(State.PAUSED);
+            mainHandler.removeCallbacks(retryRunnable);
+            mainHandler.postDelayed(retryRunnable, 1000);
+            return;
         }
 
         // 5. Check if model is ready
@@ -570,16 +569,11 @@ public class WakeWordManager {
             listener.onWakeWordDetected(detectedPhrase);
         }
 
-        // 2. Delegate to the appropriate standalone assistant
-        if (activity instanceof SpeechImpairedDashboardActivity) {
-            DeafVoiceAssistant deafAssistant = DeafVoiceAssistant.getInstance(appContext);
-            Log.i(TAG, "WakeWordManager: Transferring control to DeafVoiceAssistant with phrase: '" + detectedPhrase + "'");
-            deafAssistant.executeWakeWordCommand(activity, detectedPhrase, null);
-        } else {
-            AppVoiceAssistant voiceAssistant = AppVoiceAssistant.getInstance(appContext);
-            Log.i(TAG, "WakeWordManager: Transferring control to AppVoiceAssistant with phrase: '" + detectedPhrase + "'");
+        // 2. Delegate directly to existing AppVoiceAssistant with candidate phrase
+        AppVoiceAssistant voiceAssistant = AppVoiceAssistant.getInstance(appContext);
+        Log.i(TAG, "WakeWordManager: Transferring control to AppVoiceAssistant with phrase: '" + detectedPhrase + "'");
 
-            voiceAssistant.executeWakeWordCommand(activity, detectedPhrase, new VoiceAssistantCallback() {
+        voiceAssistant.executeWakeWordCommand(activity, detectedPhrase, new VoiceAssistantCallback() {
             @Override
             public void onAssistantReady(@NonNull String userRole, @NonNull String languageCode) {}
 
@@ -616,7 +610,6 @@ public class WakeWordManager {
                 }
             }
         });
-        }
     }
 
     /**
@@ -710,15 +703,9 @@ public class WakeWordManager {
             return true;
         }
 
-        // 3. Check if active assistant is listening
-        if (activity instanceof SpeechImpairedDashboardActivity) {
-            if (DeafVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
-                return true;
-            }
-        } else {
-            if (AppVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
-                return true;
-            }
+        // 3. Existing Voice Assistant is actively listening
+        if (AppVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
+            return true;
         }
 
         // 4. Audio mode in communication or in-call

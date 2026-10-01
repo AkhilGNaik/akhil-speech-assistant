@@ -33,6 +33,7 @@ public enum VoiceIntentType {
     CONFIRM_NO(VoiceCommandConstants.INTENT_CONFIRM_NO, VoiceCommandConstants.CMD_CONFIRM_NO),
     END_CALL(VoiceCommandConstants.INTENT_END_CALL, VoiceCommandConstants.CMD_END_CALL),
     ACCEPT_CALL(VoiceCommandConstants.INTENT_ACCEPT_CALL, VoiceCommandConstants.CMD_ACCEPT_CALL),
+    OPEN_APP(VoiceCommandConstants.INTENT_OPEN_APP, VoiceCommandConstants.CMD_OPEN_APP),
     UNKNOWN(VoiceCommandConstants.INTENT_UNKNOWN, VoiceCommandConstants.CMD_UNKNOWN);
 
     private final String intentId;
