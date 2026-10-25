@@ -35,7 +35,12 @@ public class ChatMessage {
         this.messageType = doc.getString("messageType") != null ? doc.getString("messageType") : "text";
         this.type = doc.getString("type") != null ? doc.getString("type") : "text";
         this.status = doc.getString("status") != null ? doc.getString("status") : "sent";
-        this.audioUrl = doc.getString("audioUrl") != null ? doc.getString("audioUrl") : "";
+        String url = doc.getString("audioUrl");
+        String b64 = doc.getString("audioBase64");
+        if ((url == null || url.trim().isEmpty()) && b64 != null && !b64.trim().isEmpty()) {
+            url = "data:audio/m4a;base64," + b64.trim();
+        }
+        this.audioUrl = url != null ? url : "";
         Long dur = doc.getLong("audioDuration");
         this.audioDuration = dur != null ? dur : 0L;
         
@@ -63,7 +68,12 @@ public class ChatMessage {
         this.messageType = map.containsKey("messageType") ? (String) map.get("messageType") : "text";
         this.type = map.containsKey("type") ? (String) map.get("type") : "text";
         this.status = map.containsKey("status") ? (String) map.get("status") : "sent";
-        this.audioUrl = map.containsKey("audioUrl") ? (String) map.get("audioUrl") : "";
+        String url = map.containsKey("audioUrl") ? (String) map.get("audioUrl") : "";
+        String b64 = map.containsKey("audioBase64") ? (String) map.get("audioBase64") : "";
+        if ((url == null || url.trim().isEmpty()) && b64 != null && !b64.trim().isEmpty()) {
+            url = "data:audio/m4a;base64," + b64.trim();
+        }
+        this.audioUrl = url != null ? url : "";
         Object dur = map.get("audioDuration");
         if (dur instanceof Number) {
             this.audioDuration = ((Number) dur).longValue();

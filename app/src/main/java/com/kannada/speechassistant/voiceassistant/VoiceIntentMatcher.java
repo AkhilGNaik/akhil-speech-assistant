@@ -535,8 +535,10 @@ public class VoiceIntentMatcher {
 
     public static boolean isExplicitActionNegation(@NonNull String s) {
         if (s.equals("no") || s.equals("cancel") || s.equals("don t") || s.equals("dont") || s.equals("do not") ||
+                s.equals("don t delete") || s.equals("dont delete") || s.equals("do not delete") || s.equals("cancel delete") ||
                 s.equals("never mind") || s.equals("ಇಲ್ಲ") || s.equals("ಬೇಡ") || s.equals("नहीं") || s.equals("नही") ||
-                s.equals("मत करो") || s.equals("വേണ്ട") || s.equals("റദ്ദാക്കുക")) {
+                s.equals("मत करो") || s.equals("मत हटाओ") || s.equals("ಅಳಿಸಬೇಡಿ") || s.equals("ഇല്ലാതാക്കരുത്") ||
+                s.equals("വേണ്ട") || s.equals("റദ്ദാക്കുക")) {
             return false;
         }
         if (s.startsWith("don t ") || s.startsWith("do not ") || s.startsWith("dont ") || s.startsWith("never ") ||
@@ -651,21 +653,24 @@ public class VoiceIntentMatcher {
 
         // 0. Confirmation Responses
         if (s.equals("yes") || s.equals("yeah") || s.equals("yep") || s.equals("sure") || s.equals("ok") ||
+                s.equals("हटा दो") || s.equals("डिलीट करो") || s.equals("ഡിലീറ്റ് ചെയ്യൂ") ||
                 words.contains("हाँ") || words.contains("हा") ||
                 containsMatch(s, words,
                         "confirm", "proceed", "yes please", "yes call", "yes send", "please do",
-                        "ಹೌದು", "ಸರಿ", "ಖಂಡಿತ",
-                        "ठीक है", "ज़रूर", "जरूर",
-                        "അതെ", "ശരി", "തീർച്ചയായും")) {
+                        "confirm delete", "yes delete", "yes please delete", "delete it", "yes delete it", "please delete",
+                        "ಹೌದು", "ಸರಿ", "ಖಂಡಿತ", "ಅಳಿಸಲು ದೃಢೀಕರಿಸಿ", "ಹೌದು ಅಳಿಸಿ", "ಹೌದು ಅಳಿಸು", "ದೃಢೀಕರಿಸಿ",
+                        "ठीक है", "ज़रूर", "जरूर", "पुष्टि करें", "हाँ हटाओ", "हाँ हटाएं", "हाँ हटा दीजिए", "हाँ डिलीट करो",
+                        "അതെ", "ശരി", "തീർച്ചയായും", "സ്ഥിരീകരിക്കുക", "അതെ ഇല്ലാതാക്കൂ", "അതെ ഡിലീറ്റ് ചെയ്യൂ")) {
             return new VoiceIntent(VoiceIntentType.CONFIRM_YES, rawQuery, 1.0f, null);
         }
 
         if (s.equals("no") || s.equals("cancel") || s.equals("don t") || s.equals("dont") || s.equals("do not") ||
                 s.equals("never mind") || s.equals("no cancel") || s.equals("cancel action") ||
-                s.equals("ಇಲ್ಲ") || s.equals("ಬೇಡ") || s.equals("ರದ್ದು") ||
-                s.equals("नहीं") || s.equals("नही") || s.equals("मत करो") || s.equals("रद्द") ||
-                s.equals("വേണ്ട") || s.equals("റദ്ദാക്കുക") ||
-                containsMatch(s, words, "never mind", "no cancel", "cancel action", "do not proceed", "don t proceed")) {
+                s.equals("cancel delete") || s.equals("don't delete") || s.equals("don t delete") || s.equals("dont delete") || s.equals("do not delete") ||
+                s.equals("ಇಲ್ಲ") || s.equals("ಬೇಡ") || s.equals("ರದ್ದು") || s.equals("ರದ್ದುಮಾಡಿ") || s.equals("ಅಳಿಸಬೇಡಿ") ||
+                s.equals("नहीं") || s.equals("नही") || s.equals("मत करो") || s.equals("रद्द") || s.equals("रद्द करें") || s.equals("मत हटाओ") ||
+                s.equals("വേണ്ട") || s.equals("റദ്ദാക്കുക") || s.equals("ഇല്ലാതാക്കരുത്") ||
+                containsMatch(s, words, "never mind", "no cancel", "cancel action", "cancel delete", "do not proceed", "don t proceed", "do not delete", "don t delete")) {
             return new VoiceIntent(VoiceIntentType.CONFIRM_NO, rawQuery, 1.0f, null);
         }
 
@@ -752,6 +757,11 @@ public class VoiceIntentMatcher {
                 "संचार", "बातचीत",
                 "ആശയവിനിമയം")) {
             return new VoiceIntent(VoiceIntentType.OPEN_COMMUNICATION, rawQuery, 1.0f, null);
+        }
+
+        // 7aa. Delete Last Message (Blind User voice-controlled message deletion)
+        if (matchesDeleteLastMessage(s, words, languageCode)) {
+            return new VoiceIntent(VoiceIntentType.DELETE_LAST_MESSAGE, rawQuery, 1.0f, null);
         }
 
         // 7a. Repeat Message
@@ -1339,10 +1349,14 @@ public class VoiceIntentMatcher {
             return false;
         }
 
-        // Exclude audio/voice recording and reading/counting/repeating intents
+        // Exclude audio/voice recording and reading/counting/repeating/deleting intents
         if (words.contains("voice") || words.contains("audio") || words.contains("recorder") || words.contains("record") ||
                 words.contains("read") || words.contains("check") || words.contains("count") || words.contains("how") ||
                 words.contains("repeat") || words.contains("again") ||
+                words.contains("delete") || words.contains("remove") || words.contains("clear") ||
+                s.contains("ಅಳಿಸು") || s.contains("ಅಳಿಸಿ") || s.contains("ಡಿಲೀಟ್") ||
+                s.contains("हटाओ") || s.contains("हटाएं") || s.contains("डिलीट") ||
+                s.contains("ഇല്ലാതാക്കൂ") || s.contains("ഡിലീറ്റ്") ||
                 s.contains("ಓದಿ") || s.contains("ಓದು") || s.contains("ಹೇಳಿ") || s.contains("ಹೇಳು") ||
                 s.contains("ಎಷ್ಟು") || s.contains("ಎಣಿಸಿ") || s.contains("ಮತ್ತೆ") || s.contains("ಮತ್ತೊಮ್ಮೆ") ||
                 s.contains("पढ़ो") || s.contains("गिनो") || s.contains("कितने") || s.contains("सुनाओ") || s.contains("दोबारा") ||
@@ -2166,6 +2180,113 @@ public class VoiceIntentMatcher {
         }
         if (s.contains("what") && s.contains("said") && hasEnglishCaregiver) {
             return true;
+        }
+
+        return false;
+    }
+
+    private static boolean matchesDeleteLastMessage(@NonNull String s,
+                                                    @NonNull Set<String> words,
+                                                    @NonNull String languageCode) {
+        String lang = com.kannada.speechassistant.LanguageManager.normalizeLanguageCode(languageCode);
+
+        // Disallow bare single words that must never trigger deletion accidentally
+        if (s.equals("delete") || s.equals("remove") || s.equals("clear") ||
+                s.equals("ಅಳಿಸು") || s.equals("ಅಳಿಸಿ") || s.equals("ಡಿಲೀಟ್") ||
+                s.equals("हटाओ") || s.equals("हटाएं") || s.equals("डिलीट") ||
+                s.equals("ഇല്ലാതാക്കൂ") || s.equals("ഡിലീറ്റ്") ||
+                s.equals("message") || s.equals("messages") || s.equals("last") ||
+                s.equals("ಸಂದೇಶ") || s.equals("ಕೊನೆಯ") ||
+                s.equals("संदेश") || s.equals("आखिरी") ||
+                s.equals("സന്ദേശം") || s.equals("അവസാന")) {
+            return false;
+        }
+
+        // 1. English commands: Available across all language settings ("en", "kn", "hi", "ml")
+        if (containsMatch(s, words,
+                "delete last message", "delete my last message", "delete the last message",
+                "delete last sent message", "delete my last sent message",
+                "delete recent message", "delete my recent message", "delete the recent message",
+                "delete latest message", "delete my latest message", "delete the latest message",
+                "remove last message", "remove my last message", "remove the last message",
+                "delete previous message", "delete my previous message", "delete the previous message")) {
+            return true;
+        }
+
+        // Flexible English structural match:
+        // Must contain (delete OR remove) AND (last OR recent OR latest OR previous) AND (message OR text)
+        boolean hasEngDeleteAction = words.contains("delete") || words.contains("remove");
+        boolean hasEngRecency = words.contains("last") || words.contains("recent") || words.contains("latest") || words.contains("previous");
+        boolean hasEngMessageNoun = words.contains("message") || words.contains("text") || words.contains("msg");
+        if (hasEngDeleteAction && hasEngRecency && hasEngMessageNoun) {
+            return true;
+        }
+
+        // 2. Regional language commands with STRICT isolation:
+        if (com.kannada.speechassistant.LanguageManager.LANG_KANNADA.equals(lang)) {
+            // Kannada ONLY - strictly isolated from Hindi and Malayalam
+            if (containsMatch(s, words,
+                    "ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸು", "ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸಿ",
+                    "ನಾನು ಕಳುಹಿಸಿದ ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸು", "ನಾನು ಕಳುಹಿಸಿದ ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸಿ",
+                    "ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸು", "ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸಿ",
+                    "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸು", "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸಿ",
+                    "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸು", "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸಿ",
+                    "ನಾನು ಕಳುಹಿಸಿದ ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸು", "ನಾನು ಕಳುಹಿಸಿದ ಕೊನೆಯ ಸಂದೇಶ ಅಳಿಸಿ",
+                    "ಕೊನೆಯ ಮೆಸೇಜ್ ಅಳಿಸು", "ಕೊನೆಯ ಮೆಸೇಜ್ ಅಳಿಸಿ",
+                    "ನನ್ನ ಕೊನೆಯ ಮೆಸೇಜ್ ಅಳಿಸು", "ನನ್ನ ಕೊನೆಯ ಮೆಸೇಜ್ ಅಳಿಸಿ",
+                    "ಕೊನೆಯ ಸಂದೇಶ ಡಿಲೀಟ್ ಮಾಡು", "ಕೊನೆಯ ಸಂದೇಶ ಡಿಲೀಟ್ ಮಾಡಿ",
+                    "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶ ಡಿಲೀಟ್ ಮಾಡು", "ನನ್ನ ಕೊನೆಯ ಸಂದೇಶ ಡಿಲೀಟ್ ಮಾಡಿ",
+                    "ಕೊನೆಯ ಮೆಸೇಜ್ ಡಿಲೀಟ್ ಮಾಡು", "ಕೊನೆಯ ಮೆಸೇಜ್ ಡಿಲೀಟ್ ಮಾಡಿ")) {
+                return true;
+            }
+
+            boolean hasKanDelete = s.contains("ಅಳಿಸು") || s.contains("ಅಳಿಸಿ") || (s.contains("ಡಿಲೀಟ್") && (s.contains("ಮಾಡು") || s.contains("ಮಾಡಿ")));
+            boolean hasKanLast = s.contains("ಕೊನೆಯ") || s.contains("ಕಡೆಯ");
+            boolean hasKanMessage = s.contains("ಸಂದೇಶ") || s.contains("ಮೆಸೇಜ್");
+            if (hasKanDelete && (hasKanLast || s.contains("ಕಳುಹಿಸಿದ")) && hasKanMessage) {
+                return true;
+            }
+        } else if (com.kannada.speechassistant.LanguageManager.LANG_HINDI.equals(lang)) {
+            // Hindi ONLY - strictly isolated from Kannada and Malayalam
+            if (containsMatch(s, words,
+                    "आखिरी संदेश हटाओ", "आखिरी संदेश हटाएं", "आखिरी संदेश हटा दीजिए",
+                    "मेरा आखिरी भेजा हुआ संदेश हटाओ", "मेरा आखिरी भेजा हुआ संदेश हटाएं",
+                    "मेरा आखिरी संदेश हटाओ", "मेरा आखिरी संदेश हटाएं", "मेरे आखिरी संदेश को हटाओ",
+                    "मेरा आखिरी भेजा संदेश हटाओ", "मेरा आखिरी भेजा गया संदेश हटाओ", "मेरा आखिरी भेजा संदेश हटाएं",
+                    "आखिरी मैसेज हटाओ", "आखिरी मैसेज हटाएं", "मेरा आखिरी मैसेज हटाओ", "मेरा आखिरी मैसेज हटाएं",
+                    "आखिरी संदेश डिलीट करो", "आखिरी संदेश डिलीट कीजिए",
+                    "मेरा आखिरी संदेश डिलीट करो", "मेरा आखिरी संदेश डिलीट कीजिए",
+                    "आखिरी मैसेज डिलीट करो", "मेरा आखिरी मैसेज डिलीट करो")) {
+                return true;
+            }
+
+            boolean hasHinDelete = s.contains("हटाओ") || s.contains("हटाएं") || s.contains("हटा दीजिए") || (s.contains("डिलीट") && s.contains("करो"));
+            boolean hasHinLast = s.contains("आखिरी") || s.contains("पिछला") || s.contains("भेजा");
+            boolean hasHinMessage = s.contains("संदेश") || s.contains("मैसेज");
+            if (hasHinDelete && hasHinLast && hasHinMessage) {
+                return true;
+            }
+        } else if (com.kannada.speechassistant.LanguageManager.LANG_MALAYALAM.equals(lang)) {
+            // Malayalam ONLY - strictly isolated from Kannada and Hindi
+            if (containsMatch(s, words,
+                    "അവസാന സന്ദേശം ഇല്ലാതാക്കൂ", "അവസാന സന്ദേശം ഇല്ലാതാക്കുക",
+                    "ഞാൻ അവസാനം അയച്ച സന്ദേശം ഇല്ലാതാക്കൂ", "ഞാൻ അവസാനം അയച്ച സന്ദേശം ഇല്ലാതാക്കുക",
+                    "അവസാനം അയച്ച സന്ദേശം ഇല്ലാതാക്കൂ", "അവസാനം അയച്ച സന്ദേശം ഇല്ലാതാക്കുക",
+                    "എന്റെ അവസാന സന്ദേശം ഇല്ലാതാക്കൂ", "എന്റെ അവസാന സന്ദേശം ഇല്ലാതാക്കുക",
+                    "എന്റെ അവസാനത്തെ സന്ദേശം ഇല്ലാതാക്കൂ",
+                    "അവസാന മെസേജ് ഇല്ലാതാക്കൂ", "അവസാന മെസ്സേജ് ഇല്ലാതാക്കൂ", "എന്റെ അവസാന മെസേജ് ഇല്ലാതാക്കൂ",
+                    "അവസാന സന്ദേശം ഒഴിവാക്കൂ", "അവസാന സന്ദേശം നീക്കം ചെയ്യൂ",
+                    "അവസാന സന്ദേശം ഡിലീറ്റ് ചെയ്യൂ", "അവസാന മെസേജ് ഡിലീറ്റ് ചെയ്യൂ")) {
+                return true;
+            }
+
+            boolean hasMalDelete = s.contains("ഇല്ലാതാക്കൂ") || s.contains("ഇല്ലാതാക്കുക") || s.contains("ഒഴിവാക്കൂ") ||
+                    s.contains("നീക്കം") || (s.contains("ഡിലീറ്റ്") && s.contains("ചെയ്യ"));
+            boolean hasMalLast = s.contains("അവസാന") || s.contains("അയച്ച");
+            boolean hasMalMessage = s.contains("സന്ദേശ") || s.contains("മെസേജ്") || s.contains("മെസ്സേജ്");
+            if (hasMalDelete && hasMalLast && hasMalMessage) {
+                return true;
+            }
         }
 
         return false;

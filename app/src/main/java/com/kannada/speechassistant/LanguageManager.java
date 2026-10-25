@@ -213,11 +213,12 @@ public class LanguageManager {
         String trimmed = message.trim();
         return trimmed.equals("ತುರ್ತು ಪರಿಸ್ಥಿತಿ! ಸಹಾಯ ಬೇಕು")
                 || trimmed.equals("ತುರ್ತು ಪರಿಸ್ಥಿತಿ ಸಹಾಯ ಬೇಕು")
-                || trimmed.equals("ಅടിയന്തര സഹായം വേണം!")
+                || trimmed.equals("\u0D05\u0D1F\u0D3F\u0D2F\u0D28\u0D4D\u0D24\u0D30 \u0D38\u0D39\u0D3E\u0D2F\u0D02 \u0D35\u0D47\u0D23\u0D02!")
                 || trimmed.equals("आपातकालीन मदद चाहिए!")
                 || trimmed.contains("ತುರ್ತು")
-                || trimmed.contains("ಅടിയന്തര")
-                || trimmed.contains("आपातकालीन");
+                || trimmed.contains("\u0D05\u0D1F\u0D3F\u0D2F\u0D28\u0D4D\u0D24\u0D30")
+                || trimmed.contains("आपातकालीन")
+                || trimmed.toLowerCase(Locale.ROOT).contains("emergency");
     }
 
     /**

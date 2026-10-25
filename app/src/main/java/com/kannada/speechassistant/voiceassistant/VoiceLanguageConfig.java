@@ -468,6 +468,77 @@ public final class VoiceLanguageConfig {
         }
     }
 
+    @NonNull
+    public static String getConfirmDeleteMessagePrompt(@Nullable String langCode, @NonNull String messageSnippet) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA:
+                return "ನೀವು ಕೊನೆಯದಾಗಿ ಕಳುಹಿಸಿದ ಸಂದೇಶ: " + messageSnippet + ". ಇದನ್ನು ಅಳಿಸಬೇಕೇ? ಅಳಿಸಲು ದೃಢೀಕರಿಸಿ ಅಥವಾ ರದ್ದುಮಾಡಿ ಎಂದು ಹೇಳಿ.";
+            case LANG_HINDI:
+                return "आपका आखिरी भेजा गया संदेश: " + messageSnippet + "। क्या आप इसे हटाना चाहते हैं? पुष्टि करें या रद्द करें।";
+            case LANG_MALAYALAM:
+                return "നിങ്ങൾ അവസാനം അയച്ച സന്ദേശം: " + messageSnippet + ". ഇത് ഇല്ലാതാക്കണോ? സ്ഥിരീകരിക്കുക അല്ലെങ്കിൽ റദ്ദാക്കുക.";
+            case LANG_ENGLISH:
+            default:
+                return "Your last sent message is: " + messageSnippet + ". Do you want to delete it? Say 'Confirm delete' or 'Cancel'.";
+        }
+    }
+
+    @NonNull
+    public static String getVoiceMessageSnippet(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ಧ್ವನಿ ಸಂದೇಶ";
+            case LANG_HINDI: return "वॉइस संदेश";
+            case LANG_MALAYALAM: return "വോയ്സ് മെസേജ്";
+            case LANG_ENGLISH: default: return "Voice message";
+        }
+    }
+
+    @NonNull
+    public static String getNoMessageToDeleteResponse(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ಅಳಿಸಲು ನೀವು ಕಳುಹಿಸಿದ ಯಾವುದೇ ಸಂದೇಶಗಳಿಲ್ಲ.";
+            case LANG_HINDI: return "हटाने के लिए आपका कोई भेजा गया संदेश नहीं है।";
+            case LANG_MALAYALAM: return "ഇല്ലാതാക്കാൻ നിങ്ങൾ അയച്ച സന്ദേശങ്ങളൊന്നുമില്ല.";
+            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE;
+        }
+    }
+
+    @NonNull
+    public static String getMessageDeletedResponse(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ನಿಮ್ಮ ಕೊನೆಯ ಸಂದೇಶವನ್ನು ಅಳಿಸಲಾಗಿದೆ.";
+            case LANG_HINDI: return "आपका आखिरी संदेश हटा दिया गया है।";
+            case LANG_MALAYALAM: return "നിങ്ങളുടെ അവസാന സന്ദേശം ഇല്ലാതാക്കി.";
+            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_MESSAGE_DELETED;
+        }
+    }
+
+    @NonNull
+    public static String getDeleteCancelledResponse(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ಸಂದೇಶ ಅಳಿಸುವಿಕೆಯನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ.";
+            case LANG_HINDI: return "संदेश हटाना रद्द कर दिया गया।";
+            case LANG_MALAYALAM: return "സന്ദേശം ഇല്ലാതാക്കുന്നത് റദ്ദാക്കി.";
+            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_DELETE_CANCELLED;
+        }
+    }
+
+    @NonNull
+    public static String getDeleteFailedResponse(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_KANNADA: return "ಸಂದೇಶವನ್ನು ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.";
+            case LANG_HINDI: return "संदेश हटाया नहीं जा सका। कृपया पुनः प्रयास करें।";
+            case LANG_MALAYALAM: return "സന്ദേശം ഇല്ലാതാക്കാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.";
+            case LANG_ENGLISH: default: return VoiceCommandConstants.RESPONSE_DELETE_FAILED;
+        }
+    }
+
     /**
      * Returns language-specific spoken responses for Blind User standard voice commands.
      */
@@ -500,6 +571,18 @@ public final class VoiceLanguageConfig {
         }
         if (VoiceCommandConstants.PROMPT_CONFIRM_SEND_VOICE_MESSAGE.equals(defaultEnglishResponse)) {
             return getConfirmSendVoiceMessagePrompt(code);
+        }
+        if (VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE.equals(defaultEnglishResponse)) {
+            return getNoMessageToDeleteResponse(code);
+        }
+        if (VoiceCommandConstants.RESPONSE_MESSAGE_DELETED.equals(defaultEnglishResponse)) {
+            return getMessageDeletedResponse(code);
+        }
+        if (VoiceCommandConstants.RESPONSE_DELETE_CANCELLED.equals(defaultEnglishResponse)) {
+            return getDeleteCancelledResponse(code);
+        }
+        if (VoiceCommandConstants.RESPONSE_DELETE_FAILED.equals(defaultEnglishResponse)) {
+            return getDeleteFailedResponse(code);
         }
 
         switch (commandId) {
@@ -659,6 +742,26 @@ public final class VoiceLanguageConfig {
                     return getNoNotificationsResponse(code);
                 }
                 return defaultEnglishResponse;
+            case VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE:
+                if (VoiceCommandConstants.RESPONSE_CALL_ACTIVE.equals(defaultEnglishResponse)) {
+                    return getCallActiveResponse(code);
+                }
+                if (VoiceCommandConstants.RESPONSE_NO_CAREGIVER.equals(defaultEnglishResponse)) {
+                    return getNoCaregiverResponse(code);
+                }
+                if (VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE.equals(defaultEnglishResponse)) {
+                    return getNoMessageToDeleteResponse(code);
+                }
+                if (VoiceCommandConstants.RESPONSE_MESSAGE_DELETED.equals(defaultEnglishResponse)) {
+                    return getMessageDeletedResponse(code);
+                }
+                if (VoiceCommandConstants.RESPONSE_DELETE_CANCELLED.equals(defaultEnglishResponse)) {
+                    return getDeleteCancelledResponse(code);
+                }
+                if (VoiceCommandConstants.RESPONSE_DELETE_FAILED.equals(defaultEnglishResponse)) {
+                    return getDeleteFailedResponse(code);
+                }
+                return defaultEnglishResponse;
             default:
                 return defaultEnglishResponse;
         }
@@ -791,6 +894,7 @@ public final class VoiceLanguageConfig {
     public static String getDeafHomeOpenedText(@Nullable String langCode) {
         String code = LanguageManager.normalizeLanguageCode(langCode);
         switch (code) {
+            case LANG_ENGLISH: return "Home opened";
             case LANG_HINDI: return "होम खोला गया";
             case LANG_MALAYALAM: return "ഹോം തുറന്നു";
             case LANG_KANNADA: default: return "ಮುಖಪುಟ ತೆರೆಯಲಾಗಿದೆ";
@@ -801,6 +905,7 @@ public final class VoiceLanguageConfig {
     public static String getDeafSettingsOpenedText(@Nullable String langCode) {
         String code = LanguageManager.normalizeLanguageCode(langCode);
         switch (code) {
+            case LANG_ENGLISH: return "Settings opened";
             case LANG_HINDI: return "सेटिंग्स खोली गई";
             case LANG_MALAYALAM: return "സെറ്റിംഗ്സ് തുറന്നു";
             case LANG_KANNADA: default: return "ಸೆಟ್ಟಿಂಗ್ಸ್ ತೆರೆಯಲಾಗಿದೆ";
@@ -811,6 +916,7 @@ public final class VoiceLanguageConfig {
     public static String getDeafCaregiverOpenedText(@Nullable String langCode) {
         String code = LanguageManager.normalizeLanguageCode(langCode);
         switch (code) {
+            case LANG_ENGLISH: return "Caregiver opened";
             case LANG_HINDI: return "केयरगिवर खोला गया";
             case LANG_MALAYALAM: return "കെയർഗിവർ തുറന്നു";
             case LANG_KANNADA: default: return "ಕೇರ್ಗಿವರ್ ತೆರೆಯಲಾಗಿದೆ";
@@ -821,9 +927,35 @@ public final class VoiceLanguageConfig {
     public static String getDeafEmergencyAlertSentText(@Nullable String langCode) {
         String code = LanguageManager.normalizeLanguageCode(langCode);
         switch (code) {
+            case LANG_ENGLISH: return "Emergency alert sent";
             case LANG_HINDI: return "आपातकालीन अलर्ट भेजा गया";
             case LANG_MALAYALAM: return "അടിയന്തര മുന്നറിയിപ്പ് അയച്ചു";
             case LANG_KANNADA: default: return "ತುರ್ತು ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಲಾಗಿದೆ";
+        }
+    }
+
+    @NonNull
+    public static String getDeafSuccessTextForCommand(@NonNull String commandId,
+                                                      @NonNull String defaultResponse,
+                                                      @Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (commandId) {
+            case VoiceCommandConstants.CMD_OPEN_HOME:
+                return getDeafHomeOpenedText(code);
+            case VoiceCommandConstants.CMD_OPEN_PROFILE:
+                return getDeafProfileOpenedText(code);
+            case VoiceCommandConstants.CMD_OPEN_SETTINGS:
+                return getDeafSettingsOpenedText(code);
+            case VoiceCommandConstants.CMD_OPEN_CAREGIVER:
+            case VoiceCommandConstants.CMD_OPEN_CAREGIVER_CONNECTION:
+            case VoiceCommandConstants.CMD_OPEN_MESSAGES:
+            case VoiceCommandConstants.CMD_OPEN_COMMUNICATION:
+                return getDeafCaregiverOpenedText(code);
+            case VoiceCommandConstants.CMD_OPEN_EMERGENCY:
+            case VoiceCommandConstants.CMD_OPEN_EMERGENCY_ALERT:
+                return getDeafEmergencyAlertSentText(code);
+            default:
+                return getLocalizedResponse(commandId, defaultResponse, code);
         }
     }
 }

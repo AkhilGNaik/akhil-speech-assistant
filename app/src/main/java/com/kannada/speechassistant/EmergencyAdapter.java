@@ -121,8 +121,9 @@ public class EmergencyAdapter extends RecyclerView.Adapter<EmergencyAdapter.Emer
     public int getPositionOfAlert(String alertId) {
         if (alertId == null) return -1;
         for (int i = 0; i < filteredAlerts.size(); i++) {
-            String id = filteredAlerts.get(i).getString("alertId");
-            if (alertId.equals(id)) {
+            DocumentSnapshot doc = filteredAlerts.get(i);
+            String id = doc.getString("alertId");
+            if (alertId.equals(id) || alertId.equals(doc.getId())) {
                 return i;
             }
         }

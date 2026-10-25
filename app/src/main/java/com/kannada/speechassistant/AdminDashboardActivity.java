@@ -1,6 +1,8 @@
 package com.kannada.speechassistant;
 
 import android.Manifest;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -166,6 +168,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private View btnCaregiverChatSend;
     private View btnCaregiverChatEmoji;
     private View btnCaregiverChatMic;
+    private View btnCaregiverCallPatient;
     private android.speech.SpeechRecognizer caregiverSpeechRecognizer;
     private android.content.Intent caregiverSpeechIntent;
     private boolean isCaregiverRecording = false;
@@ -509,8 +512,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 currentRoleFilter = RoleManager.ROLE_SPEECH_IMPAIRED;
             } else if (checkedId == R.id.chipBlind) {
                 currentRoleFilter = RoleManager.ROLE_BLIND_USER;
-            } else if (checkedId == R.id.chipCaregivers) {
-                currentRoleFilter = RoleManager.ROLE_ADMIN_CAREGIVER;
             }
             userAdapter.filter(currentSearchQuery, currentRoleFilter);
             updateCountLabel();
@@ -538,6 +539,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             public void onAcknowledgeClick(DocumentSnapshot doc) {
                 stopEmergencyRingtoneSound();
                 String alertId = doc.getString("alertId");
+                if (alertId == null || alertId.isEmpty()) alertId = doc.getId();
                 if (alertId != null) {
                     acknowledgeAlertInFirestore(alertId);
                 }
@@ -547,6 +549,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             public void onResolveClick(DocumentSnapshot doc) {
                 stopEmergencyRingtoneSound();
                 String alertId = doc.getString("alertId");
+                if (alertId == null || alertId.isEmpty()) alertId = doc.getId();
                 if (alertId != null) {
                     resolveAlertInFirestore(alertId);
                 }
@@ -644,6 +647,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     CaregiverSoundManager.speakWithVolume(tts, text, "CaregiverMessageTTS", AdminDashboardActivity.this);
                 }
             });
+            caregiverChatAdapter.setOnMessageDeleteListener(this::showCaregiverDeleteDialog);
             rvCaregiverChatMessages.setAdapter(caregiverChatAdapter);
             rvCaregiverChatMessages.setOnTouchListener((v, event) -> {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
@@ -670,10 +674,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
             });
         }
 
-        View btnCaregiverCallPatient = layoutCommunicationTab != null ? layoutCommunicationTab.findViewById(R.id.btnCaregiverCallPatient) : findViewById(R.id.btnCaregiverCallPatient);
+        btnCaregiverCallPatient = layoutCommunicationTab != null ? layoutCommunicationTab.findViewById(R.id.btnCaregiverCallPatient) : findViewById(R.id.btnCaregiverCallPatient);
         if (btnCaregiverCallPatient != null) {
             btnCaregiverCallPatient.setOnClickListener(v -> {
                 if (selectedPatientUid != null && !selectedPatientUid.isEmpty()) {
+                    if (isDeafOrMuteRole(selectedPatientRole)) {
+                        Toast.makeText(this, "Voice call is not supported for Deaf and Mute users", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     initiateCaregiverVoiceCall(selectedPatientUid, selectedPatientName, selectedPatientRole);
                 } else {
                     Toast.makeText(this, "Select a patient to call", Toast.LENGTH_SHORT).show();
@@ -784,7 +792,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
                                     }
                                 }
                                 if (!exists) {
-                                    Map<String, Object> map = new HashMap<>(doc.getData());
+                                    Map<String, Object> data = doc.getData();
+                                    Map<String, Object> map = data != null ? new HashMap<>(data) : new HashMap<>();
                                     map.put("docId", doc.getId());
                                     map.put("senderUid", sender);
                                     map.put("receiverUid", receiver);
@@ -935,7 +944,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
                             if (receiverEmail == null || receiverEmail.isEmpty()) receiverEmail = doc.getString("caregiverEmail");
                             
                             if (currentEmail != null && currentEmail.equalsIgnoreCase(receiverEmail)) {
-                                Map<String, Object> map = new HashMap<>(doc.getData());
+                                Map<String, Object> data = doc.getData();
+                                Map<String, Object> map = data != null ? new HashMap<>(data) : new HashMap<>();
                                 map.put("docId", doc.getId());
                                 
                                 String senderUid = doc.getString("senderUid");
@@ -1168,42 +1178,46 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (latestUsersSnapshot != null) {
             for (DocumentSnapshot doc : latestUsersSnapshot.getDocuments()) {
                 String role = doc.getString("role");
-                if (!RoleManager.ROLE_ADMIN_CAREGIVER.equals(role)) {
-                    String uid = doc.getId();
-                    String email = doc.getString("email");
-                    String normalizedEmail = (email != null && !email.trim().isEmpty()) ? email.toLowerCase().trim() : null;
+                String uid = doc.getId();
+                String email = doc.getString("email");
+                String normalizedEmail = (email != null && !email.trim().isEmpty()) ? email.toLowerCase().trim() : null;
 
-                    boolean isConnected = false;
-                    if (uid != null && connectedPatientUids.contains(uid)) {
-                        isConnected = true;
-                    }
-                    if (normalizedEmail != null && connectedPatientEmails.contains(normalizedEmail)) {
-                        isConnected = true;
-                    }
-                    if (isConnected) {
-                        boolean isDuplicate = false;
-                        if (normalizedEmail != null && seenEmails.contains(normalizedEmail)) {
-                            isDuplicate = true;
-                        }
-                        if (uid != null && !uid.trim().isEmpty() && seenUids.contains(uid.trim())) {
-                            isDuplicate = true;
-                        }
+                boolean isConnected = false;
+                if (uid != null && connectedPatientUids.contains(uid)) {
+                    isConnected = true;
+                }
+                if (normalizedEmail != null && connectedPatientEmails.contains(normalizedEmail)) {
+                    isConnected = true;
+                }
+                boolean isCaregiver = RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(role)
+                        || (role != null && (role.toLowerCase().contains("caregiver") || role.toLowerCase().contains("admin")));
+                boolean isCurrentUser = (currentUid != null && currentUid.equals(uid))
+                        || (currentEmail != null && normalizedEmail != null && currentEmail.equalsIgnoreCase(normalizedEmail));
 
-                        if (!isDuplicate) {
-                            if (normalizedEmail != null) seenEmails.add(normalizedEmail);
-                            if (uid != null && !uid.trim().isEmpty()) seenUids.add(uid.trim());
-                            userRecords.add(new UserRecord(doc));
-                        } else {
-                            // Stale duplicate document found in Firestore users collection
-                            // latestUsersSnapshot is sorted by registrationDate DESCENDING,
-                            // so the first one seen was the latest. This one is an older duplicate.
-                            Log.w(TAG, "Duplicate user found in Firestore with email: " + normalizedEmail + " (docId=" + uid + "). Cleaning up stale duplicate.");
-                            try {
-                                doc.getReference().delete()
-                                        .addOnSuccessListener(aVoid -> Log.i(TAG, "Successfully removed stale duplicate user document: " + uid))
-                                        .addOnFailureListener(e -> Log.w(TAG, "Could not delete stale user document: " + e.getMessage()));
-                            } catch (Exception ignored) {}
-                        }
+                // Only show connected users - NEVER show caregivers or the caregiver themselves
+                if (isConnected && !isCaregiver && !isCurrentUser) {
+                    boolean isDuplicate = false;
+                    if (normalizedEmail != null && seenEmails.contains(normalizedEmail)) {
+                        isDuplicate = true;
+                    }
+                    if (uid != null && !uid.trim().isEmpty() && seenUids.contains(uid.trim())) {
+                        isDuplicate = true;
+                    }
+
+                    if (!isDuplicate) {
+                        if (normalizedEmail != null) seenEmails.add(normalizedEmail);
+                        if (uid != null && !uid.trim().isEmpty()) seenUids.add(uid.trim());
+                        userRecords.add(new UserRecord(doc));
+                    } else {
+                        // Stale duplicate document found in Firestore users collection
+                        // latestUsersSnapshot is sorted by registrationDate DESCENDING,
+                        // so the first one seen was the latest. This one is an older duplicate.
+                        Log.w(TAG, "Duplicate user found in Firestore with email: " + normalizedEmail + " (docId=" + uid + "). Cleaning up stale duplicate.");
+                        try {
+                            doc.getReference().delete()
+                                    .addOnSuccessListener(aVoid -> Log.i(TAG, "Successfully removed stale duplicate user document: " + uid))
+                                    .addOnFailureListener(e -> Log.w(TAG, "Could not delete stale user document: " + e.getMessage()));
+                        } catch (Exception ignored) {}
                     }
                 }
             }
@@ -1241,7 +1255,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     uRole = (String) conn.get("senderRole");
                 }
 
-                if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(uRole)) {
+                boolean isCaregiverRole = RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(uRole)
+                        || (uRole != null && (uRole.toLowerCase().contains("caregiver") || uRole.toLowerCase().contains("admin")));
+                if (isCaregiverRole) {
+                    continue;
+                }
+
+                if ((currentEmail != null && currentEmail.equalsIgnoreCase(uEmail))
+                        || (currentUid != null && currentUid.equals(uUid))) {
                     continue;
                 }
 
@@ -1404,6 +1425,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
             if (newestNewAlert != null) {
                 String alertId = newestNewAlert.getString("alertId");
+                if (alertId == null || alertId.isEmpty()) alertId = newestNewAlert.getId();
                 if (alertId != null && !shownPopupAlertIds.contains(alertId)) {
                     shownPopupAlertIds.add(alertId);
                     showEmergencyPopupDialog(newestNewAlert);
@@ -1422,7 +1444,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (activeEmergencyDialog != null && activeEmergencyDialog.isShowing() && currentDialogAlertId != null) {
             boolean dialogAlertStillNew = false;
             for (DocumentSnapshot doc : activeList) {
-                if (currentDialogAlertId.equals(doc.getString("alertId")) && "NEW".equalsIgnoreCase(doc.getString("status"))) {
+                String aId = doc.getString("alertId");
+                if (aId == null || aId.isEmpty()) aId = doc.getId();
+                if (currentDialogAlertId.equals(aId) && "NEW".equalsIgnoreCase(doc.getString("status"))) {
                     dialogAlertStillNew = true;
                     break;
                 }
@@ -1441,7 +1465,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
             activeEmergencyDialog.dismiss();
         }
 
-        String alertId = doc.getString("alertId");
+        String rawAlertId = doc.getString("alertId");
+        final String alertId = (rawAlertId != null && !rawAlertId.trim().isEmpty())
+                ? rawAlertId.trim()
+                : (doc.getId() != null ? doc.getId() : "");
         String name = doc.getString("patientName");
         String message = doc.getString("message");
         Timestamp ts = doc.getTimestamp("timestamp");
@@ -1661,6 +1688,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if ("NEW".equalsIgnoreCase(status)) {
             builder.setNegativeButton("Acknowledge", (dialog, which) -> {
                 String alertId = doc.getString("alertId");
+                if (alertId == null || alertId.isEmpty()) alertId = doc.getId();
                 if (alertId != null) {
                     acknowledgeAlertInFirestore(alertId);
                 }
@@ -1669,6 +1697,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } else if ("ACKNOWLEDGED".equalsIgnoreCase(status)) {
             builder.setNegativeButton("Resolve", (dialog, which) -> {
                 String alertId = doc.getString("alertId");
+                if (alertId == null || alertId.isEmpty()) alertId = doc.getId();
                 if (alertId != null) {
                     resolveAlertInFirestore(alertId);
                 }
@@ -1700,12 +1729,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
         TextView dRole = dialogView.findViewById(R.id.dialogRoleBadge);
         TextView dEmail = dialogView.findViewById(R.id.dialogEmail);
         TextView dRegDate = dialogView.findViewById(R.id.dialogRegDate);
+        TextView dLanguage = dialogView.findViewById(R.id.dialogLanguage);
         TextView dConnections = dialogView.findViewById(R.id.dialogConnections);
         TextView dAlerts = dialogView.findViewById(R.id.dialogAlertCount);
         MaterialButton dClose = dialogView.findViewById(R.id.dialogBtnClose);
 
         dName.setText(name);
         dEmail.setText(email);
+
+        String rawLang = userDoc.getString("language");
+        String langDisplay = LanguageManager.getLanguageDisplayName(rawLang);
+        if (dLanguage != null) {
+            dLanguage.setText(langDisplay);
+        }
 
         // Format role badge in dialog
         if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
@@ -1745,6 +1781,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (uid != null && uid.equals(myUid)) {
             dChat.setVisibility(View.GONE);
             if (dCall != null) dCall.setVisibility(View.GONE);
+        }
+        if (dCall != null && isDeafOrMuteRole(role)) {
+            dCall.setVisibility(View.GONE);
         }
         
         final String finalName = name;
@@ -2016,13 +2055,27 @@ public class AdminDashboardActivity extends AppCompatActivity {
                                     pEmail = senderEmail;
                                     pRole = senderRole != null ? senderRole : RoleManager.ROLE_SPEECH_IMPAIRED;
                                 }
-                                
+
+                                // Skip if the connected party is the logged-in user themselves
+                                boolean isSelf = (currentEmail != null && currentEmail.equalsIgnoreCase(pEmail))
+                                        || (currentUid != null && currentUid.equals(pUid));
+                                if (isSelf) {
+                                    continue;
+                                }
+
+                                boolean isCaregiverRole = RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(pRole)
+                                        || (pRole != null && (pRole.toLowerCase().contains("caregiver") || pRole.toLowerCase().contains("admin")));
+
                                 if (latestUsersSnapshot != null && pUid != null) {
                                     for (DocumentSnapshot uDoc : latestUsersSnapshot.getDocuments()) {
                                         if (pUid.equals(uDoc.getId()) || (pEmail != null && pEmail.equalsIgnoreCase(uDoc.getString("email")))) {
                                             String realRole = uDoc.getString("role");
-                                            if (realRole != null && !realRole.isEmpty() && !RoleManager.ROLE_ADMIN_CAREGIVER.equals(realRole)) {
-                                                pRole = realRole;
+                                            if (realRole != null && !realRole.isEmpty()) {
+                                                if (RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(realRole) || realRole.toLowerCase().contains("caregiver") || realRole.toLowerCase().contains("admin")) {
+                                                    isCaregiverRole = true;
+                                                } else {
+                                                    pRole = realRole;
+                                                }
                                             }
                                             String realName = uDoc.getString("name");
                                             if (realName != null && !realName.isEmpty()) {
@@ -2031,6 +2084,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                                             break;
                                         }
                                     }
+                                }
+
+                                if (isCaregiverRole) {
+                                    continue;
                                 }
                                 
                                 if (pUid != null) {
@@ -2111,6 +2168,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                                     pName = senderName != null ? senderName : (senderEmail != null ? senderEmail.split("@")[0] : "Patient");
                                     pEmail = senderEmail;
                                     pRole = senderRole != null ? senderRole : RoleManager.ROLE_SPEECH_IMPAIRED;
+                                }
+
+                                boolean isSelf = (currentEmail != null && currentEmail.equalsIgnoreCase(pEmail))
+                                        || (currentUid != null && currentUid.equals(pUid));
+                                if (isSelf) {
+                                    continue;
+                                }
+
+                                boolean isCaregiverRole = RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(pRole)
+                                        || (pRole != null && (pRole.toLowerCase().contains("caregiver") || pRole.toLowerCase().contains("admin")));
+                                if (isCaregiverRole) {
+                                    continue;
                                 }
                                 
                                 boolean exists = false;
@@ -2342,11 +2411,35 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (layoutCaregiverChatEmptyState != null) {
             layoutCaregiverChatEmptyState.setVisibility(View.VISIBLE);
         }
+        if (btnCaregiverChatMic != null) {
+            btnCaregiverChatMic.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private boolean isDeafUserRole(String role) {
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(Locale.ROOT);
+        return r.contains("deaf")
+                || RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(role)
+                || RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(role)
+                || role.contains("ಕಿವುಡ")
+                || role.contains("ಅಶಕ್ತ");
+    }
+
+    private boolean isDeafOrMuteRole(String role) {
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(Locale.ROOT);
+        return r.contains("deaf") || r.contains("mute") || r.contains("speech");
     }
 
     private void initiateCaregiverVoiceCall(String targetUid, String targetName, String targetRole) {
         if (targetUid == null || targetUid.isEmpty()) {
             Toast.makeText(this, "Cannot initiate call: User ID unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (isDeafOrMuteRole(targetRole)) {
+            Toast.makeText(this, "Voice call is not supported for Deaf and Mute users", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -2399,6 +2492,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         selectedPatientRole = patient.getString("role");
         selectedPatientEmail = patient.getString("email");
         selectedPatientLanguage = patient.getString("language");
+        if (btnCaregiverCallPatient != null) {
+            btnCaregiverCallPatient.setVisibility(isDeafOrMuteRole(selectedPatientRole) ? View.GONE : View.VISIBLE);
+        }
+        if (btnCaregiverChatMic != null) {
+            btnCaregiverChatMic.setVisibility(isDeafUserRole(selectedPatientRole) ? View.GONE : View.VISIBLE);
+        }
         String name = selectedPatientName;
 
         txtChatHeaderName.setText(name != null ? name : "Patient");
@@ -2489,7 +2588,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
             }
 
             if (value != null) {
-                LocalConnectionSimulator.clearLocalMessages(AdminDashboardActivity.this, chatId);
                 List<DocumentSnapshot> docs = value.getDocuments();
                 Log.d("BlindVoiceMessage", "VOICE_MESSAGE_RECEIVED: count = " + docs.size());
 
@@ -2502,8 +2600,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 List<Map<String, Object>> locals = LocalConnectionSimulator.getLocalMessages(AdminDashboardActivity.this, chatId);
                 for (Map<String, Object> local : locals) {
                     boolean dup = false;
+                    Object localMsg = local.get("message");
                     for (ChatMessage m : chatMsgs) {
-                        if (m.getMessage().equals(local.get("message")) && 
+                        if (localMsg != null && localMsg.equals(m.getMessage()) && 
                             m.getTimestamp() != null && 
                             local.get("timestamp") != null &&
                             Math.abs(m.getTimestamp().toDate().getTime() - ((com.google.firebase.Timestamp)local.get("timestamp")).toDate().getTime()) < 5000) {
@@ -2514,6 +2613,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     if (!dup) {
                         chatMsgs.add(new ChatMessage(local));
                     }
+                }
+
+                if (!docs.isEmpty()) {
+                    LocalConnectionSimulator.clearLocalMessages(AdminDashboardActivity.this, chatId);
                 }
 
                 // Sort messages chronologically by timestamp in Java memory
@@ -2686,6 +2789,118 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 });
     }
 
+    private final java.util.Set<String> deletingCaregiverMessageIds = new java.util.HashSet<>();
+
+    public void showCaregiverDeleteDialog(@NonNull ChatMessage message) {
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: outgoing message sent by currently authenticated caregiver only
+        if (myUid == null || myUid.isEmpty() || !myUid.equals(message.getSenderId())) {
+            Toast.makeText(this, "Cannot delete patient messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete this message?")
+                .setMessage("\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    performDeleteCaregiverMessage(message);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void performDeleteCaregiverMessage(ChatMessage message) {
+        final String messageId = message.getId();
+        final String messageText = message.getMessage();
+
+        // Prevent accidental duplicate deletion requests
+        String trackingKey = (messageId != null && !messageId.isEmpty()) ? messageId : messageText;
+        if (trackingKey != null && deletingCaregiverMessageIds.contains(trackingKey)) {
+            return;
+        }
+        if (trackingKey != null) {
+            deletingCaregiverMessageIds.add(trackingKey);
+        }
+
+        // Clean up exclusively associated media from Firebase Storage if present
+        String audioUrl = message.getAudioUrl();
+        if (audioUrl != null && !audioUrl.isEmpty() && audioUrl.contains("firebasestorage.googleapis.com")) {
+            try {
+                com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(audioUrl).delete()
+                        .addOnFailureListener(err -> Log.w(TAG, "Failed to clean audio media file", err));
+            } catch (Exception ignored) {}
+        }
+
+        // Deterministic chatId for offline/local storage cleanup
+        String chatId = null;
+        if (selectedPatientUid != null && !selectedPatientUid.isEmpty() && currentUid != null && !currentUid.isEmpty()) {
+            if (currentUid.compareTo(selectedPatientUid) < 0) {
+                chatId = currentUid + "_" + selectedPatientUid;
+            } else {
+                chatId = selectedPatientUid + "_" + currentUid;
+            }
+        }
+        final String finalChatId = chatId;
+
+        if (messageId != null && !messageId.trim().isEmpty()) {
+            if (db == null) {
+                db = FirebaseFirestore.getInstance();
+            }
+            db.collection("caregiver_messages").document(messageId)
+                    .delete()
+                    .addOnSuccessListener(aVoid -> {
+                        if (trackingKey != null) deletingCaregiverMessageIds.remove(trackingKey);
+                        if (finalChatId != null) {
+                            LocalConnectionSimulator.deleteLocalMessage(this, finalChatId, messageId);
+                        }
+                        runOnUiThread(() -> {
+                            if (caregiverChatAdapter != null) {
+                                caregiverChatAdapter.removeMessageById(messageId);
+                                caregiverChatAdapter.removeMessage(message);
+                            }
+                            Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show();
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        if (trackingKey != null) deletingCaregiverMessageIds.remove(trackingKey);
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Failed to delete message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+                    });
+        } else {
+            // Local fallback cleanup when message has no remote Firestore document ID
+            if (trackingKey != null) deletingCaregiverMessageIds.remove(trackingKey);
+            if (finalChatId != null) {
+                LocalConnectionSimulator.deleteLocalMessage(this, finalChatId, messageText);
+            }
+            runOnUiThread(() -> {
+                if (caregiverChatAdapter != null) {
+                    caregiverChatAdapter.removeMessage(message);
+                }
+                Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
     private void showNotificationSettingsDialog() {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_notification_settings, null);
@@ -2786,7 +3001,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void playChatNotificationSound3Times() {
-        CaregiverSoundManager.playNotificationSound3Times(this);
+        CaregiverSoundManager.playNotificationSound2Times(this);
     }
 
     private void playEmergencyRingtoneSound() {
@@ -3024,6 +3239,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void toggleCaregiverVoiceRecording() {
+        if (isDeafUserRole(selectedPatientRole)) {
+            Toast.makeText(this, "Voice messages cannot be sent to Deaf users", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (isCaregiverAudioRecording) {
             stopAndSendCaregiverVoiceRecording();
         } else {
@@ -3044,6 +3263,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void startCaregiverVoiceRecording() {
+        if (isDeafUserRole(selectedPatientRole)) {
+            Toast.makeText(this, "Voice messages cannot be sent to Deaf users", Toast.LENGTH_SHORT).show();
+            return;
+        }
         CaregiverChatAdapter.stopAudioPlayback();
         try {
             caregiverTempAudioFile = new File(getExternalCacheDir(), "caregiver_voice_" + System.currentTimeMillis() + ".m4a");
@@ -3052,10 +3275,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             } else {
                 caregiverMediaRecorder = new MediaRecorder();
             }
-            caregiverMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            caregiverMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            caregiverMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            caregiverMediaRecorder.setOutputFile(caregiverTempAudioFile.getAbsolutePath());
+            VoiceAudioHelper.configureSpeechMediaRecorder(caregiverMediaRecorder, caregiverTempAudioFile);
             caregiverMediaRecorder.prepare();
             caregiverMediaRecorder.start();
 
@@ -3141,68 +3361,24 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (audioFile == null || !audioFile.exists()) return;
         if (targetUid == null || targetUid.isEmpty()) return;
 
-        String storagePath = "voice_messages/" + currentUid + "/" + System.currentTimeMillis() + ".m4a";
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(storagePath);
+        VoiceAudioHelper.uploadVoiceMessage(this, audioFile, durationSeconds, currentUid, new VoiceAudioHelper.UploadVoiceCallback() {
+            @Override
+            public void onSuccess(@NonNull String downloadUrl, int durationSecs, @Nullable String base64Audio) {
+                runOnUiThread(() -> saveCaregiverVoiceMessageToFirestore(downloadUrl, durationSecs, targetUid, targetRole, base64Audio, audioFile));
+            }
 
-        storageRef.putFile(Uri.fromFile(audioFile))
-                .addOnSuccessListener(taskSnapshot -> {
-                    storageRef.getDownloadUrl().addOnSuccessListener(downloadUri -> {
-                        String downloadUrl = downloadUri.toString();
-                        saveCaregiverVoiceMessageToFirestore(downloadUrl, durationSeconds, targetUid, targetRole, audioFile);
-                    }).addOnFailureListener(e -> {
-                        uploadCaregiverViaDirectStorage(audioFile, durationSeconds, storagePath, targetUid, targetRole);
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    uploadCaregiverViaDirectStorage(audioFile, durationSeconds, storagePath, targetUid, targetRole);
-                });
-    }
-
-    private void uploadCaregiverViaDirectStorage(File audioFile, int durationSeconds, String storagePath, String targetUid, String targetRole) {
-        caregiverNetworkExecutor.execute(() -> {
-            try {
-                URL url = new URL("https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/" + storagePath);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setDoOutput(true);
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(20000);
-                String apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmemR2emVhaHZoZmNia2h4aG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0Nzc5NDAsImV4cCI6MjA4MjA1Mzk0MH0.-UzIibKLFuOAyTeECHLal4wNkX8o73ctAuG8BhcsOYs";
-                conn.setRequestProperty("apikey", apiKey);
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-                conn.setRequestProperty("Content-Type", "audio/m4a");
-                conn.setFixedLengthStreamingMode(audioFile.length());
-
-                try (FileInputStream fis = new FileInputStream(audioFile);
-                     OutputStream os = conn.getOutputStream()) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = fis.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
-                    }
-                    os.flush();
-                }
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode >= 200 && responseCode < 300) {
-                    String downloadUrl = "https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/public/" + storagePath;
-                    runOnUiThread(() -> saveCaregiverVoiceMessageToFirestore(downloadUrl, durationSeconds, targetUid, targetRole, audioFile));
-                } else {
-                    runOnUiThread(() -> {
-                        Toast.makeText(AdminDashboardActivity.this, "Unable to send voice message", Toast.LENGTH_SHORT).show();
-                        if (audioFile != null && audioFile.exists()) audioFile.delete();
-                    });
-                }
-            } catch (Exception e) {
+            @Override
+            public void onFailure(@NonNull Exception error) {
+                Log.e(TAG, "Voice message upload failure: " + error.getMessage(), error);
                 runOnUiThread(() -> {
-                    Toast.makeText(AdminDashboardActivity.this, "Unable to send voice message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AdminDashboardActivity.this, "Unable to send voice message: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     if (audioFile != null && audioFile.exists()) audioFile.delete();
                 });
             }
         });
     }
 
-    private void saveCaregiverVoiceMessageToFirestore(String downloadUrl, int durationSeconds, String targetUid, String targetRole, File localFile) {
+    private void saveCaregiverVoiceMessageToFirestore(String downloadUrl, int durationSeconds, String targetUid, String targetRole, @Nullable String base64Audio, File localFile) {
         String chatId;
         if (currentUid.compareTo(targetUid) < 0) {
             chatId = currentUid + "_" + targetUid;
@@ -3215,6 +3391,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         msg.put("senderId", currentUid);
         msg.put("senderUid", currentUid);
         msg.put("receiverId", targetUid);
+        msg.put("recipientEmail", selectedPatientEmail != null ? selectedPatientEmail.toLowerCase().trim() : "");
         msg.put("senderRole", RoleManager.ROLE_ADMIN_CAREGIVER);
         msg.put("receiverRole", targetRole != null ? targetRole : RoleManager.ROLE_BLIND_USER);
         msg.put("message", "🎤 Voice Message");
@@ -3224,6 +3401,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         msg.put("type", "voice");
         msg.put("isVoice", true);
         msg.put("audioUrl", downloadUrl);
+        if (base64Audio != null && !base64Audio.isEmpty()) {
+            msg.put("audioBase64", base64Audio);
+        }
         msg.put("audioDuration", durationSeconds);
         msg.put("status", "sent");
         msg.put("delivered", false);
@@ -3233,13 +3413,26 @@ public class AdminDashboardActivity extends AppCompatActivity {
         db.collection("caregiver_messages")
                 .add(msg)
                 .addOnSuccessListener(documentReference -> {
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("messageId", documentReference.getId());
+                    updates.put("status", "sent");
+                    updates.put("timestamp", FieldValue.serverTimestamp());
+                    documentReference.update(updates);
+
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        documentReference.update("status", "delivered", "delivered", true);
+                    }, 1000);
+
                     Toast.makeText(AdminDashboardActivity.this, "✓ Voice message sent", Toast.LENGTH_SHORT).show();
                     if (localFile != null && localFile.exists()) {
                         localFile.delete();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(AdminDashboardActivity.this, "Failed to deliver voice message", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Failed to deliver voice message to Firestore", e);
+                    LocalConnectionSimulator.saveLocalMessage(AdminDashboardActivity.this, chatId, msg);
+                    loadCaregiverLocalMessagesFallback(selectedPatientUid);
+                    Toast.makeText(AdminDashboardActivity.this, "Saved voice message locally (Offline)", Toast.LENGTH_SHORT).show();
                     if (localFile != null && localFile.exists()) {
                         localFile.delete();
                     }
@@ -3252,7 +3445,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (requestCode == 102) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (selectedPatientUid != null && !selectedPatientUid.isEmpty()) {
-                    initiateCaregiverVoiceCall(selectedPatientUid, selectedPatientName, selectedPatientRole);
+                    if (!isDeafOrMuteRole(selectedPatientRole)) {
+                        initiateCaregiverVoiceCall(selectedPatientUid, selectedPatientName, selectedPatientRole);
+                    }
                 }
             } else {
                 Toast.makeText(this, "Microphone permission is required to make voice calls", Toast.LENGTH_SHORT).show();

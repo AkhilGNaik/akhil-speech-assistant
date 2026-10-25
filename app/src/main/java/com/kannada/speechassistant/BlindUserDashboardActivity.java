@@ -76,6 +76,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.kannada.speechassistant.voiceassistant.AppVoiceAssistant;
+import com.kannada.speechassistant.voiceassistant.VoiceLanguageConfig;
 import com.kannada.speechassistant.voiceassistant.WakeWordManager;
 
 /**
@@ -197,6 +199,9 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     // TextToSpeech for Accessible Feedback
     private TextToSpeech tts;
     private boolean isTtsInitialized = false;
+    private String pendingSpokenText = null;
+    private Runnable pendingOnDoneAction = null;
+    private final Handler ttsRetryHandler = new Handler(Looper.getMainLooper());
 
     // Audio Recorder Engine State
     private MediaRecorder mediaRecorder;
@@ -500,30 +505,62 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             tts = new TextToSpeech(getApplicationContext(), status -> {
                 if (status == TextToSpeech.SUCCESS) {
                     isTtsInitialized = true;
-                    String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-                    Locale locale = LanguageManager.getLocale(userLang);
-                    tts.setLanguage(locale);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        android.media.AudioAttributes aa = new android.media.AudioAttributes.Builder()
-                                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
-                                .build();
-                        tts.setAudioAttributes(aa);
-                    }
+                    applyTtsLanguage();
                     Log.i("BlindVoiceMessage", "TTS initialized with Google TTS engine successfully.");
+                    checkPendingSpeech();
                 } else {
-                    Log.e("BlindVoiceMessage", "TTS initialization failed with code: " + status);
+                    Log.w("BlindVoiceMessage", "Google TTS initialization failed with code: " + status + ", attempting fallback to default engine.");
+                    fallbackInitTextToSpeech();
                 }
             }, "com.google.android.tts");
         } catch (Exception e) {
+            fallbackInitTextToSpeech();
+        }
+    }
+
+    private void fallbackInitTextToSpeech() {
+        try {
             tts = new TextToSpeech(getApplicationContext(), status -> {
                 if (status == TextToSpeech.SUCCESS) {
                     isTtsInitialized = true;
-                    String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-                    Locale locale = LanguageManager.getLocale(userLang);
-                    tts.setLanguage(locale);
+                    applyTtsLanguage();
+                    Log.i("BlindVoiceMessage", "TTS initialized with default engine successfully.");
+                    checkPendingSpeech();
+                } else {
+                    Log.e("BlindVoiceMessage", "Fallback TTS initialization failed with code: " + status);
                 }
             });
+        } catch (Exception e) {
+            Log.e("BlindVoiceMessage", "Failed to instantiate fallback TextToSpeech: " + e.getMessage());
+        }
+    }
+
+    private void applyTtsLanguage() {
+        if (tts == null) return;
+        try {
+            String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
+            String langCode = LanguageManager.normalizeLanguageCode(userLang);
+            Locale locale = VoiceLanguageConfig.resolveAvailableTtsLocale(tts, langCode);
+            tts.setLanguage(locale);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                android.media.AudioAttributes aa = new android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build();
+                tts.setAudioAttributes(aa);
+            }
+        } catch (Exception e) {
+            Log.w("BlindVoiceMessage", "Error configuring TTS language: " + e.getMessage());
+        }
+    }
+
+    private void checkPendingSpeech() {
+        if (pendingSpokenText != null) {
+            String text = pendingSpokenText;
+            Runnable action = pendingOnDoneAction;
+            pendingSpokenText = null;
+            pendingOnDoneAction = null;
+            runOnUiThread(() -> speakAccessibleFeedback(text, action));
         }
     }
 
@@ -538,14 +575,50 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
         String langCode = LanguageManager.normalizeLanguageCode(userLang);
         String spokenText;
-        if (enText != null && (enText.contains("ಧ್ವನಿ") || enText.contains("ಕಳುಹಿಸಿದ್ದೇನೆ") || enText.contains("ಸಂದೇಶ"))) {
+        if (enText != null && (enText.contains("ಧ್ವನಿ") || enText.contains("ಕಳುಹಿಸಿದ್ದೇನೆ") || enText.contains("ಸಂದೇಶ") || enText.contains("ಸ್ಪೀಚ್") || enText.contains("ತೆರೆಯಲಾಗಿದೆ"))) {
             spokenText = enText;
         } else {
             spokenText = getLocalizedFeedbackText(enText, langCode);
         }
 
-        if (tts != null && isTtsInitialized) {
-            Locale locale = LanguageManager.getLocale(langCode);
+        // Always show Toast for immediate visual confirmation
+        Toast.makeText(this, spokenText, Toast.LENGTH_SHORT).show();
+
+        // 1. If local TTS is not yet ready, check if AppVoiceAssistant has ready TTS
+        if (tts == null || !isTtsInitialized) {
+            try {
+                AppVoiceAssistant va = AppVoiceAssistant.getInstance(getApplicationContext());
+                if (va != null && va.isTtsReady()) {
+                    Log.i("BlindVoiceMessage", "Local TTS not ready; speaking via AppVoiceAssistant: '" + spokenText + "'");
+                    va.speakResponse(spokenText, onDoneAction);
+                    return;
+                }
+            } catch (Exception ignored) {}
+
+            // Queue pending text and poll until TTS engine is ready
+            pendingSpokenText = enText;
+            pendingOnDoneAction = onDoneAction;
+            Log.d("BlindVoiceMessage", "TTS not initialized yet, queued pending speech: " + spokenText);
+
+            ttsRetryHandler.removeCallbacksAndMessages(null);
+            ttsRetryHandler.postDelayed(new Runnable() {
+                int attempts = 0;
+                @Override
+                public void run() {
+                    attempts++;
+                    if ((isTtsInitialized && tts != null) || (AppVoiceAssistant.getInstance(getApplicationContext()) != null && AppVoiceAssistant.getInstance(getApplicationContext()).isTtsReady())) {
+                        checkPendingSpeech();
+                    } else if (attempts < 15) {
+                        ttsRetryHandler.postDelayed(this, 200);
+                    }
+                }
+            }, 200);
+            return;
+        }
+
+        // 2. Synthesize via local TTS engine
+        try {
+            Locale locale = VoiceLanguageConfig.resolveAvailableTtsLocale(tts, langCode);
             tts.setLanguage(locale);
 
             // Ensure media volume is sufficiently audible for blind user
@@ -585,11 +658,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
 
             int volPercent = CaregiverSoundManager.getTtsVolumePercent(this, currentUid);
             if (volPercent <= 0) {
-                Log.i("BlindVoiceMessage", "Voice assistant volume is muted (0%), skipping spoken feedback.");
-                if (onDoneAction != null) {
-                    new Handler(Looper.getMainLooper()).post(onDoneAction);
-                }
-                return;
+                volPercent = 100;
             }
 
             float volFloat = volPercent / 100.0f;
@@ -606,15 +675,23 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
                 map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_MUSIC));
                 tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, map);
             }
-        } else {
-            Toast.makeText(this, spokenText, Toast.LENGTH_SHORT).show();
-            if (onDoneAction != null) {
-                new Handler(Looper.getMainLooper()).post(onDoneAction);
+        } catch (Exception e) {
+            Log.e("BlindVoiceMessage", "Error speaking via local TTS: " + e.getMessage(), e);
+            try {
+                AppVoiceAssistant.getInstance(getApplicationContext()).speakResponse(spokenText, onDoneAction);
+            } catch (Exception ex) {
+                if (onDoneAction != null) {
+                    new Handler(Looper.getMainLooper()).post(onDoneAction);
+                }
             }
         }
     }
 
     private String getLocalizedFeedbackText(String englishText, String langCode) {
+        if (englishText == null) return "";
+        if (LanguageManager.LANG_ENGLISH.equals(langCode)) {
+            return englishText;
+        }
         if (com.kannada.speechassistant.voiceassistant.VoiceCommandConstants.RESPONSE_OPEN_APP.equals(englishText) || "Speech Assistant is open.".equals(englishText)) {
             switch (langCode) {
                 case LanguageManager.LANG_MALAYALAM: return "സ്പീച്ച് അസിസ്റ്റന്റ് തുറന്നു.";
@@ -721,6 +798,93 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         editor.apply();
     }
 
+    public boolean resolveConnectedCaregiverLocally() {
+        if (connectedCaregiverUid != null && !connectedCaregiverUid.trim().isEmpty() && !"mock_caregiver_uid".equals(connectedCaregiverUid)) {
+            return true;
+        }
+
+        // 1. First check saved preferences
+        SharedPreferences settingsPref = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
+        String savedUid = settingsPref.getString("connectedCaregiverUid", null);
+        String savedName = settingsPref.getString("connectedCaregiverName", null);
+        String savedEmail = settingsPref.getString("caregiverEmail", null);
+        if (savedUid != null && !savedUid.trim().isEmpty() && !"mock_caregiver_uid".equals(savedUid)) {
+            connectedCaregiverUid = savedUid;
+            if (savedName != null && !savedName.trim().isEmpty()) connectedCaregiverName = savedName;
+            if (savedEmail != null && !savedEmail.trim().isEmpty()) caregiverEmail = savedEmail;
+            return true;
+        }
+
+        // 2. Second check LocalConnectionSimulator
+        try {
+            List<Map<String, Object>> localConns = LocalConnectionSimulator.getConnections(this);
+            for (Map<String, Object> conn : localConns) {
+                if ("Accepted".equalsIgnoreCase((String) conn.get("status"))) {
+                    String sender = (String) conn.get("senderUid");
+                    if (sender == null || sender.isEmpty()) sender = (String) conn.get("patientUid");
+                    String receiver = (String) conn.get("receiverUid");
+                    if (receiver == null || receiver.isEmpty()) receiver = (String) conn.get("caregiverUid");
+                    String senderEmail = (String) conn.get("senderEmail");
+                    if (senderEmail == null || senderEmail.isEmpty()) senderEmail = (String) conn.get("patientEmail");
+                    String receiverEmail = (String) conn.get("receiverEmail");
+                    if (receiverEmail == null || receiverEmail.isEmpty()) receiverEmail = (String) conn.get("caregiverEmail");
+
+                    if ((sender != null && currentUid != null && currentUid.equals(sender)) ||
+                            (receiver != null && currentUid != null && currentUid.equals(receiver)) ||
+                            (currentEmail != null && (currentEmail.equalsIgnoreCase(senderEmail) || currentEmail.equalsIgnoreCase(receiverEmail)))) {
+                        String otherUid = (currentUid != null && currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? receiver : sender;
+                        String otherName = (currentUid != null && currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? (String) conn.get("receiverName") : (String) conn.get("senderName");
+                        String otherEmail = (currentUid != null && currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? receiverEmail : senderEmail;
+                        if (otherName == null && otherEmail != null) otherName = otherEmail.split("@")[0];
+                        if (otherName == null) otherName = "Caregiver";
+
+                        if (otherUid != null && !otherUid.trim().isEmpty() && !"mock_caregiver_uid".equals(otherUid)) {
+                            connectedCaregiverUid = otherUid;
+                            connectedCaregiverName = otherName;
+                            caregiverEmail = otherEmail;
+                            saveCaregiverConnectionSettings(otherUid, otherName, otherEmail);
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        return false;
+    }
+
+    public void ensureCaregiverConnectionResolved(@NonNull Runnable onResolved, @NonNull Runnable onFailed) {
+        if (resolveConnectedCaregiverLocally()) {
+            onResolved.run();
+            return;
+        }
+
+        SharedPreferences settingsPref = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
+        String savedEmail = settingsPref.getString("caregiverEmail", null);
+        String emailToQuery = (caregiverEmail != null && !caregiverEmail.trim().isEmpty()) ? caregiverEmail : savedEmail;
+
+        if (emailToQuery != null && !emailToQuery.trim().isEmpty()) {
+            db.collection("users")
+                    .whereEqualTo("email", emailToQuery.toLowerCase().trim())
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            connectedCaregiverUid = queryDocumentSnapshots.getDocuments().get(0).getId();
+                            String name = queryDocumentSnapshots.getDocuments().get(0).getString("name");
+                            if (name != null && !name.trim().isEmpty()) connectedCaregiverName = name;
+                            caregiverEmail = emailToQuery;
+                            saveCaregiverConnectionSettings(connectedCaregiverUid, connectedCaregiverName, caregiverEmail);
+                            onResolved.run();
+                        } else {
+                            onFailed.run();
+                        }
+                    })
+                    .addOnFailureListener(e -> onFailed.run());
+        } else {
+            onFailed.run();
+        }
+    }
+
     private void checkConnectionStatus() {
         if (currentUid == null || currentUid.isEmpty()) return;
         db.collection("users").document(currentUid).get().addOnCompleteListener(task -> {
@@ -773,7 +937,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
 
     public void openInteractiveChat() {
         runOnUiThread(() -> {
-            if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty()) {
+            ensureCaregiverConnectionResolved(() -> {
                 Intent intent = new Intent(this, ChatActivity.class);
                 intent.putExtra("receiverId", connectedCaregiverUid);
                 intent.putExtra("receiverName", connectedCaregiverName != null && !connectedCaregiverName.isEmpty() ? connectedCaregiverName : (caregiverEmail != null && caregiverEmail.contains("@") ? caregiverEmail.split("@")[0] : "Caregiver"));
@@ -781,12 +945,14 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
                 intent.putExtra("receiverEmail", caregiverEmail != null ? caregiverEmail : "");
                 intent.putExtra("isBlindUser", true);
                 startActivity(intent);
-            } else if (btnOpenFullChat != null && btnOpenFullChat.getVisibility() == View.VISIBLE) {
-                btnOpenFullChat.performClick();
-            } else {
-                openCaregiverTab();
-                speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", null);
-            }
+            }, () -> {
+                if (btnOpenFullChat != null && btnOpenFullChat.getVisibility() == View.VISIBLE) {
+                    btnOpenFullChat.performClick();
+                } else {
+                    openCaregiverTab();
+                    speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", null);
+                }
+            });
         });
     }
 
@@ -1037,6 +1203,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             String myEmail = currentEmail != null && !currentEmail.isEmpty() ? currentEmail : "";
 
             // 2. Direct message write to caregiver_messages
+            resolveConnectedCaregiverLocally();
             String cUid = connectedCaregiverUid;
             if (cUid == null || cUid.isEmpty() || "mock_caregiver_uid".equals(cUid)) {
                 SharedPreferences settingsPref = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
@@ -1137,37 +1304,13 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        // 1. Verify Connected Caregiver or attempt email lookup fallback
-        if (connectedCaregiverUid == null || connectedCaregiverUid.isEmpty()) {
-            if (caregiverEmail != null && !caregiverEmail.trim().isEmpty()) {
-                Log.d("BlindVoiceMessage", "Resolving connected caregiver UID from email: " + caregiverEmail);
-                db.collection("users")
-                        .whereEqualTo("email", caregiverEmail.toLowerCase().trim())
-                        .get()
-                        .addOnSuccessListener(queryDocumentSnapshots -> {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                connectedCaregiverUid = queryDocumentSnapshots.getDocuments().get(0).getId();
-                                connectedCaregiverName = queryDocumentSnapshots.getDocuments().get(0).getString("name");
-                                Log.d("BlindVoiceMessage", "Resolved CONNECTED_CAREGIVER_UID: " + connectedCaregiverUid);
-                                onMicButtonClicked();
-                            } else {
-                                Log.e("BlindVoiceMessage", "Caregiver email query returned empty");
-                                speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", () -> {
-                                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_caregiver);
-                                });
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Log.e("BlindVoiceMessage", "Caregiver email lookup failed: " + e.getMessage(), e);
-                            speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", () -> {
-                                if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_caregiver);
-                            });
-                        });
-                return;
-            }
-
-            speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", () -> {
-                if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_caregiver);
+        // 1. Verify Connected Caregiver or attempt connection resolution fallback
+        if (connectedCaregiverUid == null || connectedCaregiverUid.trim().isEmpty() || "mock_caregiver_uid".equals(connectedCaregiverUid)) {
+            ensureCaregiverConnectionResolved(this::onMicButtonClicked, () -> {
+                Log.e("BlindVoiceMessage", "Caregiver connection resolution failed");
+                speakAccessibleFeedback("No caregiver is connected. Please connect to a caregiver first.", () -> {
+                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_caregiver);
+                });
             });
             return;
         }
@@ -1194,10 +1337,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             } else {
                 mediaRecorder = new MediaRecorder();
             }
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setOutputFile(tempAudioFile.getAbsolutePath());
+            VoiceAudioHelper.configureSpeechMediaRecorder(mediaRecorder, tempAudioFile);
 
             mediaRecorder.prepare();
             mediaRecorder.start();
@@ -1454,86 +1594,30 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        String storagePath = "voice_messages/" + currentUid + "/" + System.currentTimeMillis() + ".m4a";
         Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Upload started");
-        Log.d("BlindVoiceMessage", "UPLOAD_STARTED: Storage path = " + storagePath);
 
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(storagePath);
+        VoiceAudioHelper.uploadVoiceMessage(this, audioFile, durationSeconds, currentUid, new VoiceAudioHelper.UploadVoiceCallback() {
+            @Override
+            public void onSuccess(@NonNull String downloadUrl, int durationSecs, @Nullable String base64Audio) {
+                Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Upload successful");
+                Log.d("BlindVoiceMessage", "DOWNLOAD_URL_RECEIVED: " + downloadUrl);
+                runOnUiThread(() -> saveVoiceMessageToFirestore(downloadUrl, durationSecs, base64Audio, audioFile));
+            }
 
-        storageRef.putFile(Uri.fromFile(audioFile))
-                .addOnSuccessListener(taskSnapshot -> {
-                    storageRef.getDownloadUrl().addOnSuccessListener(downloadUri -> {
-                        String downloadUrl = downloadUri.toString();
-                        Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Upload successful");
-                        Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Download URL obtained");
-                        Log.d("BlindVoiceMessage", "DOWNLOAD_URL_RECEIVED: " + downloadUrl);
-                        saveVoiceMessageToFirestore(downloadUrl, durationSeconds, audioFile);
-                    }).addOnFailureListener(e -> {
-                        Log.e("BlindVoiceMessage", "Firebase Storage download URL error: " + e.getMessage(), e);
-                        uploadViaDirectStorage(audioFile, durationSeconds, storagePath);
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("BlindVoiceMessage", "Firebase Storage upload error: " + e.getMessage(), e);
-                    uploadViaDirectStorage(audioFile, durationSeconds, storagePath);
-                });
-    }
-
-    private void uploadViaDirectStorage(File audioFile, int durationSeconds, String storagePath) {
-        if (networkExecutor == null) {
-            networkExecutor = Executors.newSingleThreadExecutor();
-        }
-        networkExecutor.execute(() -> {
-            try {
-                URL url = new URL("https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/" + storagePath);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setDoOutput(true);
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(20000);
-                String apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmemR2emVhaHZoZmNia2h4aG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0Nzc5NDAsImV4cCI6MjA4MjA1Mzk0MH0.-UzIibKLFuOAyTeECHLal4wNkX8o73ctAuG8BhcsOYs";
-                conn.setRequestProperty("apikey", apiKey);
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-                conn.setRequestProperty("Content-Type", "audio/m4a");
-                conn.setFixedLengthStreamingMode(audioFile.length());
-
-                try (FileInputStream fis = new FileInputStream(audioFile);
-                     OutputStream os = conn.getOutputStream()) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = fis.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
-                    }
-                    os.flush();
-                }
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode >= 200 && responseCode < 300) {
-                    String downloadUrl = "https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/public/" + storagePath;
-                    Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Upload successful");
-                    Log.d("BlindVoiceMessage", "VOICE_MESSAGE: Download URL obtained");
-                    Log.d("BlindVoiceMessage", "DOWNLOAD_URL_RECEIVED: " + downloadUrl);
-                    runOnUiThread(() -> saveVoiceMessageToFirestore(downloadUrl, durationSeconds, audioFile));
-                } else {
-                    Log.e("BlindVoiceMessage", "Direct storage upload failed with HTTP code: " + responseCode);
-                    runOnUiThread(() -> {
-                        isUploading = false;
-                        speakAccessibleFeedback("Unable to send voice message. Please try again.", null);
-                        resetMicUI();
-                    });
-                }
-            } catch (Exception e) {
-                Log.e("BlindVoiceMessage", "Direct storage upload error: " + e.getMessage(), e);
+            @Override
+            public void onFailure(@NonNull Exception error) {
+                Log.e("BlindVoiceMessage", "Voice message upload error: " + error.getMessage(), error);
                 runOnUiThread(() -> {
                     isUploading = false;
                     speakAccessibleFeedback("Unable to send voice message. Please try again.", null);
                     resetMicUI();
+                    if (audioFile != null && audioFile.exists()) audioFile.delete();
                 });
             }
         });
     }
 
-    private void saveVoiceMessageToFirestore(String audioUrl, int durationSeconds, File localTempFile) {
+    private void saveVoiceMessageToFirestore(String audioUrl, int durationSeconds, @Nullable String base64Audio, File localTempFile) {
         String chatId;
         if (currentUid.compareTo(connectedCaregiverUid) < 0) {
             chatId = currentUid + "_" + connectedCaregiverUid;
@@ -1558,6 +1642,9 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         msg.put("type", "voice");
         msg.put("isVoice", true);
         msg.put("audioUrl", audioUrl);
+        if (base64Audio != null && !base64Audio.isEmpty()) {
+            msg.put("audioBase64", base64Audio);
+        }
         msg.put("audioDuration", durationSeconds);
         msg.put("status", "sent");
         msg.put("delivered", false);
@@ -1833,6 +1920,139 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         return null;
     }
 
+    public interface DeleteMessageCallback {
+        void onResult(boolean success, @Nullable String errorMessage);
+    }
+
+    public static boolean isEligibleOutgoingBlindUserMessage(@Nullable ChatMessage m, @Nullable String myUid) {
+        if (m == null) return false;
+        if (myUid == null || myUid.trim().isEmpty()) return false;
+
+        // Must match current authenticated Blind User UID as sender
+        if (!myUid.equals(m.getSenderId())) {
+            return false;
+        }
+
+        // Must NOT be an emergency alert or call record or system notification
+        String type = m.getType();
+        String messageType = m.getMessageType();
+        if ("emergency".equalsIgnoreCase(type) || "emergency".equalsIgnoreCase(messageType) ||
+                "call".equalsIgnoreCase(type) || "call".equalsIgnoreCase(messageType) ||
+                "system".equalsIgnoreCase(type) || "alert".equalsIgnoreCase(type) ||
+                "notification".equalsIgnoreCase(type)) {
+            return false;
+        }
+
+        // Must have a valid identifier
+        if (m.getId() == null || m.getId().trim().isEmpty()) {
+            return false;
+        }
+
+        // Must have valid content: either text or voice
+        boolean hasText = (m.getMessageText() != null && !m.getMessageText().trim().isEmpty())
+                || (m.getMessage() != null && !m.getMessage().trim().isEmpty());
+        boolean hasVoice = m.isVoice() || (m.getAudioUrl() != null && !m.getAudioUrl().trim().isEmpty());
+        return hasText || hasVoice;
+    }
+
+    @Nullable
+    public ChatMessage getLatestEligibleOutgoingBlindUserMessage() {
+        if (caregiverChatAdapter == null) return null;
+        List<ChatMessage> list = caregiverChatAdapter.getMessages();
+        if (list == null || list.isEmpty()) return null;
+
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+        if (myUid == null || myUid.isEmpty()) return null;
+
+        // caregiverChatAdapter holds messages sorted chronologically (oldest to newest).
+        // Scan backwards from newest to oldest to find the latest eligible message sent by this blind user.
+        for (int i = list.size() - 1; i >= 0; i--) {
+            ChatMessage m = list.get(i);
+            if (isEligibleOutgoingBlindUserMessage(m, myUid)) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    public void deleteLastSentMessage(@NonNull ChatMessage messageToDelete, @Nullable DeleteMessageCallback callback) {
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        final String finalMyUid = myUid;
+        final String messageId = messageToDelete.getId();
+
+        // 1. Strict Ownership & Identity Re-verification
+        if (finalMyUid == null || !finalMyUid.equals(messageToDelete.getSenderId())) {
+            Log.e(TAG, "deleteLastSentMessage: Unauthorized deletion attempt. Current UID does not match senderId.");
+            if (callback != null) callback.onResult(false, "Unauthorized: sender mismatch");
+            return;
+        }
+
+        if (messageId == null || messageId.trim().isEmpty()) {
+            Log.e(TAG, "deleteLastSentMessage: Message ID is empty or invalid.");
+            if (callback != null) callback.onResult(false, "Invalid message ID");
+            return;
+        }
+
+        // 2. Delete message document from Firestore caregiver_messages collection
+        db.collection("caregiver_messages").document(messageId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.i(TAG, "deleteLastSentMessage: Successfully deleted message doc " + messageId);
+
+                    // Update UI and local adapter
+                    runOnUiThread(() -> {
+                        if (caregiverChatAdapter != null) {
+                            caregiverChatAdapter.removeMessageById(messageId);
+                            if (caregiverChatAdapter.getItemCount() == 0 && layoutCaregiverChatEmptyState != null) {
+                                layoutCaregiverChatEmptyState.setVisibility(View.VISIBLE);
+                                if (rvCaregiverChatMessages != null) {
+                                    rvCaregiverChatMessages.setVisibility(View.GONE);
+                                }
+                            }
+                        }
+                    });
+
+                    // Clean up local temp audio file if this was a local voice message
+                    if (messageToDelete.isVoice() && messageToDelete.getAudioUrl() != null && messageToDelete.getAudioUrl().startsWith("file://")) {
+                        try {
+                            File f = new File(Uri.parse(messageToDelete.getAudioUrl()).getPath());
+                            if (f.exists()) {
+                                f.delete();
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
+                    if (callback != null) {
+                        callback.onResult(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "deleteLastSentMessage: Failed to delete message doc " + messageId + ": " + e.getMessage(), e);
+                    if (callback != null) {
+                        callback.onResult(false, e.getMessage());
+                    }
+                });
+    }
+
     private void resetMicUI() {
         isRecording = false;
         isUploading = false;
@@ -1881,55 +2101,14 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
 
         // 1. Verify Connected Caregiver or attempt connection resolution fallback
         if (connectedCaregiverUid == null || connectedCaregiverUid.trim().isEmpty() || "mock_caregiver_uid".equals(connectedCaregiverUid)) {
-            // First check saved preferences
-            SharedPreferences settingsPref = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
-            String savedUid = settingsPref.getString("connectedCaregiverUid", null);
-            String savedName = settingsPref.getString("connectedCaregiverName", null);
-            String savedEmail = settingsPref.getString("caregiverEmail", null);
-            if (savedUid != null && !savedUid.trim().isEmpty() && !"mock_caregiver_uid".equals(savedUid)) {
-                connectedCaregiverUid = savedUid;
-                if (savedName != null && !savedName.trim().isEmpty()) connectedCaregiverName = savedName;
-                if (savedEmail != null && !savedEmail.trim().isEmpty()) caregiverEmail = savedEmail;
+            if (resolveConnectedCaregiverLocally()) {
                 onStartVoiceCallClicked();
                 return;
             }
 
-            // Second check LocalConnectionSimulator
-            try {
-                List<Map<String, Object>> localConns = LocalConnectionSimulator.getConnections(this);
-                for (Map<String, Object> conn : localConns) {
-                    if ("Accepted".equalsIgnoreCase((String) conn.get("status"))) {
-                        String sender = (String) conn.get("senderUid");
-                        if (sender == null || sender.isEmpty()) sender = (String) conn.get("patientUid");
-                        String receiver = (String) conn.get("receiverUid");
-                        if (receiver == null || receiver.isEmpty()) receiver = (String) conn.get("caregiverUid");
-                        String senderEmail = (String) conn.get("senderEmail");
-                        if (senderEmail == null || senderEmail.isEmpty()) senderEmail = (String) conn.get("patientEmail");
-                        String receiverEmail = (String) conn.get("receiverEmail");
-                        if (receiverEmail == null || receiverEmail.isEmpty()) receiverEmail = (String) conn.get("caregiverEmail");
-
-                        if ((sender != null && currentUid.equals(sender)) || (receiver != null && currentUid.equals(receiver)) ||
-                                (currentEmail != null && (currentEmail.equalsIgnoreCase(senderEmail) || currentEmail.equalsIgnoreCase(receiverEmail)))) {
-                            String otherUid = (currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? receiver : sender;
-                            String otherName = (currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? (String) conn.get("receiverName") : (String) conn.get("senderName");
-                            String otherEmail = (currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) ? receiverEmail : senderEmail;
-                            if (otherName == null && otherEmail != null) otherName = otherEmail.split("@")[0];
-                            if (otherName == null) otherName = "Caregiver";
-
-                            if (otherUid != null && !otherUid.trim().isEmpty() && !"mock_caregiver_uid".equals(otherUid)) {
-                                connectedCaregiverUid = otherUid;
-                                connectedCaregiverName = otherName;
-                                caregiverEmail = otherEmail;
-                                saveCaregiverConnectionSettings(otherUid, otherName, otherEmail);
-                                onStartVoiceCallClicked();
-                                return;
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable ignored) {}
-
             // Third check if caregiverEmail is available, resolve from users collection
+            SharedPreferences settingsPref = getSharedPreferences("BlindUserSettings", MODE_PRIVATE);
+            String savedEmail = settingsPref.getString("caregiverEmail", null);
             String emailToQuery = (caregiverEmail != null && !caregiverEmail.trim().isEmpty()) ? caregiverEmail : savedEmail;
             if (emailToQuery != null && !emailToQuery.trim().isEmpty()) {
                 Log.d("BlindVoiceCall", "Resolving connected caregiver UID from email: " + emailToQuery);
@@ -3156,6 +3335,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         if (isRecording) {
             cancelVoiceRecording();
         }
+        ttsRetryHandler.removeCallbacksAndMessages(null);
         if (tts != null) {
             tts.stop();
             tts.shutdown();

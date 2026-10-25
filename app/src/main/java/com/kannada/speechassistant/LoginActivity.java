@@ -4,8 +4,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.speech.tts.TextToSpeech;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
@@ -62,7 +60,6 @@ public class LoginActivity extends AppCompatActivity {
     private TextView btnForgotPassword;
     private MaterialButton btnLogin;
     private ProgressBar loginProgressBar;
-    private LinearLayout btnVoiceAssist;
     private MaterialCardView errorCardView;
     private TextView errorTextView;
     private TextView btnRegisterRedirect;
@@ -70,7 +67,6 @@ public class LoginActivity extends AppCompatActivity {
     // Firebase & Local Utilities
     private FirebaseAuth mAuth;
     private SessionManager sessionManager;
-    private TextToSpeech tts;
     private ExecutorService networkExecutor;
 
     // Backend URL (10.0.2.2 points to host localhost in Android Emulator)
@@ -102,13 +98,9 @@ public class LoginActivity extends AppCompatActivity {
         btnForgotPassword = findViewById(R.id.btnForgotPassword);
         btnLogin = findViewById(R.id.btnLogin);
         loginProgressBar = findViewById(R.id.loginProgressBar);
-        btnVoiceAssist = findViewById(R.id.btnVoiceAssist);
         errorCardView = findViewById(R.id.errorCardView);
         errorTextView = findViewById(R.id.errorTextView);
         btnRegisterRedirect = findViewById(R.id.btnRegisterRedirect);
-
-        // Setup Accessibility Text-to-Speech
-        initTextToSpeech();
 
         // Listeners
         btnLogin.setOnClickListener(new View.OnClickListener() {
@@ -125,13 +117,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        btnVoiceAssist.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                speakInstructions();
-            }
-        });
-
         btnRegisterRedirect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -142,40 +127,6 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Initializes the TTS engine for accessibility narration.
-     */
-    private void initTextToSpeech() {
-        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status == TextToSpeech.SUCCESS) {
-                    int result = tts.setLanguage(Locale.US);
-                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        Log.e(TAG, "TTS Language is not supported or missing data.");
-                    }
-                } else {
-                    Log.e(TAG, "TTS Initialization failed.");
-                }
-            }
-        });
-    }
-
-    /**
-     * Speaks voice-assistance instructions for logging in.
-     */
-    private void speakInstructions() {
-        if (tts != null) {
-            String instructions = "Welcome to the Speech Assistant Login Screen. " +
-                    "Please enter your email address in the first text field. " +
-                    "Enter your password in the second text field. " +
-                    "Select the checkbox to remember your login session. " +
-                    "Tap the Login button at the bottom to continue. " +
-                    "If you forgot your password, select the Forgot Password link next to the checkbox.";
-            tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, "login_instructions");
-            Toast.makeText(this, "Reading instructions...", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     /**
      * Runs validations and signs the user in via Firebase.
@@ -451,11 +402,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Shutdown executor and TTS engine
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
+        // Shutdown executor
         if (networkExecutor != null) {
             networkExecutor.shutdown();
         }

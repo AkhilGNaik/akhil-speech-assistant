@@ -129,23 +129,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Preferred Language Dropdown -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutProfileLanguage"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:hint="@string/select_language">
 
-                    <AutoCompleteTextView
-                        android:id="@+id/editProfileLanguage"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_primary" />
-                </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Coqui Endpoint Settings -->
                 <com.google.android.material.textfield.TextInputLayout

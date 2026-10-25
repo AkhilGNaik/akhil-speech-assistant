@@ -299,12 +299,16 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
     private int consecutiveStableFrames = 0;
     private boolean isGestureConfirmed = false;
     private long lastActionExecutionTime = 0;
+    private long lastEmergencyTriggerTime = 0;
 
     // Profile Page Widgets
     private TextView txtProfileRole;
     private TextView txtProfileEmail;
     private TextView txtProfileUid;
-    private android.widget.AutoCompleteTextView editProfileLanguage;
+    private TextView txtProfileName;
+    private View viewProfileStatusDot;
+    private TextView txtProfileStatusLabel;
+    private SwitchMaterial switchUseCoquiTts;
     private EditText editCoquiUrl;
     private EditText editCaregiverEmail;
     private EditText editEmergencyMessage;
@@ -374,6 +378,10 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         layoutStatus = findViewById(R.id.layoutStatus);
         viewStatusDot = findViewById(R.id.viewStatusDot);
         txtStatusLabel = findViewById(R.id.txtStatusLabel);
+        cardEmergency = findViewById(R.id.cardEmergency);
+        if (cardEmergency != null) {
+            cardEmergency.setOnClickListener(v -> triggerEmergencySOS());
+        }
         btnBellNotificationSettings = findViewById(R.id.btnBellNotificationSettings);
         if (btnBellNotificationSettings != null) {
             btnBellNotificationSettings.setOnClickListener(v -> showNotificationSettingsDialog());
@@ -445,6 +453,9 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         SharedPreferences settingsPref = getSharedPreferences("MuteUserSettings", MODE_PRIVATE);
         coquiUrl = settingsPref.getString("coquiUrl", "http://10.0.2.2:5000");
         caregiverEmail = settingsPref.getString("caregiverEmail", "");
+        if (connectedCaregiverUid == null || connectedCaregiverUid.trim().isEmpty()) {
+            connectedCaregiverUid = settingsPref.getString("connectedCaregiverUid", null);
+        }
         
         String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
         String normLang = LanguageManager.normalizeLanguageCode(userLang);
@@ -529,12 +540,18 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                 .document(currentUid)
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
+                    boolean online = task.isSuccessful();
+                    if (online) {
                         if (layoutStatus != null) layoutStatus.setBackgroundResource(R.drawable.bg_status_pill_online);
                         if (viewStatusDot != null) viewStatusDot.setBackgroundResource(R.drawable.bg_status_dot_online);
                         if (txtStatusLabel != null) {
                             txtStatusLabel.setText(getString(R.string.online));
                             txtStatusLabel.setTextColor(0xFF047857);
+                        }
+                        if (viewProfileStatusDot != null) viewProfileStatusDot.setBackgroundColor(0xFF10B981);
+                        if (txtProfileStatusLabel != null) {
+                            txtProfileStatusLabel.setText("Firebase Connection: Online");
+                            txtProfileStatusLabel.setTextColor(0xFF047857);
                         }
                     } else {
                         if (layoutStatus != null) layoutStatus.setBackgroundResource(R.drawable.bg_status_pill_offline);
@@ -542,6 +559,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                         if (txtStatusLabel != null) {
                             txtStatusLabel.setText(getString(R.string.offline));
                             txtStatusLabel.setTextColor(0xFFB91C1C);
+                        }
+                        if (viewProfileStatusDot != null) viewProfileStatusDot.setBackgroundColor(0xFFEF4444);
+                        if (txtProfileStatusLabel != null) {
+                            txtProfileStatusLabel.setText("Firebase Connection: Offline");
+                            txtProfileStatusLabel.setTextColor(0xFFB91C1C);
                         }
                     }
                 });
@@ -606,7 +628,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             row1Keys[i] = findViewById(resId);
             final int index = i;
             if (row1Keys[i] != null) {
-                row1Keys[i].setOnClickListener(v -> handleKannadaKeyPress(row1Keys[index].getText().toString()));
+                row1Keys[i].setOnClickListener(v -> {
+                    if (row1Keys[index] != null && row1Keys[index].getText() != null) {
+                        handleKannadaKeyPress(row1Keys[index].getText().toString());
+                    }
+                });
             }
         }
 
@@ -616,7 +642,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             row2Keys[i] = findViewById(resId);
             final int index = i;
             if (row2Keys[i] != null) {
-                row2Keys[i].setOnClickListener(v -> handleKannadaKeyPress(row2Keys[index].getText().toString()));
+                row2Keys[i].setOnClickListener(v -> {
+                    if (row2Keys[index] != null && row2Keys[index].getText() != null) {
+                        handleKannadaKeyPress(row2Keys[index].getText().toString());
+                    }
+                });
             }
         }
 
@@ -626,7 +656,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             row3Keys[i] = findViewById(resId);
             final int index = i;
             if (row3Keys[i] != null) {
-                row3Keys[i].setOnClickListener(v -> handleKannadaKeyPress(row3Keys[index].getText().toString()));
+                row3Keys[i].setOnClickListener(v -> {
+                    if (row3Keys[index] != null && row3Keys[index].getText() != null) {
+                        handleKannadaKeyPress(row3Keys[index].getText().toString());
+                    }
+                });
             }
         }
 
@@ -636,7 +670,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             row4Keys[i] = findViewById(resId);
             final int index = i;
             if (row4Keys[i] != null) {
-                row4Keys[i].setOnClickListener(v -> handleKannadaKeyPress(row4Keys[index].getText().toString()));
+                row4Keys[i].setOnClickListener(v -> {
+                    if (row4Keys[index] != null && row4Keys[index].getText() != null) {
+                        handleKannadaKeyPress(row4Keys[index].getText().toString());
+                    }
+                });
             }
         }
 
@@ -735,7 +773,9 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             }
         });
 
-        cardEmergency.setOnClickListener(v -> triggerEmergencySOS());
+        if (cardEmergency != null) {
+            cardEmergency.setOnClickListener(v -> triggerEmergencySOS());
+        }
 
         cardQuickWater.setOnClickListener(v -> handleQuickPhraseClick(getString(R.string.phrase_water)));
         cardQuickFood.setOnClickListener(v -> handleQuickPhraseClick(getString(R.string.phrase_food)));
@@ -749,6 +789,7 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         rvCaregiverChatMessages = findViewById(R.id.rvCaregiverChatMessages);
         layoutCaregiverChatEmptyState = findViewById(R.id.layoutCaregiverChatEmptyState);
         caregiverChatAdapter = new CaregiverChatAdapter(currentUid, this::speakText);
+        caregiverChatAdapter.setOnMessageDeleteListener(this::showMuteUserDeleteDialog);
         rvCaregiverChatMessages.setLayoutManager(new LinearLayoutManager(this));
         rvCaregiverChatMessages.setAdapter(caregiverChatAdapter);
         rvCaregiverChatMessages.setOnTouchListener((v, event) -> {
@@ -1405,6 +1446,7 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         msg.put("senderRole", RoleManager.ROLE_MUTE_USER);
         msg.put("receiverRole", "Admin/Caregiver");
         msg.put("message", text);
+        msg.put("messageText", text);
         msg.put("language", lang);
 
         String mType = "gesture";
@@ -1422,6 +1464,16 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                 .add(msg)
                 .addOnSuccessListener(documentReference -> {
                     Log.d(TAG, "Gesture message sent successfully");
+                    documentReference.update("messageId", documentReference.getId());
+                    if (txtMessageSentStatus != null) {
+                        runOnUiThread(() -> {
+                            txtMessageSentStatus.setText("Sent to Caregiver");
+                            txtMessageSentStatus.setVisibility(View.VISIBLE);
+                        });
+                    }
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        documentReference.update("delivered", true);
+                    }, 1500);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to send gesture message", e);
@@ -1509,13 +1561,15 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
     }
 
     private void handleKannadaKeyPress(String str) {
-        if (editHomeQuickText == null) return;
+        if (editHomeQuickText == null || str == null) return;
+        android.text.Editable editable = editHomeQuickText.getText();
+        if (editable == null) return;
         int start = Math.max(0, editHomeQuickText.getSelectionStart());
         int end = Math.max(0, editHomeQuickText.getSelectionEnd());
         int selMin = Math.min(start, end);
         int selMax = Math.max(start, end);
-        editHomeQuickText.getText().replace(selMin, selMax, str);
-        editHomeQuickText.setSelection(selMin + str.length());
+        editable.replace(selMin, selMax, str);
+        editHomeQuickText.setSelection(Math.min(editable.length(), selMin + str.length()));
     }
 
     private void toggleKeyboardShift() {
@@ -1687,18 +1741,25 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
      * Converts phonetic English letters in text area to target script (Malayalam, Hindi, or Kannada).
      */
     private void triggerHomeTransliteration() {
+        if (editHomeQuickText == null) return;
         final String text = editHomeQuickText.getText().toString();
         if (text.trim().isEmpty()) {
             return;
         }
 
         runOnUiThread(() -> {
-            progressHomeTranslit.setVisibility(View.VISIBLE);
-            txtHomeTranslitStatus.setText("Converting...");
+            if (progressHomeTranslit != null) progressHomeTranslit.setVisibility(View.VISIBLE);
+            if (txtHomeTranslitStatus != null) txtHomeTranslitStatus.setText("Converting...");
         });
 
         final String langCode = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
         final String itcCode = LanguageManager.getInputToolCode(langCode);
+
+        if (networkExecutor == null || networkExecutor.isShutdown()) {
+            final String converted = TransliterationEngine.transliterate(text.trim(), langCode) + (text.endsWith(" ") ? " " : "");
+            applyTransliteratedText(text, converted, langCode, true);
+            return;
+        }
 
         networkExecutor.execute(() -> {
             HttpURLConnection conn = null;
@@ -1730,16 +1791,7 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                             org.json.JSONArray destArray = itemObj.getJSONArray("translit_dest");
                             if (destArray.length() > 0) {
                                 final String converted = destArray.getString(0) + (text.endsWith(" ") ? " " : "");
-                                runOnUiThread(() -> {
-                                    if (!editHomeQuickText.getText().toString().equals(converted)) {
-                                        isTranslitInternalChange = true;
-                                        editHomeQuickText.setText(converted);
-                                        editHomeQuickText.setSelection(converted.length());
-                                        isTranslitInternalChange = false;
-                                    }
-                                    progressHomeTranslit.setVisibility(View.GONE);
-                                    txtHomeTranslitStatus.setText("Translit active (" + LanguageManager.getLanguageDisplayName(langCode) + ")");
-                                });
+                                applyTransliteratedText(text, converted, langCode, false);
                                 return;
                             }
                         }
@@ -1750,21 +1802,44 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Log.w(TAG, "Online transliteration failed. Falling back to local offline rules.", e);
                 final String converted = TransliterationEngine.transliterate(text.trim(), langCode) + (text.endsWith(" ") ? " " : "");
-                runOnUiThread(() -> {
-                    if (!editHomeQuickText.getText().toString().equals(converted)) {
-                        isTranslitInternalChange = true;
-                        editHomeQuickText.setText(converted);
-                        editHomeQuickText.setSelection(converted.length());
-                        isTranslitInternalChange = false;
-                    }
-                    progressHomeTranslit.setVisibility(View.GONE);
-                    txtHomeTranslitStatus.setText("Converted (Offline Fallback - " + LanguageManager.getLanguageDisplayName(langCode) + ")");
-                });
+                applyTransliteratedText(text, converted, langCode, true);
             } finally {
                 try {
                     if (reader != null) reader.close();
                 } catch (Exception ex) {}
                 if (conn != null) conn.disconnect();
+            }
+        });
+    }
+
+    private void applyTransliteratedText(String originalInput, String convertedText, String langCode, boolean isOffline) {
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed() || editHomeQuickText == null) return;
+            String current = editHomeQuickText.getText().toString();
+            String finalText;
+            if (current.equals(originalInput)) {
+                finalText = convertedText;
+            } else if (current.startsWith(originalInput)) {
+                // User continued typing suffix while network request was running
+                String remaining = current.substring(originalInput.length());
+                finalText = convertedText + remaining;
+            } else {
+                finalText = convertedText;
+            }
+
+            if (!current.equals(finalText)) {
+                isTranslitInternalChange = true;
+                editHomeQuickText.setText(finalText);
+                editHomeQuickText.setSelection(Math.min(finalText.length(), editHomeQuickText.length()));
+                isTranslitInternalChange = false;
+            }
+            if (progressHomeTranslit != null) progressHomeTranslit.setVisibility(View.GONE);
+            if (txtHomeTranslitStatus != null) {
+                if (isOffline) {
+                    txtHomeTranslitStatus.setText("Converted (Offline Fallback - " + LanguageManager.getLanguageDisplayName(langCode) + ")");
+                } else {
+                    txtHomeTranslitStatus.setText("Translit active (" + LanguageManager.getLanguageDisplayName(langCode) + ")");
+                }
             }
         });
     }
@@ -1789,10 +1864,18 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         // 2. Speak out loud in user language at high volume instantly
         speakText(resolvedMsg);
 
-        // 3. Send message to connected caregiver immediately via Firestore
-        sendDirectMessageToCaregiver(resolvedMsg);
+        // 3. Put in text edit box for visual feedback
+        if (editHomeQuickText != null) {
+            editHomeQuickText.setText(resolvedMsg);
+            editHomeQuickText.setSelection(resolvedMsg.length());
+        }
 
-        // 4. Update recent phrases chips
+        // 4. Send message to connected caregiver immediately via Firestore if connected
+        if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty()) {
+            sendDirectMessageToCaregiver(resolvedMsg);
+        }
+
+        // 5. Update recent phrases chips
         saveSpokenHistory(resolvedMsg);
         updateHomeRecentPhrasesList();
     }
@@ -1803,9 +1886,15 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             return; // Prevent rapid double-tap / duplicate messages
         }
 
+        if (editHomeQuickText == null) return;
         final String msg = editHomeQuickText.getText().toString().trim();
         if (msg.isEmpty()) {
             Toast.makeText(this, "Please enter some text to send.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (connectedCaregiverUid == null || connectedCaregiverUid.isEmpty()) {
+            Toast.makeText(this, "No caregiver connected to send message.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1947,37 +2036,35 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         txtProfileRole = findViewById(R.id.txtProfileRole);
         txtProfileEmail = findViewById(R.id.txtProfileEmail);
         txtProfileUid = findViewById(R.id.txtProfileUid);
-        editProfileLanguage = findViewById(R.id.editProfileLanguage);
-        if (editProfileLanguage != null) {
-            String[] languages = {"Kannada", "Hindi", "Malayalam"};
-            android.widget.ArrayAdapter<String> langAdapter = new android.widget.ArrayAdapter<>(
-                    this,
-                    android.R.layout.simple_dropdown_item_1line,
-                    languages
-            );
-            editProfileLanguage.setAdapter(langAdapter);
-            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-            editProfileLanguage.setText(LanguageManager.getLanguageDisplayName(currentLang), false);
-        }
+        txtProfileName = findViewById(R.id.txtProfileName);
+        viewProfileStatusDot = findViewById(R.id.viewProfileStatusDot);
+        txtProfileStatusLabel = findViewById(R.id.txtProfileStatusLabel);
+        switchUseCoquiTts = findViewById(R.id.switchUseCoquiTts);
         editCoquiUrl = findViewById(R.id.editCoquiUrl);
         editCaregiverEmail = findViewById(R.id.editCaregiverEmail);
         editEmergencyMessage = findViewById(R.id.editEmergencyMessage);
         btnSaveProfileSettings = findViewById(R.id.btnSaveProfileSettings);
         btnProfileLogout = findViewById(R.id.btnProfileLogout);
 
+        if (switchUseCoquiTts != null) {
+            switchUseCoquiTts.setChecked(useCoquiTts);
+            switchUseCoquiTts.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                useCoquiTts = isChecked;
+            });
+        }
+
         btnSaveProfileSettings.setOnClickListener(v -> {
-            String url = editCoquiUrl.getText().toString().trim();
-            String email = editCaregiverEmail.getText().toString().trim();
-            String sosMsg = editEmergencyMessage.getText().toString().trim();
-            String selectedLangDisplay = editProfileLanguage != null ? editProfileLanguage.getText().toString().trim() : "";
-            String selectedLangCode = LanguageManager.getLanguageCodeFromDisplayName(selectedLangDisplay);
+            String url = editCoquiUrl != null ? editCoquiUrl.getText().toString().trim() : "";
+            String email = editCaregiverEmail != null ? editCaregiverEmail.getText().toString().trim() : "";
+            String sosMsg = editEmergencyMessage != null ? editEmergencyMessage.getText().toString().trim() : "";
+            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
 
             if (url.isEmpty() || email.isEmpty() || sosMsg.isEmpty()) {
                 Toast.makeText(this, "Please fill out all configuration settings.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            saveSettings(url, email, sosMsg, selectedLangCode);
+            saveSettings(url, email, sosMsg, currentLang);
         });
 
         btnProfileLogout.setOnClickListener(v -> performLogout());
@@ -2016,7 +2103,16 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
      */
     private void refreshProfileDetails() {
         HashMap<String, String> userDetails = sessionManager.getUserDetails();
-        txtProfileEmail.setText(userDetails.get(SessionManager.KEY_USER_EMAIL));
+        if (txtProfileName != null) {
+            String name = (currentName != null && !currentName.isEmpty()) ? currentName : userDetails.get(SessionManager.KEY_USER_EMAIL);
+            if (name != null && name.contains("@")) {
+                name = name.split("@")[0];
+            }
+            txtProfileName.setText(name != null ? name : "Mute User");
+        }
+        if (txtProfileEmail != null) {
+            txtProfileEmail.setText(userDetails.get(SessionManager.KEY_USER_EMAIL));
+        }
         String roleStr = userDetails.get(SessionManager.KEY_USER_ROLE);
         String locRole = getString(R.string.role_mute_user);
         if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(roleStr)) {
@@ -2026,22 +2122,31 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(roleStr)) {
             locRole = getString(R.string.role_caregiver);
         }
-        txtProfileRole.setText(getString(R.string.user_role) + ": " + locRole);
-        txtProfileUid.setText("UID: " + userDetails.get(SessionManager.KEY_USER_UID));
-
-        if (editProfileLanguage != null) {
-            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-            editProfileLanguage.setText(LanguageManager.getLanguageDisplayName(currentLang), false);
+        if (txtProfileRole != null) {
+            txtProfileRole.setText(getString(R.string.user_role) + ": " + locRole);
+        }
+        if (txtProfileUid != null) {
+            txtProfileUid.setText("UID: " + userDetails.get(SessionManager.KEY_USER_UID));
         }
 
-        editCoquiUrl.setText(coquiUrl);
-        if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && caregiverEmail != null && !caregiverEmail.isEmpty()) {
-            editCaregiverEmail.setText(caregiverEmail);
-        } else {
-            editCaregiverEmail.setText("");
-            editCaregiverEmail.setHint(getString(R.string.enter_email_address));
+        if (switchUseCoquiTts != null) {
+            switchUseCoquiTts.setChecked(useCoquiTts);
         }
-        editEmergencyMessage.setText(emergencyMessage);
+        if (editCoquiUrl != null) {
+            editCoquiUrl.setText(coquiUrl);
+        }
+        if (editCaregiverEmail != null) {
+            if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && caregiverEmail != null && !caregiverEmail.isEmpty()) {
+                editCaregiverEmail.setText(caregiverEmail);
+            } else {
+                editCaregiverEmail.setText("");
+                editCaregiverEmail.setHint(getString(R.string.enter_email_address));
+            }
+        }
+        if (editEmergencyMessage != null) {
+            editEmergencyMessage.setText(emergencyMessage);
+        }
+        checkConnectionStatus();
     }
 
     /**
@@ -2056,10 +2161,15 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             sosMsg = LanguageManager.getDefaultSosMessage(normalizedNewLang);
         }
 
+        boolean coquiChecked = switchUseCoquiTts != null ? switchUseCoquiTts.isChecked() : useCoquiTts;
+        useCoquiTts = coquiChecked;
+
         getSharedPreferences("MuteUserSettings", MODE_PRIVATE).edit()
                 .putString("coquiUrl", url)
                 .putString("caregiverEmail", email)
                 .putString("emergencyMessage", sosMsg)
+                .putBoolean("useCoquiTts", useCoquiTts)
+                .putString("connectedCaregiverUid", connectedCaregiverUid != null ? connectedCaregiverUid : "")
                 .apply();
         coquiUrl = url;
         caregiverEmail = email;
@@ -2126,8 +2236,12 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
         String cleanedText = cleanTextForSpeech(text);
         if (cleanedText.isEmpty()) return;
 
-        // Speak instantly on device via local Google TTS
-        speakGoogleTts(cleanedText, isFallback);
+        if (useCoquiTts && !isFallback && coquiUrl != null && !coquiUrl.trim().isEmpty()) {
+            speakCoquiTts(cleanedText, false);
+        } else {
+            // Speak instantly on device via local Google TTS
+            speakGoogleTts(cleanedText, isFallback);
+        }
     }
 
     /**
@@ -2296,6 +2410,12 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
      * sound siren alarm and post emergency alert parameters to Firestore.
      */
     private void triggerEmergencySOS() {
+        long now = System.currentTimeMillis();
+        if (now - lastEmergencyTriggerTime < 2000) {
+            return; // Debounce rapid multi-clicks or continuous closed-fist gesture frames
+        }
+        lastEmergencyTriggerTime = now;
+
         Toast.makeText(this, "EMERGENCY ALARM TRIGGERED!", Toast.LENGTH_LONG).show();
 
         // 0. Maximize System Media Volume for Loud External Output
@@ -2482,12 +2602,18 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                     if (found) {
                         // Role Verification Guard
                         if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(currentRole)) {
-                            if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(foundRole)) {
+                            boolean isCaregiver = RoleManager.ROLE_ADMIN_CAREGIVER.equals(foundRole) 
+                                    || "Caregiver".equalsIgnoreCase(foundRole) 
+                                    || "Admin".equalsIgnoreCase(foundRole);
+                            if (isCaregiver) {
                                 Toast.makeText(this, "Caregivers can only request connection with deaf or physically disabled users.", Toast.LENGTH_LONG).show();
                                 return;
                             }
                         } else {
-                            if (!RoleManager.ROLE_ADMIN_CAREGIVER.equals(foundRole)) {
+                            boolean isCaregiver = RoleManager.ROLE_ADMIN_CAREGIVER.equals(foundRole) 
+                                    || "Caregiver".equalsIgnoreCase(foundRole) 
+                                    || "Admin".equalsIgnoreCase(foundRole);
+                            if (!isCaregiver) {
                                 Toast.makeText(this, "You can only request connection with caregivers.", Toast.LENGTH_LONG).show();
                                 return;
                             }
@@ -2643,6 +2769,11 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                         caregiverEmail = otherEmail;
                         connectedCaregiverUid = otherUid;
 
+                        getSharedPreferences("MuteUserSettings", MODE_PRIVATE).edit()
+                                .putString("connectedCaregiverUid", otherUid)
+                                .putString("caregiverEmail", otherEmail)
+                                .apply();
+
                         final String finalOtherUid = otherUid;
                         final String finalOtherName = otherName;
                         final String finalOtherRole = otherRole;
@@ -2653,21 +2784,122 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                             intent.putExtra("receiverName", finalOtherName);
                             intent.putExtra("receiverRole", finalOtherRole);
                             intent.putExtra("receiverEmail", finalOtherEmail);
+                            intent.putExtra("senderRole", RoleManager.ROLE_MUTE_USER);
+                            intent.putExtra("isMuteUser", true);
                             startActivity(intent);
                         });
 
                         btnDisconnect.setOnClickListener(v -> disconnectUser(docId));
                         cardConnectedUser.setVisibility(View.VISIBLE);
                         startCaregiverChatListener(otherUid);
-                    } else {
-                        cardConnectedUser.setVisibility(View.GONE);
-                        connectedCaregiverUid = null;
-                        caregiverEmail = "";
-                        startCaregiverChatListener(null);
-                        if (editCaregiverEmail != null) {
-                            editCaregiverEmail.setText("");
-                            editCaregiverEmail.setHint("Not Connected to any Caregiver");
+                        updateSearchCardVisibility();
+                        return;
+                    }
+
+                    // Fallback to local offline simulator accepted connections
+                    List<Map<String, Object>> localConnections = LocalConnectionSimulator.getConnections(this);
+                    for (Map<String, Object> conn : localConnections) {
+                        String status = (String) conn.get("status");
+                        String sender = (String) conn.get("senderUid");
+                        if (sender == null || sender.isEmpty()) sender = (String) conn.get("patientUid");
+                        String receiver = (String) conn.get("receiverUid");
+                        if (receiver == null || receiver.isEmpty()) receiver = (String) conn.get("caregiverUid");
+                        String senderEmail = (String) conn.get("senderEmail");
+                        if (senderEmail == null || senderEmail.isEmpty()) senderEmail = (String) conn.get("patientEmail");
+                        String receiverEmail = (String) conn.get("receiverEmail");
+                        if (receiverEmail == null || receiverEmail.isEmpty()) receiverEmail = (String) conn.get("caregiverEmail");
+
+                        if ("Accepted".equalsIgnoreCase(status) && sender != null && receiver != null &&
+                            (currentUid.equals(sender) || currentUid.equals(receiver) ||
+                            (currentEmail != null && (currentEmail.equalsIgnoreCase(senderEmail) || currentEmail.equalsIgnoreCase(receiverEmail))))) {
+
+                            String docId = (String) conn.get("docId");
+                            if (docId == null) docId = "local_accepted_" + System.currentTimeMillis();
+                            String senderName = (String) conn.get("senderName");
+                            if (senderName == null || senderName.isEmpty()) senderName = (String) conn.get("patientName");
+                            String receiverName = (String) conn.get("receiverName");
+                            if (receiverName == null || receiverName.isEmpty()) receiverName = (String) conn.get("caregiverName");
+                            String senderRole = (String) conn.get("senderRole");
+                            if (senderRole == null || senderRole.isEmpty()) senderRole = (String) conn.get("patientRole");
+                            String receiverRole = (String) conn.get("receiverRole");
+                            if (receiverRole == null || receiverRole.isEmpty()) receiverRole = (String) conn.get("caregiverRole");
+
+                            String otherName, otherEmail, otherRole, otherUid;
+                            if (currentUid.equals(sender) || (currentEmail != null && currentEmail.equalsIgnoreCase(senderEmail))) {
+                                otherUid = receiver;
+                                otherName = receiverName != null ? receiverName : (receiverEmail != null ? receiverEmail.split("@")[0] : "Caregiver");
+                                otherEmail = receiverEmail;
+                                otherRole = receiverRole != null ? receiverRole : RoleManager.ROLE_ADMIN_CAREGIVER;
+                            } else {
+                                otherUid = sender;
+                                otherName = senderName != null ? senderName : (senderEmail != null ? senderEmail.split("@")[0] : "Patient");
+                                otherEmail = senderEmail;
+                                otherRole = senderRole != null ? senderRole : RoleManager.ROLE_SPEECH_IMPAIRED;
+                            }
+
+                            if (txtConnectedTitle != null) {
+                                if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(currentRole)) {
+                                    txtConnectedTitle.setText(getString(R.string.connected_patient_title));
+                                } else {
+                                    txtConnectedTitle.setText(getString(R.string.connected_caregiver_title));
+                                }
+                            }
+
+                            if (txtConnectedName != null) txtConnectedName.setText(otherName);
+                            if (txtConnectedEmail != null) txtConnectedEmail.setText(otherEmail);
+                            String locOtherRole = RoleManager.ROLE_ADMIN_CAREGIVER.equals(otherRole) ? getString(R.string.role_caregiver) : (RoleManager.ROLE_MUTE_USER.equals(otherRole) ? getString(R.string.role_mute_user) : getString(R.string.role_speech_impaired));
+                            if (txtConnectedRole != null) txtConnectedRole.setText("Role: " + locOtherRole);
+
+                            caregiverEmail = otherEmail;
+                            connectedCaregiverUid = otherUid;
+
+                            getSharedPreferences("MuteUserSettings", MODE_PRIVATE).edit()
+                                    .putString("connectedCaregiverUid", otherUid)
+                                    .putString("caregiverEmail", otherEmail)
+                                    .apply();
+
+                            final String finalOtherUid = otherUid;
+                            final String finalOtherName = otherName;
+                            final String finalOtherRole = otherRole;
+                            final String finalOtherEmail = otherEmail;
+                            final String finalDocId = docId;
+                            if (btnOpenFullChat != null) {
+                                btnOpenFullChat.setOnClickListener(v -> {
+                                    Intent intent = new Intent(MuteUserDashboardActivity.this, ChatActivity.class);
+                                    intent.putExtra("receiverId", finalOtherUid);
+                                    intent.putExtra("receiverName", finalOtherName);
+                                    intent.putExtra("receiverRole", finalOtherRole);
+                                    intent.putExtra("receiverEmail", finalOtherEmail);
+                                    intent.putExtra("senderRole", RoleManager.ROLE_MUTE_USER);
+                                    intent.putExtra("isMuteUser", true);
+                                    startActivity(intent);
+                                });
+                            }
+
+                            if (btnDisconnect != null) {
+                                btnDisconnect.setOnClickListener(v -> disconnectUser(finalDocId));
+                            }
+                            if (cardConnectedUser != null) {
+                                cardConnectedUser.setVisibility(View.VISIBLE);
+                            }
+                            startCaregiverChatListener(otherUid);
+                            updateSearchCardVisibility();
+                            return;
                         }
+                    }
+
+                    // No active connection found in Firestore or Local simulator
+                    cardConnectedUser.setVisibility(View.GONE);
+                    connectedCaregiverUid = null;
+                    caregiverEmail = "";
+                    getSharedPreferences("MuteUserSettings", MODE_PRIVATE).edit()
+                            .remove("connectedCaregiverUid")
+                            .remove("caregiverEmail")
+                            .apply();
+                    startCaregiverChatListener(null);
+                    if (editCaregiverEmail != null) {
+                        editCaregiverEmail.setText("");
+                        editCaregiverEmail.setHint("Not Connected to any Caregiver");
                     }
                     updateSearchCardVisibility();
                 });
@@ -2890,6 +3122,12 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
 
     private void disconnectUser(String docId) {
         LocalConnectionSimulator.deleteConnection(this, docId);
+        connectedCaregiverUid = null;
+        caregiverEmail = "";
+        getSharedPreferences("MuteUserSettings", MODE_PRIVATE).edit()
+                .remove("connectedCaregiverUid")
+                .remove("caregiverEmail")
+                .apply();
         Toast.makeText(this, "Disconnected successfully.", Toast.LENGTH_SHORT).show();
         refreshConnectionState();
 
@@ -2940,7 +3178,13 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
     }
 
     private void clearSpokenHistory() {
+        String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
+        String normLang = LanguageManager.normalizeLanguageCode(userLang);
         getSharedPreferences("SpeechHistory", MODE_PRIVATE).edit()
+                .remove("history_" + normLang)
+                .remove("history_kn")
+                .remove("history_hi")
+                .remove("history_ml")
                 .remove("history")
                 .apply();
     }
@@ -3090,7 +3334,6 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
             }
 
             if (value != null) {
-                LocalConnectionSimulator.clearLocalMessages(this, chatId);
                 List<DocumentSnapshot> docs = value.getDocuments();
                 List<ChatMessage> chatMsgs = new ArrayList<>();
                 for (DocumentSnapshot doc : docs) {
@@ -3101,8 +3344,9 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                 List<Map<String, Object>> locals = LocalConnectionSimulator.getLocalMessages(this, chatId);
                 for (Map<String, Object> local : locals) {
                     boolean dup = false;
+                    Object localMsg = local.get("message");
                     for (ChatMessage m : chatMsgs) {
-                        if (m.getMessage().equals(local.get("message")) && 
+                        if (localMsg != null && localMsg.equals(m.getMessage()) && 
                             m.getTimestamp() != null && 
                             local.get("timestamp") != null &&
                             Math.abs(m.getTimestamp().toDate().getTime() - ((com.google.firebase.Timestamp)local.get("timestamp")).toDate().getTime()) < 5000) {
@@ -3113,6 +3357,10 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                     if (!dup) {
                         chatMsgs.add(new ChatMessage(local));
                     }
+                }
+
+                if (!docs.isEmpty()) {
+                    LocalConnectionSimulator.clearLocalMessages(this, chatId);
                 }
 
 
@@ -3414,6 +3662,126 @@ public class MuteUserDashboardActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to load audio file from File Manager", Toast.LENGTH_SHORT).show();
                 }
             }
+        }
+    }
+
+    private final java.util.Set<String> deletingMessageIds = new java.util.HashSet<>();
+
+    public void showMuteUserDeleteDialog(@NonNull ChatMessage message) {
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: outgoing message sent by currently authenticated mute user only
+        if (myUid == null || myUid.isEmpty() || !myUid.equals(message.getSenderId())) {
+            Toast.makeText(this, "Cannot delete caregiver messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete this message?")
+                .setMessage("\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    performDeleteMuteUserMessage(message);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void performDeleteMuteUserMessage(ChatMessage message) {
+        final String messageId = message.getId();
+        final String messageText = message.getMessage();
+
+        // Prevent accidental duplicate deletion requests
+        String trackingKey = (messageId != null && !messageId.isEmpty()) ? messageId : messageText;
+        if (trackingKey != null && deletingMessageIds.contains(trackingKey)) {
+            return;
+        }
+        if (trackingKey != null) {
+            deletingMessageIds.add(trackingKey);
+        }
+
+        // Clean up exclusively associated media from Firebase Storage if present
+        String audioUrl = message.getAudioUrl();
+        if (audioUrl != null && !audioUrl.isEmpty() && audioUrl.contains("firebasestorage.googleapis.com")) {
+            try {
+                com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(audioUrl).delete()
+                        .addOnFailureListener(err -> Log.w(TAG, "Failed to clean audio media file", err));
+            } catch (Exception ignored) {}
+        }
+
+        // Deterministic chatId for offline/local storage cleanup
+        String chatId = null;
+        if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && currentUid != null && !currentUid.isEmpty()) {
+            if (currentUid.compareTo(connectedCaregiverUid) < 0) {
+                chatId = currentUid + "_" + connectedCaregiverUid;
+            } else {
+                chatId = connectedCaregiverUid + "_" + currentUid;
+            }
+        }
+        final String finalChatId = chatId;
+
+        if (messageId != null && !messageId.trim().isEmpty()) {
+            if (db == null) {
+                db = FirebaseFirestore.getInstance();
+            }
+            db.collection("caregiver_messages").document(messageId)
+                    .delete()
+                    .addOnSuccessListener(aVoid -> {
+                        if (trackingKey != null) deletingMessageIds.remove(trackingKey);
+                        if (finalChatId != null) {
+                            LocalConnectionSimulator.deleteLocalMessage(this, finalChatId, messageId);
+                        }
+                        runOnUiThread(() -> {
+                            if (caregiverChatAdapter != null) {
+                                caregiverChatAdapter.removeMessageById(messageId);
+                                caregiverChatAdapter.removeMessage(message);
+                                if (caregiverChatAdapter.getItemCount() == 0 && layoutCaregiverChatEmptyState != null) {
+                                    layoutCaregiverChatEmptyState.setVisibility(View.VISIBLE);
+                                    if (rvCaregiverChatMessages != null) rvCaregiverChatMessages.setVisibility(View.GONE);
+                                }
+                            }
+                            Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show();
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        if (trackingKey != null) deletingMessageIds.remove(trackingKey);
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Failed to delete message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+                    });
+        } else {
+            // Local fallback cleanup when message has no remote Firestore document ID
+            if (trackingKey != null) deletingMessageIds.remove(trackingKey);
+            if (finalChatId != null) {
+                LocalConnectionSimulator.deleteLocalMessage(this, finalChatId, messageText);
+            }
+            runOnUiThread(() -> {
+                if (caregiverChatAdapter != null) {
+                    caregiverChatAdapter.removeMessage(message);
+                    if (caregiverChatAdapter.getItemCount() == 0 && layoutCaregiverChatEmptyState != null) {
+                        layoutCaregiverChatEmptyState.setVisibility(View.VISIBLE);
+                        if (rvCaregiverChatMessages != null) rvCaregiverChatMessages.setVisibility(View.GONE);
+                    }
+                }
+                Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show();
+            });
         }
     }
 

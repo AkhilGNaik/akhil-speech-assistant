@@ -16,6 +16,7 @@ import com.kannada.speechassistant.ChatActivity;
 import com.kannada.speechassistant.EmergencyActivity;
 import com.kannada.speechassistant.ProfileActivity;
 import com.kannada.speechassistant.R;
+import com.kannada.speechassistant.SpeechImpairedDashboardActivity;
 
 /**
  * Dispatches resolved voice commands to existing Activities, Fragments, and UI widgets.
@@ -91,6 +92,11 @@ public class VoiceActionDispatcher {
                 case VoiceCommandConstants.CMD_SEND_MESSAGE:
                     handled = true;
                     spokenResponse = VoiceCommandConstants.PROMPT_SAY_MESSAGE;
+                    break;
+
+                case VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE:
+                    handled = true;
+                    spokenResponse = VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE;
                     break;
 
                 case VoiceCommandConstants.CMD_READ_MESSAGES:
@@ -299,6 +305,9 @@ public class VoiceActionDispatcher {
             btnSettings.performClick();
             return true;
         }
+        if (activity instanceof SpeechImpairedDashboardActivity) {
+            return handleOpenProfile(activity);
+        }
         return false;
     }
 
@@ -361,7 +370,9 @@ public class VoiceActionDispatcher {
             View cardEmergency = activity.findViewById(R.id.cardEmergency);
             if (layoutHome != null) layoutHome.setVisibility(View.GONE);
             if (layoutProfile != null) layoutProfile.setVisibility(View.GONE);
-            if (cardEmergency != null) cardEmergency.setVisibility(View.GONE);
+            if (!(activity instanceof SpeechImpairedDashboardActivity)) {
+                if (cardEmergency != null) cardEmergency.setVisibility(View.GONE);
+            }
             if (layoutCaregiver != null) layoutCaregiver.setVisibility(View.VISIBLE);
             return true;
         }

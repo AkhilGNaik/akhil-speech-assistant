@@ -63,8 +63,21 @@ public class VoiceCommandProcessor {
             RoleManager.ROLE_BLIND_USER
     )));
 
-    public VoiceCommandProcessor(@NonNull Context context) {
-        this.context = context.getApplicationContext();
+    // Roles authorized for Delete Message feature (Blind User, Deaf User)
+    public static final Set<String> DELETE_MESSAGE_ROLES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            RoleManager.ROLE_BLIND_USER,
+            RoleManager.ROLE_DEAF_USER,
+            RoleManager.ROLE_SPEECH_IMPAIRED,
+            "Deaf",
+            "Speech-Impaired"
+    )));
+
+    public VoiceCommandProcessor() {
+        this.context = null;
+    }
+
+    public VoiceCommandProcessor(@Nullable Context context) {
+        this.context = context != null ? context.getApplicationContext() : null;
     }
 
     public synchronized void registerActionHandler(@NonNull VoiceActionHandler handler) {
@@ -206,6 +219,9 @@ public class VoiceCommandProcessor {
             case STOP_LISTENING:
                 return new VoiceCommand(VoiceCommandConstants.CMD_STOP_LISTENING, intent, ALL_ROLES, false);
 
+            case DELETE_LAST_MESSAGE:
+                return new VoiceCommand(VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE, intent, DELETE_MESSAGE_ROLES, false);
+
             case OPEN_APP:
                 return new VoiceCommand(VoiceCommandConstants.CMD_OPEN_APP, intent, BLIND_ONLY_ROLES, false);
 
@@ -243,6 +259,8 @@ public class VoiceCommandProcessor {
                 return VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_REPEAT;
             case VoiceCommandConstants.CMD_READ_NOTIFICATIONS:
                 return VoiceCommandConstants.RESPONSE_NO_NOTIFICATIONS;
+            case VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE:
+                return VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE;
             case VoiceCommandConstants.CMD_GO_BACK:
                 return VoiceCommandConstants.RESPONSE_GOING_BACK;
             case VoiceCommandConstants.CMD_OPEN_COMMUNICATION:

@@ -1,0 +1,211 @@
+<mxfile host="app.diagrams.net" modified="2026-10-06T16:50:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="DFD_Unified_Simple" name="DFD All Users - Simple Unified">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="950" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ========================================================
+             DIAGRAM TITLE
+             ======================================================== -->
+        <mxCell id="title" value="Data Flow Diagram (DFD) — All User Roles (Blind, Mute, Deaf &amp; Caregiver)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontFamily=Arial;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="150" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             EXTERNAL ENTITIES (Left & Right)
+             ======================================================== -->
+        <!-- Blind User (Left - Top) -->
+        <mxCell id="ent_blind" value="Blind User&#xa;(Voice / Audio)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=1;fillColor=#EBF5FB;strokeColor=#2980B9;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Mute User (Left - Mid-Top) -->
+        <mxCell id="ent_mute" value="Mute User&#xa;(Hand Gestures)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=1;fillColor=#EBF5FB;strokeColor=#2980B9;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Deaf User (Left - Mid-Bottom) -->
+        <mxCell id="ent_deaf" value="Deaf User&#xa;(Text / Visual)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=1;fillColor=#EBF5FB;strokeColor=#2980B9;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="180" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Caregiver / Admin (Bottom Left / Spanning) -->
+        <mxCell id="ent_caregiver" value="Caregiver / Admin&#xa;(Monitor &amp; Emergency Support)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=1;fillColor=#FEF9E7;strokeColor=#D4AC0D;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             PROCESSES (Center Column - Ellipses)
+             ======================================================== -->
+        <!-- 1.0 Login & Authentication -->
+        <mxCell id="proc_auth" value="1.0&#xa;Login &amp; Role-Based&#xa;Access Control" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FFFFFF;strokeColor=#333333;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="450" y="90" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- 2.0 Assistive Interaction Engine -->
+        <mxCell id="proc_assistive" value="2.0&#xa;Assistive Interaction Engine&#xa;(Voice / Gesture / Text)" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FFFFFF;strokeColor=#333333;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="450" y="260" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- 3.0 Communication & Voice Calling -->
+        <mxCell id="proc_comm" value="3.0&#xa;Communication &amp;&#xa;Voice Call System" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FFFFFF;strokeColor=#333333;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="450" y="440" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- 4.0 Emergency SOS Alerting -->
+        <mxCell id="proc_sos" value="4.0&#xa;Emergency SOS&#xa;Alert Management" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FFFFFF;strokeColor=#C0392B;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="450" y="620" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             DATA STORES (Right Column - Classic Open Rectangles)
+             ======================================================== -->
+        <!-- D1: Users & Profiles -->
+        <mxCell id="ds_users" value="D1: User Accounts &amp; Roles" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=#F8F9F9;strokeColor=#2C3E50;strokeWidth=2;fontFamily=Arial;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="115" width="220" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- D2: Assistive Models & Sign Rules -->
+        <mxCell id="ds_assistive" value="D2: Speech &amp; Gesture Library" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=#F8F9F9;strokeColor=#2C3E50;strokeWidth=2;fontFamily=Arial;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="280" width="220" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- D3: Messages & Call Sessions -->
+        <mxCell id="ds_messages" value="D3: Messages &amp; Call Logs" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=#F8F9F9;strokeColor=#2C3E50;strokeWidth=2;fontFamily=Arial;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="460" width="220" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- D4: SOS Incidents -->
+        <mxCell id="ds_sos" value="D4: SOS Emergency Records" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=#F8F9F9;strokeColor=#2C3E50;strokeWidth=2;fontFamily=Arial;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="640" width="220" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             FLOW ARROWS: Entities to Process 1.0 (Auth)
+             ======================================================== -->
+        <!-- Blind/Mute/Deaf Users to 1.0 -->
+        <mxCell id="flow_users_auth" value="Login Details (Voice / Text / Pin)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.3;entryX=0;entryY=0.35;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_blind" target="proc_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="flow_auth_users" value="Authorized Role Dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;entryX=1;entryY=0.7;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_auth" target="ent_blind">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="flow_mute_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#2980B9;strokeWidth=1.2;" edge="1" parent="1" source="ent_mute" target="proc_auth">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="275" />
+              <mxPoint x="320" y="135" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="flow_deaf_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.65;strokeColor=#2980B9;strokeWidth=1.2;" edge="1" parent="1" source="ent_deaf" target="proc_auth">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="415" />
+              <mxPoint x="340" y="148" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Caregiver to 1.0 -->
+        <mxCell id="flow_cg_auth" value="Caregiver Login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.9;exitY=0;entryX=0;entryY=0.85;strokeColor=#D4AC0D;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_caregiver" target="proc_auth">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="238" y="560" />
+              <mxPoint x="380" y="560" />
+              <mxPoint x="380" y="167" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========================================================
+             FLOW ARROWS: Entities to Process 2.0 (Assistive Engine)
+             ======================================================== -->
+        <!-- Blind User -> 2.0 -->
+        <mxCell id="flow_blind_assist" value="Spoken Voice Input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.8;entryX=0;entryY=0.25;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_blind" target="proc_assistive">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Mute User -> 2.0 -->
+        <mxCell id="flow_mute_assist" value="Hand Gesture Stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.35;entryX=0;entryY=0.5;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_mute" target="proc_assistive">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2.0 -> Disabled Users (Output) -->
+        <mxCell id="flow_assist_out" value="Kannada TTS Speech / Screen Text" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.75;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_assistive" target="ent_mute">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Deaf User -> 2.0 -->
+        <mxCell id="flow_deaf_assist" value="Text / Quick Phrase" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.85;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_deaf" target="proc_assistive">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             FLOW ARROWS: Entities to Process 3.0 (Communication & Calls)
+             ======================================================== -->
+        <!-- Disabled Users <-> 3.0 -->
+        <mxCell id="flow_users_comm" value="Chat Messages / Voice Call Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.8;entryX=0;entryY=0.35;strokeColor=#2980B9;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_deaf" target="proc_comm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Caregiver <-> 3.0 -->
+        <mxCell id="flow_cg_comm" value="Reply Messages / Accept Voice Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.7;strokeColor=#D4AC0D;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_caregiver" target="proc_comm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="620" />
+              <mxPoint x="360" y="503" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========================================================
+             FLOW ARROWS: Entities to Process 4.0 (Emergency SOS)
+             ======================================================== -->
+        <!-- All Disabled Users -> 4.0 -->
+        <mxCell id="flow_sos_trigger" value="Emergency Trigger (Voice 'help' / Gesture / Button)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0;entryY=0.25;strokeColor=#C0392B;strokeWidth=2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ent_deaf" target="proc_sos">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="530" />
+              <mxPoint x="390" y="530" />
+              <mxPoint x="390" y="643" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 4.0 -> Caregiver -->
+        <mxCell id="flow_sos_cg" value="Instant SOS Alert &amp; Location" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.75;strokeColor=#C0392B;strokeWidth=2;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_sos" target="ent_caregiver">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             FLOW ARROWS: Processes <-> Data Stores
+             ======================================================== -->
+        <!-- 1.0 <-> D1 (Users) -->
+        <mxCell id="flow_auth_d1" value="Verify Credentials / Fetch Role" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#2C3E50;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_auth" target="ds_users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2.0 <-> D2 (Assistive Models) -->
+        <mxCell id="flow_assist_d2" value="Match Acoustic / Sign Patterns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#2C3E50;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_assistive" target="ds_assistive">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 3.0 <-> D3 (Messages & Call Sessions) -->
+        <mxCell id="flow_comm_d3" value="Sync Realtime Messages &amp; Call Signals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#2C3E50;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_comm" target="ds_messages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4.0 <-> D4 (SOS Logs) -->
+        <mxCell id="flow_sos_d4" value="Log SOS Alert &amp; Timestamp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#2C3E50;strokeWidth=1.5;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_sos" target="ds_sos">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

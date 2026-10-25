@@ -31,6 +31,7 @@ public class VoiceCommandConstants {
     public static final String CMD_REPEAT_MESSAGE = "CMD_REPEAT_MESSAGE";
     public static final String CMD_READ_NOTIFICATIONS = "CMD_READ_NOTIFICATIONS";
     public static final String CMD_GO_BACK = "CMD_GO_BACK";
+    public static final String CMD_DELETE_LAST_MESSAGE = "CMD_DELETE_LAST_MESSAGE";
     public static final String CMD_CONFIRM_YES = "CMD_CONFIRM_YES";
     public static final String CMD_CONFIRM_NO = "CMD_CONFIRM_NO";
     public static final String CMD_OPEN_APP = "CMD_OPEN_APP";
@@ -43,6 +44,7 @@ public class VoiceCommandConstants {
     public static final String INTENT_OPEN_SETTINGS = "INTENT_OPEN_SETTINGS";
     public static final String INTENT_OPEN_MESSAGES = "INTENT_OPEN_MESSAGES";
     public static final String INTENT_SEND_MESSAGE = "INTENT_SEND_MESSAGE";
+    public static final String INTENT_DELETE_LAST_MESSAGE = "INTENT_DELETE_LAST_MESSAGE";
     public static final String INTENT_READ_MESSAGES = "INTENT_READ_MESSAGES";
     public static final String INTENT_MESSAGE_COUNT = "INTENT_MESSAGE_COUNT";
     public static final String INTENT_REPEAT_MESSAGE = "INTENT_REPEAT_MESSAGE";
@@ -95,6 +97,10 @@ public class VoiceCommandConstants {
     public static final String RESPONSE_MESSAGE_SENT = "Message sent.";
     public static final String RESPONSE_NO_NEW_MESSAGES = "No new messages.";
     public static final String RESPONSE_NO_MESSAGE_TO_REPEAT = "No message to repeat.";
+    public static final String RESPONSE_NO_MESSAGE_TO_DELETE = "No message to delete.";
+    public static final String RESPONSE_MESSAGE_DELETED = "Message deleted.";
+    public static final String RESPONSE_DELETE_CANCELLED = "Deletion cancelled.";
+    public static final String RESPONSE_DELETE_FAILED = "Unable to delete message.";
     public static final String RESPONSE_NO_NOTIFICATIONS = "No new notifications.";
     public static final String RESPONSE_GOING_BACK = "Going back.";
     public static final String RESPONSE_ALREADY_FIRST_SCREEN = "Already at the first screen.";

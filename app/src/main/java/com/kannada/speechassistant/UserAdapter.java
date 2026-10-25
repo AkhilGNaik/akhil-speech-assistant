@@ -95,8 +95,34 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
 
             // Check Role Filter
             boolean matchesRole = true;
-            if (!"All".equalsIgnoreCase(roleFilter)) {
-                matchesRole = role.equalsIgnoreCase(roleFilter);
+            if (!"All".equalsIgnoreCase(roleFilter) && !roleFilter.isEmpty()) {
+                if (RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(roleFilter)
+                        || RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(roleFilter)
+                        || "deaf".equalsIgnoreCase(roleFilter)
+                        || "speech".equalsIgnoreCase(roleFilter)
+                        || "speech_impaired".equalsIgnoreCase(roleFilter)) {
+                    matchesRole = RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(role)
+                            || RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(role)
+                            || "deaf".equalsIgnoreCase(role)
+                            || "speech".equalsIgnoreCase(role)
+                            || "speech_impaired".equalsIgnoreCase(role);
+                } else if (RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(roleFilter)
+                        || "blind".equalsIgnoreCase(roleFilter)) {
+                    matchesRole = RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(role)
+                            || "blind".equalsIgnoreCase(role);
+                } else if (RoleManager.ROLE_MUTE_USER.equalsIgnoreCase(roleFilter)
+                        || "mute".equalsIgnoreCase(roleFilter)) {
+                    matchesRole = RoleManager.ROLE_MUTE_USER.equalsIgnoreCase(role)
+                            || "mute".equalsIgnoreCase(role);
+                } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(roleFilter)
+                        || "caregiver".equalsIgnoreCase(roleFilter)
+                        || "admin".equalsIgnoreCase(roleFilter)) {
+                    matchesRole = RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(role)
+                            || "caregiver".equalsIgnoreCase(role)
+                            || "admin".equalsIgnoreCase(role);
+                } else {
+                    matchesRole = role.equalsIgnoreCase(roleFilter);
+                }
             }
 
             // Check Search Query
@@ -155,7 +181,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         if (RoleManager.ROLE_MUTE_USER.equals(role)) {
             badgeBg = Color.parseColor("#DBEAFE"); // Light Blue
             badgeText = Color.parseColor("#1D4ED8");
-        } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role)) {
+        } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
             badgeBg = Color.parseColor("#E0E7FF"); // Light Indigo
             badgeText = Color.parseColor("#4F46E5");
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(role)) {
@@ -164,6 +190,9 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
             badgeBg = Color.parseColor("#FCE7F3"); // Light Pink
             badgeText = Color.parseColor("#DB2777");
+        } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(role)) {
+            badgeBg = Color.parseColor("#FEF3C7"); // Warm Amber
+            badgeText = Color.parseColor("#B45309");
         } else {
             badgeBg = Color.parseColor("#F1F5F9"); // Light Slate
             badgeText = Color.parseColor("#475569");
@@ -175,11 +204,45 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             holder.txtRoleBadge.setText("Deaf User");
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
             holder.txtRoleBadge.setText("Blind User");
+        } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(role)) {
+            holder.txtRoleBadge.setText("Caregiver");
         } else {
             holder.txtRoleBadge.setText(role.replace(" User", ""));
         }
         holder.txtRoleBadge.setBackgroundTintList(ColorStateList.valueOf(badgeBg));
         holder.txtRoleBadge.setTextColor(badgeText);
+
+        // Bind Language Badge below Role Badge
+        if (holder.txtLanguageBadge != null) {
+            String rawLang = doc.getString("language");
+            String langDisplay = LanguageManager.getLanguageDisplayName(rawLang);
+            holder.txtLanguageBadge.setText(langDisplay);
+
+            int langBg;
+            int langText;
+            String normCode = LanguageManager.normalizeLanguageCode(rawLang);
+            switch (normCode) {
+                case LanguageManager.LANG_HINDI:
+                    langBg = Color.parseColor("#FEF3C7"); // Warm Amber
+                    langText = Color.parseColor("#B45309");
+                    break;
+                case LanguageManager.LANG_MALAYALAM:
+                    langBg = Color.parseColor("#DCFCE7"); // Mint Green
+                    langText = Color.parseColor("#15803D");
+                    break;
+                case LanguageManager.LANG_ENGLISH:
+                    langBg = Color.parseColor("#F3E8FF"); // Soft Purple
+                    langText = Color.parseColor("#7E22CE");
+                    break;
+                case LanguageManager.LANG_KANNADA:
+                default:
+                    langBg = Color.parseColor("#E0F2FE"); // Light Sky Blue
+                    langText = Color.parseColor("#0369A1");
+                    break;
+            }
+            holder.txtLanguageBadge.setBackgroundTintList(ColorStateList.valueOf(langBg));
+            holder.txtLanguageBadge.setTextColor(langText);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             if (clickListener != null) {
@@ -195,7 +258,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
 
     public static class UserViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView avatarCard;
-        TextView txtAvatar, txtName, txtEmail, txtRegDate, txtRoleBadge;
+        TextView txtAvatar, txtName, txtEmail, txtRegDate, txtRoleBadge, txtLanguageBadge;
 
         public UserViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -205,6 +268,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             txtEmail = itemView.findViewById(R.id.txtEmail);
             txtRegDate = itemView.findViewById(R.id.txtRegDate);
             txtRoleBadge = itemView.findViewById(R.id.txtRoleBadge);
+            txtLanguageBadge = itemView.findViewById(R.id.txtLanguageBadge);
         }
     }
 }

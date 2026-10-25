@@ -131,7 +131,8 @@ public class AppVoiceAssistant {
     public enum ConfirmationType {
         NONE,
         COMMAND,
-        VOICE_MESSAGE
+        VOICE_MESSAGE,
+        DELETE_LAST_MESSAGE
     }
 
     public enum ClarificationContext {
@@ -201,12 +202,37 @@ public class AppVoiceAssistant {
         return pendingRecordedAudioDuration;
     }
 
+    private ChatMessage pendingDeleteMessage = null;
+    private String pendingDeleteMessageId = null;
+    private String pendingDeleteSenderUid = null;
+
+    public void setPendingDeleteMessageForTesting(@Nullable ChatMessage message) {
+        this.pendingDeleteMessage = message;
+        if (message != null) {
+            this.pendingConfirmationType = ConfirmationType.DELETE_LAST_MESSAGE;
+            this.pendingDeleteMessageId = message.getId();
+            this.pendingDeleteSenderUid = message.getSenderId();
+        } else {
+            this.pendingConfirmationType = ConfirmationType.NONE;
+            this.pendingDeleteMessageId = null;
+            this.pendingDeleteSenderUid = null;
+        }
+    }
+
+    @Nullable
+    public ChatMessage getPendingDeleteMessage() {
+        return pendingDeleteMessage;
+    }
+
     public void resetRecordingAndConfirmationStateForTesting() {
         this.currentState = AssistantState.IDLE;
         this.pendingConfirmationType = ConfirmationType.NONE;
         this.pendingRecordedAudioFile = null;
         this.pendingRecordedAudioDuration = 0;
         this.isHandsFreeVoiceRecordingActive = false;
+        this.pendingDeleteMessage = null;
+        this.pendingDeleteMessageId = null;
+        this.pendingDeleteSenderUid = null;
     }
 
     public void setAssistantState(@NonNull AssistantState newState) {
@@ -292,9 +318,18 @@ public class AppVoiceAssistant {
         return null;
     }
 
+    public static boolean isDeafUserRole(@Nullable String role) {
+        if (role == null) return false;
+        return RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(role)
+                || RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(role)
+                || "Mute, Deaf & Blind User".equalsIgnoreCase(role)
+                || "Mute, Deaf & Blind Users".equalsIgnoreCase(role)
+                || "Deaf".equalsIgnoreCase(role)
+                || "Speech-Impaired".equalsIgnoreCase(role);
+    }
+
     public boolean isDeafUser(@Nullable String role) {
-        if (RoleManager.ROLE_DEAF_USER.equals(role) || RoleManager.ROLE_SPEECH_IMPAIRED.equals(role)
-                || "Mute, Deaf & Blind User".equals(role) || "Mute, Deaf & Blind Users".equals(role)) {
+        if (isDeafUserRole(role)) {
             return true;
         }
         Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
@@ -453,6 +488,10 @@ public class AppVoiceAssistant {
         }
 
         CaregiverSoundManager.speakWithVolume(textToSpeech, text, utteranceId, appContext);
+    }
+
+    public boolean isTtsReady() {
+        return isTtsReady && textToSpeech != null;
     }
 
     @Nullable
@@ -655,26 +694,43 @@ public class AppVoiceAssistant {
 
         String commandPortion = VoiceIntentMatcher.extractCommandText(detectedPhrase);
 
-        // RELIABILITY FIX: Always route through Android STT for command recognition.
-        // Vosk uses a grammar-restricted offline model which is much less accurate than
-        // Android STT (Google Speech Recognition) for command matching. We use Vosk only
-        // to detect the wake word trigger. Android STT then captures the actual command.
-        //
-        // This covers both:
-        //   Style 1: User said "Assistant, open profile" in one breath (Vosk captured command)
-        //   Style 2: User said "Assistant" alone (Vosk captured only wake word)
-        //
-        // In both cases, we open Android STT so the user can speak their command clearly.
+        // Style 1: User said a single-utterance command like "Hey Assistant, call caregiver".
+        // If a valid command intent is already captured from the wake word utterance, execute it immediately
+        // with 100% responsiveness instead of discarding it and forcing an empty STT listen.
+        if (!commandPortion.isEmpty()) {
+            VoiceIntent detectedIntent = VoiceIntentMatcher.matchIntent(commandPortion, langCode);
+            if (detectedIntent.getIntentType() == VoiceIntentType.UNKNOWN && VoiceIntentMatcher.match(detectedPhrase) != VoiceIntentType.UNKNOWN) {
+                detectedIntent = VoiceIntentMatcher.matchIntent(detectedPhrase, langCode);
+                commandPortion = detectedPhrase;
+            }
+            if (detectedIntent != null && detectedIntent.getIntentType() != VoiceIntentType.UNKNOWN) {
+                Log.i(TAG, "executeWakeWordCommand: Direct single-utterance command detected: '" + commandPortion
+                        + "' intent=" + detectedIntent.getIntentType());
 
+                try {
+                    WakeWordManager.getInstance(appContext).pauseListening();
+                } catch (Throwable ignored) {}
+
+                commandHandled.set(true);
+                setAssistantState(AssistantState.EXECUTING);
+                AccessibleMicFeedbackManager.triggerShortVibration(activity);
+
+                MaterialButton btnAssistant = activity.findViewById(com.kannada.speechassistant.R.id.btnVoiceAssistant);
+                VoiceAssistantCallback internalCallback = createInternalCallback(activity, btnAssistant, userRole, langCode, customCallback);
+                internalCallback.onSpeechRecognized(commandPortion);
+                internalCallback.onIntentDetected(detectedIntent);
+
+                executeVoiceCommandFlow(activity, commandPortion, userRole, langCode, internalCallback);
+                return;
+            }
+        }
+
+        // Style 2: User said only the wake word ("Assistant", "Hey Assistant").
+        // Prompt with an audible listening cue for blind users and open Android STT to capture their command.
         boolean isBlindOrDash = RoleManager.ROLE_BLIND_USER.equals(userRole)
                 || activity instanceof BlindUserDashboardActivity;
 
-        // For Style 1 where Vosk already captured a clear command, we still go through
-        // Android STT but give the user an audio hint of what was heard, allowing correction.
-        // For Style 2 (command is empty), just say "Yes?" and open mic.
-        String listeningCue = commandPortion.isEmpty()
-                ? VoiceLanguageConfig.getListeningReadyCue(langCode)
-                : null; // No cue for Style 1 - just open mic immediately
+        String listeningCue = VoiceLanguageConfig.getListeningReadyCue(langCode);
 
         Runnable openMicAction = () -> {
             if (!activity.isFinishing() && !activity.isDestroyed()) {
@@ -685,11 +741,9 @@ public class AppVoiceAssistant {
         };
 
         if (isBlindOrDash && listeningCue != null && !listeningCue.isEmpty()) {
-            // Speak cue then open mic (Style 2 for blind users)
             setAssistantState(AssistantState.SPEAKING);
             speakResponse(listeningCue, openMicAction);
         } else {
-            // Open mic immediately (Style 1, or non-blind Style 2)
             mainHandler.post(openMicAction);
         }
     }
@@ -753,10 +807,23 @@ public class AppVoiceAssistant {
         setAssistantState(AssistantState.WAITING_FOR_COMMAND);
         commandHandled.set(false);
 
-        VoiceAssistantCallback internalCallback = new VoiceAssistantCallback() {
+        VoiceAssistantCallback internalCallback = createInternalCallback(activity, button, role, langCode, customCallback);
+
+        // Short non-blocking haptic cue so the microphone is immediately open for user speech
+        AccessibleMicFeedbackManager.triggerShortVibration(activity);
+        startListening(activity, internalCallback);
+    }
+
+    @NonNull
+    private VoiceAssistantCallback createInternalCallback(@NonNull Activity activity,
+                                                           @Nullable MaterialButton button,
+                                                           @Nullable String userRole,
+                                                           @NonNull String langCode,
+                                                           @Nullable VoiceAssistantCallback customCallback) {
+        return new VoiceAssistantCallback() {
             @Override
-            public void onAssistantReady(@NonNull String userRole, @NonNull String languageCode) {
-                if (customCallback != null) customCallback.onAssistantReady(userRole, languageCode);
+            public void onAssistantReady(@NonNull String role, @NonNull String languageCode) {
+                if (customCallback != null) customCallback.onAssistantReady(role, languageCode);
             }
 
             @Override
@@ -809,17 +876,13 @@ public class AppVoiceAssistant {
                 // Tactile feedback for blind users; spoken error is handled once by AppVoiceAssistant.speakResponse
                 AccessibleMicFeedbackManager.triggerShortVibration(activity);
 
-                if (!RoleManager.ROLE_BLIND_USER.equals(role) && !(activity instanceof BlindUserDashboardActivity)) {
+                if (!RoleManager.ROLE_BLIND_USER.equals(userRole) && !(activity instanceof BlindUserDashboardActivity)) {
                     Toast.makeText(activity, "Voice Assistant: " + errorMessage, Toast.LENGTH_SHORT).show();
                 }
 
                 if (customCallback != null) customCallback.onError(errorMessage, errorCode);
             }
         };
-
-        // Short non-blocking haptic cue so the microphone is immediately open for user speech
-        AccessibleMicFeedbackManager.triggerShortVibration(activity);
-        startListening(activity, internalCallback);
     }
 
     public void notifyConflict(@NonNull Activity activity, @NonNull String message) {
@@ -980,6 +1043,24 @@ public class AppVoiceAssistant {
                 Log.w(TAG, "STT Recognition error: code " + error);
                 Log.i(TAG, "VOICE_ERROR_HANDLED_ONCE");
 
+                // If waiting for delete confirmation and error/timeout occurs, safely cancel without deleting
+                if (pendingConfirmationType == ConfirmationType.DELETE_LAST_MESSAGE) {
+                    clearDeleteMessageConfirmation();
+                    setAssistantState(AssistantState.SPEAKING);
+                    String cancelResp = VoiceLanguageConfig.getDeleteCancelledResponse(langCode);
+                    if (isDeafUser(userRole)) {
+                        DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                        if (deafResp != null) {
+                            deafResp.showSuccess(cancelResp);
+                        }
+                    }
+                    speakResponse(cancelResp, () -> {
+                        callback.onResponseSpoken(cancelResp);
+                        onAssistantFinished(activity);
+                    });
+                    return;
+                }
+
                 // If the assistant was actively awaiting a command, speak at most one short notification
                 if (currentState == AssistantState.WAITING_FOR_COMMAND) {
                     setAssistantState(AssistantState.SPEAKING);
@@ -1013,6 +1094,22 @@ public class AppVoiceAssistant {
                     }
                     if (commandHandled.compareAndSet(false, true)) {
                         Log.i(TAG, "VOICE_ERROR_HANDLED_ONCE");
+                        if (pendingConfirmationType == ConfirmationType.DELETE_LAST_MESSAGE) {
+                            clearDeleteMessageConfirmation();
+                            setAssistantState(AssistantState.SPEAKING);
+                            String cancelResp = VoiceLanguageConfig.getDeleteCancelledResponse(langCode);
+                            if (isDeafUser(userRole)) {
+                                DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                                if (deafResp != null) {
+                                    deafResp.showSuccess(cancelResp);
+                                }
+                            }
+                            speakResponse(cancelResp, () -> {
+                                callback.onResponseSpoken(cancelResp);
+                                onAssistantFinished(activity);
+                            });
+                            return;
+                        }
                         if (currentState == AssistantState.WAITING_FOR_COMMAND) {
                             setAssistantState(AssistantState.SPEAKING);
                             String errorText = RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity
@@ -1118,6 +1215,12 @@ public class AppVoiceAssistant {
         // 0.5 Check if we are currently awaiting voice message send confirmation
         if (pendingConfirmationType == ConfirmationType.VOICE_MESSAGE) {
             handleVoiceMessageConfirmationFlow(activity, recognizedUtterance, userRole, langCode, callback);
+            return;
+        }
+
+        // 0.6 Check if we are currently awaiting delete last message confirmation
+        if (pendingConfirmationType == ConfirmationType.DELETE_LAST_MESSAGE) {
+            handleDeleteLastMessageConfirmationFlow(activity, recognizedUtterance, userRole, langCode, callback);
             return;
         }
 
@@ -1465,6 +1568,11 @@ public class AppVoiceAssistant {
             return;
         }
 
+        if (VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE.equals(command.getCommandId())) {
+            handleDeleteLastMessageFlow(activity, userRole, callback);
+            return;
+        }
+
         if (VoiceCommandConstants.CMD_READ_MESSAGES.equals(command.getCommandId())) {
             handleReadMessagesFlow(activity, userRole, callback);
             return;
@@ -1528,7 +1636,7 @@ public class AppVoiceAssistant {
                 // If emergency was triggered, EmergencyActivity takes ownership of UI and accessible alarm/audio feedback
                 if (VoiceCommandConstants.CMD_OPEN_EMERGENCY.equals(command.getCommandId())
                         || VoiceCommandConstants.CMD_OPEN_EMERGENCY_ALERT.equals(command.getCommandId())) {
-                    if (!(activity instanceof BlindUserDashboardActivity)) {
+                    if (!(activity instanceof BlindUserDashboardActivity) && !(activity instanceof SpeechImpairedDashboardActivity) && !isDeafUser(userRole)) {
                         Log.i(TAG, "EMERGENCY_TRIGGERED: Yielding microphone and audio control to EmergencyActivity");
                         cleanupSpeechRecognizer();
                         WakeWordManager.getInstance(appContext).pauseListening();
@@ -1541,7 +1649,7 @@ public class AppVoiceAssistant {
 
                 String finalCalculatedResponse = finalResponse;
                 if (isDeafUser(userRole)) {
-                    finalCalculatedResponse = VoiceLanguageConfig.getLocalizedResponse(command.getCommandId(), spokenResponse, getCurrentLanguageCode());
+                    finalCalculatedResponse = VoiceLanguageConfig.getDeafSuccessTextForCommand(command.getCommandId(), spokenResponse, getCurrentLanguageCode());
                     DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
                     if (deafResp != null) {
                         deafResp.showSuccess(finalCalculatedResponse);
@@ -2332,6 +2440,285 @@ public class AppVoiceAssistant {
         handleVoiceMessageConfirmationFlow(activity, utterance, getCurrentUserRole(), getCurrentLanguageCode(), callback);
     }
 
+    public void handleDeleteLastMessageFlow(@NonNull Activity activity,
+                                            @Nullable String userRole,
+                                            @NonNull VoiceAssistantCallback callback) {
+        Log.i(TAG, "COMMAND_EXECUTED_ONCE: " + VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE);
+        String langCode = getCurrentLanguageCode();
+
+        // 1. Voice call active check
+        if (isVoiceCallActive(activity)) {
+            Log.i(TAG, "DELETE_LAST_MESSAGE rejected: active call");
+            setAssistantState(AssistantState.SPEAKING);
+            String callResp = VoiceLanguageConfig.getCallActiveResponse(langCode);
+            speakResponse(callResp, () -> {
+                callback.onResponseSpoken(callResp);
+                onAssistantFinished(activity);
+            });
+            return;
+        }
+
+        // 2. Active recording check
+        if (isVoiceRecordingActive(activity)) {
+            notifyConflict(activity, VoiceCommandConstants.MESSAGE_CONFLICT_RECORDING);
+            return;
+        }
+
+        // 3. Role authorization check: Supported for Blind User and Deaf User modules
+        boolean isDeaf = isDeafUser(userRole) || (activity instanceof SpeechImpairedDashboardActivity);
+        boolean isBlind = RoleManager.ROLE_BLIND_USER.equals(userRole) || (activity instanceof BlindUserDashboardActivity);
+        if (!isBlind && !isDeaf) {
+            Log.w(TAG, "DELETE_LAST_MESSAGE rejected: unauthorized for non-blind/non-deaf user role " + userRole);
+            setAssistantState(AssistantState.SPEAKING);
+            String unauthResp = VoiceCommandConstants.RESPONSE_ROLE_UNAUTHORIZED;
+            if (isDeaf) {
+                DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                if (deafResp != null) {
+                    deafResp.showError(unauthResp);
+                }
+            }
+            speakResponse(unauthResp, () -> {
+                callback.onError(unauthResp, ERROR_COMMAND_PROCESSING);
+                onAssistantFinished(activity);
+            });
+            return;
+        }
+
+        // 4. Inspect caregiver conversation and locate most recent eligible outgoing message
+        ChatMessage eligibleMsg = null;
+        if (activity instanceof BlindUserDashboardActivity) {
+            eligibleMsg = ((BlindUserDashboardActivity) activity).getLatestEligibleOutgoingBlindUserMessage();
+        } else if (activity instanceof SpeechImpairedDashboardActivity) {
+            eligibleMsg = ((SpeechImpairedDashboardActivity) activity).getLatestEligibleOutgoingDeafUserMessage();
+        } else if (pendingDeleteMessage != null) {
+            eligibleMsg = pendingDeleteMessage;
+        }
+
+        // 5. If no eligible outgoing message exists, provide accessible response in currently selected language
+        if (eligibleMsg == null) {
+            Log.i(TAG, "DELETE_LAST_MESSAGE: No eligible outgoing message found to delete.");
+            setAssistantState(AssistantState.SPEAKING);
+            String noMsgResp = VoiceLanguageConfig.getNoMessageToDeleteResponse(langCode);
+            if (isDeaf) {
+                DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                if (deafResp != null) {
+                    deafResp.showError(noMsgResp);
+                }
+            }
+            speakResponse(noMsgResp, () -> {
+                callback.onResponseSpoken(noMsgResp);
+                onAssistantFinished(activity);
+            });
+            return;
+        }
+
+        // 6. Bind the confirmation to the exact selected message ID and sender UID
+        this.pendingConfirmationType = ConfirmationType.DELETE_LAST_MESSAGE;
+        this.pendingDeleteMessage = eligibleMsg;
+        this.pendingDeleteMessageId = eligibleMsg.getId();
+        this.pendingDeleteSenderUid = eligibleMsg.getSenderId();
+
+        // 7. Announce message contents and request explicit confirmation
+        String snippet;
+        if (eligibleMsg.isVoice() || (eligibleMsg.getAudioUrl() != null && !eligibleMsg.getAudioUrl().trim().isEmpty())) {
+            snippet = VoiceLanguageConfig.getVoiceMessageSnippet(langCode);
+        } else {
+            String text = eligibleMsg.getMessageText();
+            if (text == null || text.trim().isEmpty()) {
+                text = eligibleMsg.getMessage();
+            }
+            snippet = (text != null && !text.trim().isEmpty()) ? text.trim() : VoiceLanguageConfig.getVoiceMessageSnippet(langCode);
+        }
+
+        String prompt = VoiceLanguageConfig.getConfirmDeleteMessagePrompt(langCode, snippet);
+        if (isDeaf) {
+            DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+            if (deafResp != null) {
+                deafResp.showAssistantMessage(prompt);
+            }
+        }
+        setAssistantState(AssistantState.SPEAKING);
+        Log.i(TAG, "TTS_STARTED: " + prompt);
+        speakResponse(prompt, () -> {
+            Log.i(TAG, "TTS_COMPLETED: " + prompt);
+            callback.onResponseSpoken(prompt);
+            mainHandler.postDelayed(() -> {
+                if (!activity.isFinishing() && !activity.isDestroyed()) {
+                    setAssistantState(AssistantState.WAITING_FOR_CONFIRMATION);
+                    commandHandled.set(false);
+                    startListening(activity, callback);
+                }
+            }, 300);
+        });
+    }
+
+    public void handleDeleteLastMessageConfirmationFlow(@NonNull Activity activity,
+                                                        @NonNull String recognizedUtterance,
+                                                        @Nullable String userRole,
+                                                        @NonNull String langCode,
+                                                        @NonNull VoiceAssistantCallback callback) {
+        ChatMessage msgToDelete = this.pendingDeleteMessage;
+        String boundMsgId = this.pendingDeleteMessageId;
+        String boundSenderUid = this.pendingDeleteSenderUid;
+        clearDeleteMessageConfirmation();
+
+        boolean isDeaf = isDeafUser(userRole) || (activity instanceof SpeechImpairedDashboardActivity);
+
+        VoiceIntent intent = commandProcessor.detectIntent(recognizedUtterance, langCode);
+        String s = VoiceIntentMatcher.normalizeText(recognizedUtterance);
+        Set<String> words = new HashSet<>(Arrays.asList(s.split(" ")));
+
+        // 1. Positive confirmation: "Confirm delete", "Yes, delete", "Delete it", "Yes", etc.
+        boolean isAffirmative = intent.getIntentType() == VoiceIntentType.CONFIRM_YES ||
+                s.equals("confirm delete") || s.equals("yes delete") || s.equals("delete it") ||
+                s.equals("yes please delete") || s.equals("yes delete it") || s.equals("delete") ||
+                s.equals("confirm") || s.equals("yes") || s.equals("proceed") || s.equals("yes please") ||
+                words.contains("confirm") || (words.contains("yes") && words.contains("delete")) ||
+                // Kannada
+                s.equals("ಅಳಿಸಲು ದೃಢೀಕರಿಸಿ") || s.equals("ಹೌದು ಅಳಿಸಿ") || s.equals("ಅಳಿಸಿ") || s.equals("ಅಳಿಸು") ||
+                s.equals("ಹೌದು ಅಳಿಸು") || s.equals("ದೃಢೀಕರಿಸಿ") || s.equals("ಹೌದು") || s.equals("ಸರಿ") ||
+                // Hindi
+                s.equals("पुष्टि करें") || s.equals("हाँ हटाओ") || s.equals("हां हटाओ") || s.equals("हाँ हटाएं") ||
+                s.equals("हटाओ") || s.equals("हटाएं") || s.equals("हटा दो") || s.equals("हाँ") || s.equals("हां") ||
+                // Malayalam
+                s.equals("സ്ഥിരീകരിക്കുക") || s.equals("അതെ ഇല്ലാതാക്കൂ") || s.equals("ഇല്ലാതാക്കൂ") ||
+                s.equals("ഇല്ലാതാക്കുക") || s.equals("അതെ") || s.equals("ശരി");
+
+        if (isAffirmative) {
+            Log.i(TAG, "DELETE_LAST_MESSAGE_CONFIRMED for messageId=" + boundMsgId);
+
+            // Re-validate current user, sender UID, and message ID before deletion
+            String currentUid = sessionManager != null ? sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID) : null;
+            if (currentUid == null || currentUid.isEmpty()) {
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null) currentUid = user.getUid();
+            }
+
+            if (msgToDelete == null || boundMsgId == null || boundSenderUid == null ||
+                    (currentUid != null && !currentUid.isEmpty() && !currentUid.equals(boundSenderUid)) ||
+                    !boundMsgId.equals(msgToDelete.getId())) {
+                Log.e(TAG, "DELETE_LAST_MESSAGE failed: message ownership or ID revalidation failed.");
+                setAssistantState(AssistantState.SPEAKING);
+                String failResp = VoiceLanguageConfig.getDeleteFailedResponse(langCode);
+                if (isDeaf) {
+                    DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                    if (deafResp != null) {
+                        deafResp.showError(failResp);
+                    }
+                }
+                speakResponse(failResp, () -> {
+                    callback.onError(failResp, ERROR_COMMAND_PROCESSING);
+                    onAssistantFinished(activity);
+                });
+                return;
+            }
+
+            if (activity instanceof BlindUserDashboardActivity) {
+                ((BlindUserDashboardActivity) activity).deleteLastSentMessage(msgToDelete, (success, errorMsg) -> {
+                    setAssistantState(AssistantState.SPEAKING);
+                    if (success) {
+                        String successResp = VoiceLanguageConfig.getMessageDeletedResponse(langCode);
+                        speakResponse(successResp, () -> {
+                            callback.onResponseSpoken(successResp);
+                            onAssistantFinished(activity);
+                        });
+                    } else {
+                        String failResp = VoiceLanguageConfig.getDeleteFailedResponse(langCode);
+                        speakResponse(failResp, () -> {
+                            callback.onError(failResp, ERROR_COMMAND_PROCESSING);
+                            onAssistantFinished(activity);
+                        });
+                    }
+                });
+            } else if (activity instanceof SpeechImpairedDashboardActivity) {
+                ((SpeechImpairedDashboardActivity) activity).deleteLastSentMessage(msgToDelete, (success, errorMsg) -> {
+                    setAssistantState(AssistantState.SPEAKING);
+                    if (success) {
+                        String successResp = VoiceLanguageConfig.getMessageDeletedResponse(langCode);
+                        if (isDeaf) {
+                            DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                            if (deafResp != null) {
+                                deafResp.showSuccess(successResp);
+                            }
+                        }
+                        speakResponse(successResp, () -> {
+                            callback.onResponseSpoken(successResp);
+                            onAssistantFinished(activity);
+                        });
+                    } else {
+                        String failResp = VoiceLanguageConfig.getDeleteFailedResponse(langCode);
+                        if (isDeaf) {
+                            DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                            if (deafResp != null) {
+                                deafResp.showError(failResp);
+                            }
+                        }
+                        speakResponse(failResp, () -> {
+                            callback.onError(failResp, ERROR_COMMAND_PROCESSING);
+                            onAssistantFinished(activity);
+                        });
+                    }
+                });
+            } else {
+                setAssistantState(AssistantState.SPEAKING);
+                String successResp = VoiceLanguageConfig.getMessageDeletedResponse(langCode);
+                if (isDeaf) {
+                    DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+                    if (deafResp != null) {
+                        deafResp.showSuccess(successResp);
+                    }
+                }
+                speakResponse(successResp, () -> {
+                    callback.onResponseSpoken(successResp);
+                    onAssistantFinished(activity);
+                });
+            }
+            return;
+        }
+
+        // 2. Negative confirmation: "Cancel", "No, cancel", "Don't delete", "No", etc.
+        boolean isNegative = intent.getIntentType() == VoiceIntentType.CONFIRM_NO ||
+                s.equals("cancel") || s.equals("no cancel") || s.equals("cancel delete") ||
+                s.equals("don't delete") || s.equals("dont delete") || s.equals("do not delete") ||
+                s.equals("no") || s.equals("never mind") || s.equals("stop") ||
+                words.contains("cancel") || words.contains("no") || s.contains("don t") || s.contains("dont") ||
+                // Kannada
+                s.equals("ರದ್ದುಮಾಡಿ") || s.equals("ರದ್ದು ಮಾಡಿ") || s.equals("ಅಳಿಸಬೇಡಿ") ||
+                s.equals("ಬೇಡ") || s.equals("ಇಲ್ಲ") || s.equals("ರದ್ದು") ||
+                // Hindi
+                s.equals("रद्द करें") || s.equals("रद्द करो") || s.equals("मत हटाओ") ||
+                s.equals("नहीं") || s.equals("नही") || s.equals("मत करो") ||
+                // Malayalam
+                s.equals("റദ്ദാക്കുക") || s.equals("ഇല്ലാതാക്കരുത്") || s.equals("വേണ്ട") || s.equals("ഇല്ല");
+
+        Log.i(TAG, isNegative ? "DELETE_LAST_MESSAGE_CANCELLED" : "DELETE_LAST_MESSAGE_AMBIGUOUS_CANCELLED");
+        setAssistantState(AssistantState.SPEAKING);
+        String cancelResp = VoiceLanguageConfig.getDeleteCancelledResponse(langCode);
+        if (isDeaf) {
+            DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
+            if (deafResp != null) {
+                deafResp.showSuccess(cancelResp);
+            }
+        }
+        speakResponse(cancelResp, () -> {
+            callback.onResponseSpoken(cancelResp);
+            onAssistantFinished(activity);
+        });
+    }
+
+    private void clearDeleteMessageConfirmation() {
+        pendingConfirmationType = ConfirmationType.NONE;
+        pendingDeleteMessage = null;
+        pendingDeleteMessageId = null;
+        pendingDeleteSenderUid = null;
+    }
+
+    public void simulateDeleteConfirmationInput(@NonNull Activity activity,
+                                                @NonNull String utterance,
+                                                @NonNull VoiceAssistantCallback callback) {
+        handleDeleteLastMessageConfirmationFlow(activity, utterance, getCurrentUserRole(), getCurrentLanguageCode(), callback);
+    }
+
     private void handleReadMessagesFlow(@NonNull Activity activity,
                                         @Nullable String userRole,
                                         @NonNull VoiceAssistantCallback callback) {
@@ -2365,10 +2752,12 @@ public class AppVoiceAssistant {
         com.kannada.speechassistant.CaregiverChatAdapter.stopAudioPlayback();
         stopVoicePlayer();
 
-        // 3. Try to get message from BlindUserDashboardActivity directly
+        // 3. Try to get message from BlindUserDashboardActivity or SpeechImpairedDashboardActivity directly
         ChatMessage latestMsg = null;
         if (activity instanceof BlindUserDashboardActivity) {
             latestMsg = ((BlindUserDashboardActivity) activity).getLatestCaregiverMessage();
+        } else if (activity instanceof SpeechImpairedDashboardActivity) {
+            latestMsg = ((SpeechImpairedDashboardActivity) activity).getLatestCaregiverMessage();
         }
 
         if (latestMsg != null) {
@@ -2486,7 +2875,12 @@ public class AppVoiceAssistant {
                 activeVoicePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             }
 
-            activeVoicePlayer.setDataSource(activity.getApplicationContext(), Uri.parse(audioUrl));
+            File localFile = com.kannada.speechassistant.VoiceAudioHelper.resolveAudioFile(activity.getApplicationContext(), audioUrl);
+            if (localFile != null && localFile.exists()) {
+                activeVoicePlayer.setDataSource(localFile.getAbsolutePath());
+            } else {
+                activeVoicePlayer.setDataSource(activity.getApplicationContext(), Uri.parse(audioUrl));
+            }
             activeVoicePlayer.setOnPreparedListener(mp -> {
                 try {
                     mp.start();
@@ -2678,10 +3072,12 @@ public class AppVoiceAssistant {
         cleanupSpeechRecognizer();
         WakeWordManager.getInstance(appContext).pauseListening();
 
-        // 3. Try to get message count from BlindUserDashboardActivity directly
+        // 3. Try to get message count from BlindUserDashboardActivity or SpeechImpairedDashboardActivity directly
         int count = -1;
         if (activity instanceof BlindUserDashboardActivity) {
             count = ((BlindUserDashboardActivity) activity).getCaregiverTextMessageCount();
+        } else if (activity instanceof SpeechImpairedDashboardActivity) {
+            count = ((SpeechImpairedDashboardActivity) activity).getCaregiverTextMessageCount();
         }
 
         if (count >= 0) {
@@ -3151,6 +3547,10 @@ public class AppVoiceAssistant {
                 "Message sent.".equals(defaultResponse) ||
                 VoiceCommandConstants.RESPONSE_MESSAGE_CANCELLED.equals(defaultResponse) ||
                 VoiceCommandConstants.RESPONSE_ACTION_CANCELLED.equals(defaultResponse) ||
+                VoiceCommandConstants.RESPONSE_NO_MESSAGE_TO_DELETE.equals(defaultResponse) ||
+                VoiceCommandConstants.RESPONSE_MESSAGE_DELETED.equals(defaultResponse) ||
+                VoiceCommandConstants.RESPONSE_DELETE_CANCELLED.equals(defaultResponse) ||
+                VoiceCommandConstants.RESPONSE_DELETE_FAILED.equals(defaultResponse) ||
                 "No active call.".equals(defaultResponse)) {
             baseResponse = defaultResponse;
         } else {
@@ -3158,6 +3558,7 @@ public class AppVoiceAssistant {
                 case VoiceCommandConstants.CMD_READ_MESSAGES:
                 case VoiceCommandConstants.CMD_MESSAGE_COUNT:
                 case VoiceCommandConstants.CMD_REPEAT_MESSAGE:
+                case VoiceCommandConstants.CMD_DELETE_LAST_MESSAGE:
                 case VoiceCommandConstants.CMD_GO_BACK:
                     baseResponse = defaultResponse;
                     break;

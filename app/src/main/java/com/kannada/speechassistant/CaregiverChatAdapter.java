@@ -3,6 +3,7 @@ package com.kannada.speechassistant;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,9 +27,14 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
         void onTextMessageClicked(String text);
     }
 
+    public interface OnMessageDeleteListener {
+        void onMessageDeleteRequested(ChatMessage message);
+    }
+
     private final List<ChatMessage> messages = new ArrayList<>();
     private final String currentUserId;
     private final OnMessageClickListener messageClickListener;
+    private OnMessageDeleteListener deleteListener = null;
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
 
     public CaregiverChatAdapter(String currentUserId) {
@@ -39,6 +46,10 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
         this.messageClickListener = listener;
     }
 
+    public void setOnMessageDeleteListener(OnMessageDeleteListener listener) {
+        this.deleteListener = listener;
+    }
+
     public void setMessages(List<ChatMessage> newMessages) {
         this.messages.clear();
         this.messages.addAll(newMessages);
@@ -47,6 +58,42 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
 
     public List<ChatMessage> getMessages() {
         return new ArrayList<>(messages);
+    }
+
+    public boolean removeMessageById(String messageId) {
+        if (messageId == null || messageId.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage msg = messages.get(i);
+            if (messageId.equals(msg.getId())) {
+                messages.remove(i);
+                notifyItemRemoved(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean removeMessage(ChatMessage target) {
+        if (target == null) return false;
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage msg = messages.get(i);
+            boolean match = false;
+            if (target.getId() != null && !target.getId().isEmpty() && target.getId().equals(msg.getId())) {
+                match = true;
+            } else if (target.getMessage() != null && target.getMessage().equals(msg.getMessage()) &&
+                    target.getTimestamp() != null && msg.getTimestamp() != null &&
+                    target.getTimestamp().equals(msg.getTimestamp())) {
+                match = true;
+            }
+            if (match) {
+                messages.remove(i);
+                notifyItemRemoved(i);
+                return true;
+            }
+        }
+        return false;
     }
 
     @NonNull
@@ -154,6 +201,29 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
                 holder.txtRightStatus.setText("◷");
                 holder.txtRightStatus.setTextColor(android.graphics.Color.parseColor("#94A3B8")); // Clock icon for sending
             }
+
+            if (holder.btnDeleteRightMessage != null) {
+                if (deleteListener != null) {
+                    holder.btnDeleteRightMessage.setVisibility(View.VISIBLE);
+                    holder.btnDeleteRightMessage.setOnClickListener(v -> {
+                        if (deleteListener != null) {
+                            deleteListener.onMessageDeleteRequested(msg);
+                        }
+                    });
+                } else {
+                    holder.btnDeleteRightMessage.setVisibility(View.GONE);
+                    holder.btnDeleteRightMessage.setOnClickListener(null);
+                }
+            }
+
+            if (deleteListener != null) {
+                holder.cardRightBubble.setOnLongClickListener(v -> {
+                    deleteListener.onMessageDeleteRequested(msg);
+                    return true;
+                });
+            } else {
+                holder.cardRightBubble.setOnLongClickListener(null);
+            }
         } else {
             // Received (Left bubble)
             holder.layoutLeft.setVisibility(View.VISIBLE);
@@ -179,6 +249,11 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
                     messageClickListener.onTextMessageClicked(finalMessageText);
                 }
             });
+
+            if (holder.btnDeleteRightMessage != null) {
+                holder.btnDeleteRightMessage.setVisibility(View.GONE);
+                holder.btnDeleteRightMessage.setOnClickListener(null);
+            }
         }
     }
 
@@ -233,7 +308,12 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
             } else {
                 activeMediaPlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
             }
-            activeMediaPlayer.setDataSource(context, android.net.Uri.parse(audioUrl));
+            File localFile = VoiceAudioHelper.resolveAudioFile(context, audioUrl);
+            if (localFile != null && localFile.exists()) {
+                activeMediaPlayer.setDataSource(localFile.getAbsolutePath());
+            } else {
+                activeMediaPlayer.setDataSource(context, android.net.Uri.parse(audioUrl));
+            }
             activeMediaPlayer.prepareAsync();
             android.widget.Toast.makeText(context, "Loading Voice Message...", android.widget.Toast.LENGTH_SHORT).show();
             playingAudioUrl = audioUrl;
@@ -314,6 +394,7 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
         LinearLayout layoutLeft, layoutRight;
         MaterialCardView cardLeftBubble, cardRightBubble;
         TextView txtLeftMessage, txtLeftTime, txtRightMessage, txtRightTime, txtRightStatus;
+        ImageView btnDeleteRightMessage;
 
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -328,6 +409,7 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
             txtRightMessage = itemView.findViewById(R.id.txtRightMessage);
             txtRightTime = itemView.findViewById(R.id.txtRightTime);
             txtRightStatus = itemView.findViewById(R.id.txtRightStatus);
+            btnDeleteRightMessage = itemView.findViewById(R.id.btnDeleteRightMessage);
         }
     }
 }

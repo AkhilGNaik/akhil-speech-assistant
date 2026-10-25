@@ -3,8 +3,6 @@ package com.kannada.speechassistant;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.speech.tts.TextToSpeech;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
@@ -69,15 +67,12 @@ public class RegisterActivity extends AppCompatActivity {
     private AutoCompleteTextView languageAutoCompleteTextView;
     private MaterialButton btnRegister;
     private ProgressBar registerProgressBar;
-    private LinearLayout btnVoiceAssist;
     private TextView btnSignInRedirect;
     private MaterialCardView errorCardView;
     private TextView errorTextView;
 
-    // Firebase & Utilities
     private FirebaseAuth mAuth;
     private SessionManager sessionManager;
-    private TextToSpeech tts;
     private ExecutorService networkExecutor;
 
     // Backend Registration URL
@@ -115,7 +110,6 @@ public class RegisterActivity extends AppCompatActivity {
         languageAutoCompleteTextView = findViewById(R.id.languageAutoCompleteTextView);
         btnRegister = findViewById(R.id.btnRegister);
         registerProgressBar = findViewById(R.id.registerProgressBar);
-        btnVoiceAssist = findViewById(R.id.btnVoiceAssist);
         btnSignInRedirect = findViewById(R.id.btnSignInRedirect);
         errorCardView = findViewById(R.id.errorCardView);
         errorTextView = findViewById(R.id.errorTextView);
@@ -125,9 +119,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Populate Language dropdown menu
         setupLanguagesDropdown();
-
-        // Initialize Text-To-Speech
-        initTextToSpeech();
 
         // View Action Listeners
         btnRegister.setOnClickListener(new View.OnClickListener() {
@@ -142,13 +133,6 @@ public class RegisterActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Navigate back to LoginActivity
                 finish();
-            }
-        });
-
-        btnVoiceAssist.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                speakInstructions();
             }
         });
     }
@@ -179,44 +163,6 @@ public class RegisterActivity extends AppCompatActivity {
         languageAutoCompleteTextView.setAdapter(adapter);
         // Default selection: Kannada
         languageAutoCompleteTextView.setText("Kannada", false);
-    }
-
-    /**
-     * Sets up TextToSpeech for accessibility narration
-     */
-    private void initTextToSpeech() {
-        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (status == TextToSpeech.SUCCESS) {
-                    int result = tts.setLanguage(Locale.US);
-                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        Log.e(TAG, "TTS Language is not supported or missing data.");
-                    }
-                } else {
-                    Log.e(TAG, "TTS Initialization failed.");
-                }
-            }
-        });
-    }
-
-    /**
-     * Reads registration instructions aloud
-     */
-    private void speakInstructions() {
-        if (tts != null) {
-            String instructions = "Welcome to the Speech Assistant Registration Screen. " +
-                    "Please enter your full name in the first text field. " +
-                    "Enter your email address in the second text field. " +
-                    "Enter your password in the third text field, which must be at least six characters. " +
-                    "Re-enter your password in the fourth text field to confirm. " +
-                    "Select your user role from the dropdown menu. " +
-                    "Select your preferred language: Kannada, Hindi, or Malayalam. " +
-                    "Finally, tap the Sign Up button at the bottom to register. " +
-                    "To navigate back to the login page, tap the Sign In link at the very bottom.";
-            tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, "register_instructions");
-            Toast.makeText(this, "Reading instructions...", Toast.LENGTH_SHORT).show();
-        }
     }
 
     /**
@@ -510,10 +456,6 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         // Release resources
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
         if (networkExecutor != null) {
             networkExecutor.shutdown();
         }

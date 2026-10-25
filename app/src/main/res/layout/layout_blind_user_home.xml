@@ -48,7 +48,7 @@
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="#0F172A"
+            app:cardBackgroundColor="@color/surface"
             app:strokeWidth="1.5dp"
             app:strokeColor="#38BDF8">
 
@@ -66,21 +66,32 @@
                     android:textColor="#38BDF8"
                     android:textSize="18sp"
                     android:textStyle="bold"
+                    android:gravity="center"
+                    android:textAlignment="center"
                     android:layout_marginBottom="16dp" />
 
                 <!-- Voice Call Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnVoiceCallCaregiver"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
                     android:text="@string/btn_start_voice_call"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:lineSpacingMultiplier="1.2"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
                     android:contentDescription="Start live real-time voice call with connected caregiver"
-                    app:cornerRadius="16dp"
+                    app:cornerRadius="28dp"
                     app:backgroundTint="#0284C7"
-                    app:elevation="6dp" />
+                    app:elevation="4dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

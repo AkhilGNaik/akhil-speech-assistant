@@ -1,0 +1,295 @@
+<mxfile host="app.diagrams.net" modified="2026-10-05T15:10:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="DFD_Admin_Structure" name="DFD Level 1 - Caregiver Admin Structure">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="850" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ========================================================
+             EXTERNAL ENTITY: Caregiver / Admin
+             ======================================================== -->
+        <mxCell id="entity_admin" value="Caregiver / Admin" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=15;fontStyle=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="220" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             PROCESSES (Ellipses / Ovals in Center Column)
+             ======================================================== -->
+        <!-- P1: Login -->
+        <mxCell id="proc_login" value="Login" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="60" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- P2: User Management -->
+        <mxCell id="proc_user_mgmt" value="User Management" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="180" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- P3: Connection Management -->
+        <mxCell id="proc_conn_mgmt" value="Connection Management" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="320" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- P4: Communication -->
+        <mxCell id="proc_comm" value="Communication" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="470" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- P5: Voice Call -->
+        <mxCell id="proc_voice_call" value="Voice Call" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="620" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- P6: Emergency Management -->
+        <mxCell id="proc_emergency" value="Emergency Management" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Arial;fontSize=14;fontStyle=0;fillColor=#ffffff;strokeColor=#444444;strokeWidth=1.5;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="440" y="760" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             DATA STORES (Classic DFD Open-Ended Rectangles on Right)
+             ======================================================== -->
+        <!-- DS1: Users -->
+        <mxCell id="ds_users" value="Users" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=13;fontStyle=0;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="140" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- DS2: Connections -->
+        <mxCell id="ds_connections" value="Connections" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=13;fontStyle=0;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="325" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- DS3: Messages -->
+        <mxCell id="ds_messages" value="Messages" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=13;fontStyle=0;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="480" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- DS4: Voice Call -->
+        <mxCell id="ds_voice_call" value="Voice Call" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=13;fontStyle=0;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="630" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- DS5: Emergencies -->
+        <mxCell id="ds_emergencies" value="Emergencies" style="shape=partialRectangle;top=1;bottom=1;right=0;left=0;fillColor=none;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial;fontSize=13;fontStyle=0;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="920" y="770" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================
+             DATA FLOW ARROWS: Admin <-> Processes
+             ======================================================== -->
+        <!-- Admin -> Login (Login Details) -->
+        <mxCell id="flow_admin_login" value="Login Details" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_login">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="75" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Login -> Admin (Login Result) -->
+        <mxCell id="flow_login_admin" value="Login Result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_login">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="95" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Admin -> User Management (User Management Request) -->
+        <mxCell id="flow_admin_usermgmt" value="User Management Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_user_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="220" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="260" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User Management -> Admin (User Details) -->
+        <mxCell id="flow_usermgmt_admin" value="User Details" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_user_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="150" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="350" y="201" />
+              <mxPoint x="350" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Admin -> Connection Management (Connection Request) -->
+        <mxCell id="flow_admin_connm_req" value="Connection Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_conn_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="210" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="210" y="341" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Connection Management -> Admin (Connection Status) -->
+        <mxCell id="flow_connm_admin_stat" value="Connection Status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_conn_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="220" y="359" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Admin -> Communication (Message) -->
+        <mxCell id="flow_admin_comm_msg" value="Message" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_comm">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="150" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="150" y="491" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Communication -> Admin (Communication Response) -->
+        <mxCell id="flow_comm_admin_resp" value="Communication Response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_comm">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="160" y="509" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Admin -> Voice Call (Call Request) -->
+        <mxCell id="flow_admin_call_req" value="Call Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_voice_call">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="90" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="90" y="641" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Voice Call -> Admin (Call Status) -->
+        <mxCell id="flow_call_admin_stat" value="Call Status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_voice_call">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="100" y="659" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Admin -> Emergency Management (Emergency Management Request) -->
+        <mxCell id="flow_admin_emrg_req" value="Emergency Management Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;entryX=0;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" target="proc_emergency">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="40" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="40" y="781" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Emergency Management -> Admin (Emergency Information) -->
+        <mxCell id="flow_emrg_admin_info" value="Emergency Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_emergency">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="50" y="799" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========================================================
+             DATA FLOW ARROWS: Processes <-> Data Stores
+             ======================================================== -->
+        <!-- Users -> Login (Authentication Data) -->
+        <mxCell id="flow_users_login" value="Authentication Data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.25;entryX=1;entryY=0.5;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_users" target="proc_login">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="150" />
+              <mxPoint x="880" y="90" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User Management -> Users (Updated User Information) -->
+        <mxCell id="flow_usermgmt_users_upd" value="Updated User Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.35;entryX=0;entryY=0.5;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_user_mgmt" target="ds_users">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="201" />
+              <mxPoint x="880" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Users -> User Management (User Information) -->
+        <mxCell id="flow_users_usermgmt_info" value="User Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_users" target="proc_user_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="170" />
+              <mxPoint x="880" y="219" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Connection Management -> Connections (Updated Connection) -->
+        <mxCell id="flow_connm_conns_upd" value="Updated Connection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.35;entryX=0;entryY=0.25;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_conn_mgmt" target="ds_connections">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="341" />
+              <mxPoint x="880" y="335" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Connections -> Connection Management (Connection Information) -->
+        <mxCell id="flow_conns_connm_info" value="Connection Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_connections" target="proc_conn_mgmt">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="355" />
+              <mxPoint x="880" y="359" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Communication -> Messages (Message Data) -->
+        <mxCell id="flow_comm_msgs_data" value="Message Data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.65;entryX=0;entryY=0.75;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_comm" target="ds_messages">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="509" />
+              <mxPoint x="880" y="510" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Messages -> Communication (Received Messages) -->
+        <mxCell id="flow_msgs_comm_recv" value="Received Messages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.25;entryX=1;entryY=0.35;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_messages" target="proc_comm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="490" />
+              <mxPoint x="880" y="491" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Voice Call -> Voice Call Store (Call Data) -->
+        <mxCell id="flow_voice_call_store_data" value="Call Data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.35;entryX=0;entryY=0.25;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_voice_call" target="ds_voice_call">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Voice Call Store -> Voice Call (Call Status) -->
+        <mxCell id="flow_voice_store_call_stat" value="Call Status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.75;entryX=1;entryY=0.65;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_voice_call" target="proc_voice_call">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Emergencies -> Emergency Management (Emergency Information) -->
+        <mxCell id="flow_emrg_store_proc" value="Emergency Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ds_emergencies" target="proc_emergency">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Emergency Management -> Emergencies (Emergency Information - bottom loop) -->
+        <mxCell id="flow_emergency_to_store" value="Emergency Information" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.8;exitY=0.95;entryX=0.5;entryY=1;strokeColor=#000000;fontFamily=Arial;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="proc_emergency" target="ds_emergencies">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="656" y="840" />
+              <mxPoint x="985" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

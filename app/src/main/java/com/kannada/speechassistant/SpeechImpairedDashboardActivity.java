@@ -42,6 +42,7 @@ import android.os.VibrationEffect;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.material.imageview.ShapeableImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -173,6 +174,12 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
      * Returns true only when connectedCaregiverUid contains a valid non-empty value.
      */
     public boolean isCaregiverConnected() {
+        if (connectedCaregiverUid == null || connectedCaregiverUid.trim().isEmpty()) {
+            SharedPreferences settingsPref = getSharedPreferences("SpeechSettings", MODE_PRIVATE);
+            if (settingsPref != null) {
+                connectedCaregiverUid = settingsPref.getString("connectedCaregiverUid", null);
+            }
+        }
         return connectedCaregiverUid != null && !connectedCaregiverUid.trim().isEmpty();
     }
 
@@ -193,8 +200,253 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
             if (onComplete != null) onComplete.run();
             return;
         }
-        sendDirectMessageToCaregiver(msg.trim());
-        if (onComplete != null) onComplete.run();
+        sendDirectMessageToCaregiver(msg.trim(), onComplete);
+    }
+
+    @Nullable
+    public ChatMessage getLatestCaregiverMessage() {
+        if (caregiverChatAdapter == null) return null;
+        List<ChatMessage> list = caregiverChatAdapter.getMessages();
+        if (list == null || list.isEmpty()) return null;
+
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+
+        // 1. First priority: Newest unread caregiver message
+        for (int i = list.size() - 1; i >= 0; i--) {
+            ChatMessage m = list.get(i);
+            if (isCaregiverAnyMessage(m, myUid)) {
+                boolean isUnread = !m.isSeen() && !"read".equalsIgnoreCase(m.getStatus());
+                if (isUnread) {
+                    return m;
+                }
+            }
+        }
+
+        // 2. Second priority: Newest caregiver message chronologically
+        for (int i = list.size() - 1; i >= 0; i--) {
+            ChatMessage m = list.get(i);
+            if (isCaregiverAnyMessage(m, myUid)) {
+                return m;
+            }
+        }
+
+        return null;
+    }
+
+    public int getCaregiverTextMessageCount() {
+        if (caregiverChatAdapter == null) return 0;
+        List<ChatMessage> list = caregiverChatAdapter.getMessages();
+        if (list == null || list.isEmpty()) return 0;
+
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+
+        int count = 0;
+        for (ChatMessage m : list) {
+            if (isCaregiverTextMessage(m, myUid)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean isCaregiverTextMessage(@Nullable ChatMessage m, @Nullable String myUid) {
+        if (m == null) return false;
+        if (m.isVoice() || (m.getAudioUrl() != null && !m.getAudioUrl().trim().isEmpty())) return false;
+        if (myUid != null && myUid.equals(m.getSenderId())) {
+            return false;
+        }
+        boolean isCaregiverSender = (myUid != null && !myUid.equals(m.getSenderId())) ||
+                RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(m.getSenderRole());
+        String text = m.getMessageText() != null ? m.getMessageText() : m.getMessage();
+        return isCaregiverSender && text != null && !text.trim().isEmpty();
+    }
+
+    private boolean isCaregiverAnyMessage(@Nullable ChatMessage m, @Nullable String myUid) {
+        if (m == null) return false;
+        if (myUid != null && myUid.equals(m.getSenderId())) {
+            return false;
+        }
+        return (myUid != null && !myUid.equals(m.getSenderId())) ||
+                RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(m.getSenderRole());
+    }
+
+    public interface DeleteMessageCallback {
+        void onResult(boolean success, @Nullable String errorMessage);
+    }
+
+    public static boolean isEligibleOutgoingDeafUserMessage(@Nullable ChatMessage m, @Nullable String myUid) {
+        if (m == null) return false;
+        if (myUid == null || myUid.trim().isEmpty()) return false;
+
+        // Must match current authenticated Deaf User UID as sender
+        if (!myUid.equals(m.getSenderId())) {
+            return false;
+        }
+
+        // Must NOT be an emergency alert or call record or system notification
+        String type = m.getType();
+        String messageType = m.getMessageType();
+        if ("emergency".equalsIgnoreCase(type) || "emergency".equalsIgnoreCase(messageType) ||
+                "call".equalsIgnoreCase(type) || "call".equalsIgnoreCase(messageType) ||
+                "system".equalsIgnoreCase(type) || "alert".equalsIgnoreCase(type) ||
+                "notification".equalsIgnoreCase(type)) {
+            return false;
+        }
+
+        // Must have a valid identifier
+        if (m.getId() == null || m.getId().trim().isEmpty()) {
+            return false;
+        }
+
+        // Must have valid content
+        boolean hasText = (m.getMessageText() != null && !m.getMessageText().trim().isEmpty())
+                || (m.getMessage() != null && !m.getMessage().trim().isEmpty());
+        boolean hasVoice = m.isVoice() || (m.getAudioUrl() != null && !m.getAudioUrl().trim().isEmpty());
+        return hasText || hasVoice;
+    }
+
+    @Nullable
+    public ChatMessage getLatestEligibleOutgoingDeafUserMessage() {
+        if (caregiverChatAdapter == null) return null;
+        List<ChatMessage> list = caregiverChatAdapter.getMessages();
+        if (list == null || list.isEmpty()) return null;
+
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+        if (myUid == null || myUid.isEmpty()) return null;
+
+        for (int i = list.size() - 1; i >= 0; i--) {
+            ChatMessage m = list.get(i);
+            if (isEligibleOutgoingDeafUserMessage(m, myUid)) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    public void deleteLastSentMessage(@NonNull ChatMessage messageToDelete, @Nullable DeleteMessageCallback callback) {
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        final String finalMyUid = myUid;
+        final String messageId = messageToDelete.getId();
+
+        // 1. Strict Ownership & Identity Re-verification
+        if (finalMyUid == null || !finalMyUid.equals(messageToDelete.getSenderId())) {
+            Log.e(TAG, "deleteLastSentMessage: Unauthorized deletion attempt. Current UID does not match senderId.");
+            if (callback != null) callback.onResult(false, "Unauthorized: sender mismatch");
+            return;
+        }
+
+        if (messageId == null || messageId.trim().isEmpty()) {
+            Log.e(TAG, "deleteLastSentMessage: Message ID is empty or invalid.");
+            if (callback != null) callback.onResult(false, "Invalid message ID");
+            return;
+        }
+
+        // 2. Delete message document from Firestore caregiver_messages collection
+        if (db == null) {
+            db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        }
+        db.collection("caregiver_messages").document(messageId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.i(TAG, "deleteLastSentMessage: Successfully deleted message doc " + messageId);
+
+                    // Update UI and local adapter
+                    runOnUiThread(() -> {
+                        if (caregiverChatAdapter != null) {
+                            caregiverChatAdapter.removeMessageById(messageId);
+                            if (caregiverChatAdapter.getItemCount() == 0 && layoutCaregiverChatEmptyState != null) {
+                                layoutCaregiverChatEmptyState.setVisibility(View.VISIBLE);
+                                if (rvCaregiverChatMessages != null) {
+                                    rvCaregiverChatMessages.setVisibility(View.GONE);
+                                }
+                            }
+                        }
+                    });
+
+                    if (callback != null) {
+                        callback.onResult(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "deleteLastSentMessage: Failed to delete message doc " + messageId + ": " + e.getMessage(), e);
+                    if (callback != null) {
+                        callback.onResult(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void showDeleteMessageConfirmationDialog(@NonNull ChatMessage message) {
+        String myUid = currentUid;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: Never allow deleting caregiver messages
+        if (!isEligibleOutgoingDeafUserMessage(message, myUid)) {
+            Toast.makeText(this, "Cannot delete caregiver messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Message")
+                .setMessage("Are you sure you want to delete this message?\n\n\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    deleteLastSentMessage(message, (success, errorMessage) -> {
+                        runOnUiThread(() -> {
+                            if (success) {
+                                Toast.makeText(SpeechImpairedDashboardActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(SpeechImpairedDashboardActivity.this, "Failed to delete message: " + (errorMessage != null ? errorMessage : "Error"), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    });
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private ObjectAnimator micScaleXAnimator;
@@ -288,7 +540,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     private TextView txtProfileRole;
     private TextView txtProfileEmail;
     private TextView txtProfileUid;
-    private android.widget.AutoCompleteTextView editProfileLanguage;
     private EditText editCoquiUrl;
     private EditText editCaregiverEmail;
     private EditText editEmergencyMessage;
@@ -723,6 +974,7 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         rvCaregiverChatMessages = findViewById(R.id.rvCaregiverChatMessages);
         layoutCaregiverChatEmptyState = findViewById(R.id.layoutCaregiverChatEmptyState);
         caregiverChatAdapter = new CaregiverChatAdapter(currentUid, this::speakText);
+        caregiverChatAdapter.setOnMessageDeleteListener(this::showDeleteMessageConfirmationDialog);
         rvCaregiverChatMessages.setLayoutManager(new LinearLayoutManager(this));
         rvCaregiverChatMessages.setAdapter(caregiverChatAdapter);
         rvCaregiverChatMessages.setOnTouchListener((v, event) -> {
@@ -996,6 +1248,14 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         });
 
         final String langCode = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
+        final String normLang = LanguageManager.normalizeLanguageCode(langCode);
+        if (LanguageManager.LANG_ENGLISH.equals(normLang)) {
+            runOnUiThread(() -> {
+                progressHomeTranslit.setVisibility(View.GONE);
+                txtHomeTranslitStatus.setText("");
+            });
+            return;
+        }
         final String itcCode = LanguageManager.getInputToolCode(langCode);
 
         networkExecutor.execute(() -> {
@@ -1087,8 +1347,19 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
     }
 
     private void sendDirectMessageToCaregiver(String msg) {
+        sendDirectMessageToCaregiver(msg, null);
+    }
+
+    private void sendDirectMessageToCaregiver(String msg, @Nullable Runnable onComplete) {
+        if (connectedCaregiverUid == null || connectedCaregiverUid.isEmpty()) {
+            SharedPreferences settingsPref = getSharedPreferences("SpeechSettings", MODE_PRIVATE);
+            if (settingsPref != null) {
+                connectedCaregiverUid = settingsPref.getString("connectedCaregiverUid", null);
+            }
+        }
         if (connectedCaregiverUid == null || connectedCaregiverUid.isEmpty()) {
             Toast.makeText(this, "No caregiver connected to send message.", Toast.LENGTH_SHORT).show();
+            if (onComplete != null) onComplete.run();
             return;
         }
 
@@ -1142,12 +1413,16 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
                         ref.update("status", "delivered", "delivered", true);
                     }, 1000);
+
+                    if (onComplete != null) onComplete.run();
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to send message to caregiver chat thread", e);
                     // Save locally as offline fallback
                     LocalConnectionSimulator.saveLocalMessage(SpeechImpairedDashboardActivity.this, chatId, chatMsgMap);
                     Toast.makeText(this, "Saved locally (Offline)", Toast.LENGTH_SHORT).show();
+
+                    if (onComplete != null) onComplete.run();
                 });
     }
 
@@ -1216,19 +1491,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         txtProfileRole = findViewById(R.id.txtProfileRole);
         txtProfileEmail = findViewById(R.id.txtProfileEmail);
         txtProfileUid = findViewById(R.id.txtProfileUid);
-        editProfileLanguage = findViewById(R.id.editProfileLanguage);
-        if (editProfileLanguage != null) {
-            String[] languages = {"Kannada", "Hindi", "Malayalam"};
-            android.widget.ArrayAdapter<String> langAdapter = new android.widget.ArrayAdapter<>(
-                    this,
-                    android.R.layout.simple_dropdown_item_1line,
-                    languages
-            );
-            editProfileLanguage.setAdapter(langAdapter);
-            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-            editProfileLanguage.setText(LanguageManager.getLanguageDisplayName(currentLang), false);
-            editProfileLanguage.setOnClickListener(v -> editProfileLanguage.showDropDown());
-        }
         editCoquiUrl = findViewById(R.id.editCoquiUrl);
         editCaregiverEmail = findViewById(R.id.editCaregiverEmail);
         editEmergencyMessage = findViewById(R.id.editEmergencyMessage);
@@ -1239,15 +1501,14 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
             String url = editCoquiUrl.getText().toString().trim();
             String email = editCaregiverEmail.getText().toString().trim();
             String sosMsg = editEmergencyMessage.getText().toString().trim();
-            String selectedLangDisplay = editProfileLanguage != null ? editProfileLanguage.getText().toString().trim() : "";
-            String selectedLangCode = LanguageManager.getLanguageCodeFromDisplayName(selectedLangDisplay);
+            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
 
             if (url.isEmpty() || email.isEmpty() || sosMsg.isEmpty()) {
                 Toast.makeText(this, "Please fill out all configuration settings.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            saveSettings(url, email, sosMsg, selectedLangCode);
+            saveSettings(url, email, sosMsg, currentLang);
         });
 
         btnProfileLogout.setOnClickListener(v -> performLogout());
@@ -1296,11 +1557,6 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         }
         txtProfileRole.setText(getString(R.string.user_role) + ": " + locRole);
         txtProfileUid.setText("UID: " + userDetails.get(SessionManager.KEY_USER_UID));
-
-        if (editProfileLanguage != null) {
-            String currentLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
-            editProfileLanguage.setText(LanguageManager.getLanguageDisplayName(currentLang), false);
-        }
 
         editCoquiUrl.setText(coquiUrl);
         if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && caregiverEmail != null && !caregiverEmail.isEmpty()) {
@@ -1996,6 +2252,8 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
             intent.putExtra("receiverName", finalOtherName);
             intent.putExtra("receiverRole", finalOtherRole);
             intent.putExtra("receiverEmail", finalOtherEmail);
+            intent.putExtra("senderRole", RoleManager.ROLE_DEAF_USER);
+            intent.putExtra("isDeafUser", true);
             startActivity(intent);
         });
 
@@ -3037,6 +3295,11 @@ public class SpeechImpairedDashboardActivity extends AppCompatActivity {
         CaregiverSoundManager.stopEmergencySound(this);
         updateKeyboardTabLabels();
         updateKeyboardLabels();
+
+        if (deafAssistantResponseManager != null) {
+            com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this)
+                    .setDeafAssistantResponseManager(deafAssistantResponseManager);
+        }
 
         // Hands-free Wake Word listening for Deaf User
         if (isVoiceAssistantActive()) {

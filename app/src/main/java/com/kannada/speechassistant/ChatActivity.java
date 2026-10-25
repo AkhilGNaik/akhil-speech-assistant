@@ -101,6 +101,7 @@ public class ChatActivity extends AppCompatActivity {
     private String receiverRole;
     private String receiverEmail;
     private String chatId;
+    private String myRole;
 
     // Quick phrases list
     private final String[] quickPhrases = {
@@ -156,6 +157,42 @@ public class ChatActivity extends AppCompatActivity {
     private File blindTempAudioFile;
     private boolean isBlindUserMode = false;
 
+    private boolean isDeafOrMuteRole(String role) {
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(java.util.Locale.ROOT);
+        return r.contains("deaf") || r.contains("mute") || r.contains("speech")
+                || role.contains("ಮೂಕ") || role.contains("ಕಿವುಡ") || role.contains("ಮಾತು") || role.contains("ಅಶಕ್ತ");
+    }
+
+    private boolean isDeafUserRole(String role) {
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(java.util.Locale.ROOT);
+        return r.contains("deaf")
+                || RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(role)
+                || RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(role)
+                || role.contains("ಕಿವುಡ")
+                || role.contains("ಅಶಕ್ತ");
+    }
+
+    private boolean isCaregiverRole(String role) {
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(java.util.Locale.ROOT);
+        return r.contains("caregiver")
+                || r.contains("admin")
+                || RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(role);
+    }
+
+    private void updateMicVisibilityForDeafUser() {
+        if (btnMicInput == null) return;
+        if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+            // Caregiver communicating with Deaf User:
+            // Deaf users cannot hear voice notes, so voice message function is removed.
+            btnMicInput.setVisibility(View.GONE);
+        } else if (!isBlindUserMode) {
+            btnMicInput.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -165,8 +202,9 @@ public class ChatActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
 
         // Initialize TTS for Physically Disabled, Speech Impaired, Mute, and Blind Users
-        String myRole = sessionManager.getUserRole();
-        if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(myRole) || RoleManager.ROLE_SPEECH_IMPAIRED.equals(myRole) || RoleManager.ROLE_MUTE_USER.equals(myRole) || RoleManager.ROLE_BLIND_USER.equals(myRole)) {
+        String intentSenderRole = getIntent().getStringExtra("senderRole");
+        myRole = (intentSenderRole != null && !intentSenderRole.isEmpty()) ? intentSenderRole : sessionManager.getUserRole();
+        if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(myRole) || RoleManager.ROLE_SPEECH_IMPAIRED.equals(myRole) || RoleManager.ROLE_MUTE_USER.equals(myRole) || RoleManager.ROLE_BLIND_USER.equals(myRole) || isDeafOrMuteRole(myRole)) {
             initGoogleTextToSpeech();
         }
 
@@ -193,6 +231,14 @@ public class ChatActivity extends AppCompatActivity {
                 if (!TextUtils.isEmpty(userLang)) {
                     activeTranslitLanguage = LanguageManager.normalizeLanguageCode(userLang);
                 }
+                String userDocRole = documentSnapshot.getString("role");
+                if (userDocRole != null && !userDocRole.isEmpty()) {
+                    myRole = userDocRole;
+                }
+                if (isDeafOrMuteRole(userDocRole)) {
+                    if (btnCall != null) btnCall.setVisibility(View.GONE);
+                }
+                updateMicVisibilityForDeafUser();
             }
         });
 
@@ -212,13 +258,21 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        // Fetch receiver's language from Firestore for accurate transliteration
+        // Fetch receiver's language and role from Firestore for accurate transliteration and call suppression
         db.collection("users").document(receiverId).get().addOnSuccessListener(doc -> {
             if (doc != null && doc.exists()) {
                 String rLang = doc.getString("language");
                 if (!TextUtils.isEmpty(rLang)) {
                     activeTranslitLanguage = LanguageManager.normalizeLanguageCode(rLang);
                 }
+                String rxDocRole = doc.getString("role");
+                if (rxDocRole != null && !rxDocRole.isEmpty()) {
+                    receiverRole = rxDocRole;
+                }
+                if (isDeafOrMuteRole(rxDocRole)) {
+                    if (btnCall != null) btnCall.setVisibility(View.GONE);
+                }
+                updateMicVisibilityForDeafUser();
             }
         });
 
@@ -241,24 +295,39 @@ public class ChatActivity extends AppCompatActivity {
         rvMessages = findViewById(R.id.rvMessages);
         layoutQuickPhrases = findViewById(R.id.layoutQuickPhrases);
 
-        myRole = sessionManager.getUserRole();
-        isDeaf = RoleManager.ROLE_DEAF_USER.equals(myRole)
+        boolean isMuteUserFromIntent = getIntent().getBooleanExtra("isMuteUser", false);
+        boolean isDeafUserFromIntent = getIntent().getBooleanExtra("isDeafUser", false);
+
+        isDeaf = isDeafUserFromIntent
+                || RoleManager.ROLE_DEAF_USER.equals(myRole)
                 || RoleManager.ROLE_SPEECH_IMPAIRED.equals(myRole)
                 || "Mute, Deaf & Blind User".equals(myRole)
-                || "Mute, Deaf & Blind Users".equals(myRole);
+                || "Mute, Deaf & Blind Users".equals(myRole)
+                || (myRole != null && (myRole.toLowerCase(java.util.Locale.ROOT).contains("deaf") || myRole.contains("ಕಿವುಡ")));
 
-        boolean isReceiverDeaf = RoleManager.ROLE_DEAF_USER.equals(receiverRole)
-                || RoleManager.ROLE_SPEECH_IMPAIRED.equals(receiverRole)
-                || "Mute, Deaf & Blind User".equals(receiverRole)
-                || "Mute, Deaf & Blind Users".equals(receiverRole);
+        boolean isReceiverDeafOrMute = isDeafOrMuteRole(receiverRole);
+        boolean isMyRoleDeafOrMute = isMuteUserFromIntent
+                || isDeafUserFromIntent
+                || isDeafOrMuteRole(myRole)
+                || isDeaf;
+
+        if (btnCall != null && (isMyRoleDeafOrMute || isReceiverDeafOrMute)) {
+            btnCall.setVisibility(View.GONE);
+        }
 
         if (btnMicInput != null) {
-            if (isDeaf) {
+            if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+                // Caregiver communicating with Deaf User:
+                // Deaf users cannot hear voice notes, so voice message function is removed.
+                btnMicInput.setVisibility(View.GONE);
+            } else if (isDeaf) {
                 // Deaf User Module: Voice recording sending removed.
                 // Tapping the mic button activates STT (Speech to Text) into the message box directly.
+                btnMicInput.setVisibility(View.VISIBLE);
                 btnMicInput.setOnClickListener(v -> toggleVoiceInput());
                 btnMicInput.setOnLongClickListener(null);
             } else {
+                btnMicInput.setVisibility(View.VISIBLE);
                 btnMicInput.setOnClickListener(v -> toggleVoiceMessageRecording());
                 btnMicInput.setOnLongClickListener(v -> {
                     toggleVoiceInput();
@@ -269,8 +338,8 @@ public class ChatActivity extends AppCompatActivity {
 
         if (btnCall != null) {
             btnCall.setOnClickListener(v -> {
-                if (isDeaf || isReceiverDeaf) {
-                    Toast.makeText(this, "Voice calls are not supported for Deaf users", Toast.LENGTH_SHORT).show();
+                if (isMyRoleDeafOrMute || isReceiverDeafOrMute) {
+                    Toast.makeText(this, "Voice calls are not supported for Deaf and Mute users", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (receiverId == null || receiverId.isEmpty()) {
@@ -305,7 +374,7 @@ public class ChatActivity extends AppCompatActivity {
         // Hide SOS button for Admin/Caregiver users to avoid cluttering their screen
         if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(myRole)) {
             if (btnSendEmergency != null) btnSendEmergency.setVisibility(View.GONE);
-            if (btnCall != null) btnCall.setVisibility(isReceiverDeaf ? View.GONE : View.VISIBLE);
+            if (btnCall != null) btnCall.setVisibility(isReceiverDeafOrMute ? View.GONE : View.VISIBLE);
             if (layoutQuickPhrases != null) {
                 // If it is inside scrollQuickPhrases, hide the scroll view too
                 View parent = (View) layoutQuickPhrases.getParent();
@@ -314,7 +383,7 @@ public class ChatActivity extends AppCompatActivity {
             }
         } else {
             if (btnSendEmergency != null) btnSendEmergency.setVisibility(View.VISIBLE);
-            if (btnCall != null) btnCall.setVisibility(isDeaf ? View.GONE : View.VISIBLE);
+            if (btnCall != null) btnCall.setVisibility((isMyRoleDeafOrMute || isReceiverDeafOrMute) ? View.GONE : View.VISIBLE);
             if (layoutQuickPhrases != null) {
                 View parent = (View) layoutQuickPhrases.getParent();
                 if (isDeaf) {
@@ -337,6 +406,17 @@ public class ChatActivity extends AppCompatActivity {
 
         // Setup Chat RecyclerView
         chatAdapter = new ChatAdapter(currentUserId);
+        boolean isMuteUser = isMuteUserFromIntent || RoleManager.ROLE_MUTE_USER.equals(myRole);
+        if (isMuteUser) {
+            chatAdapter.setOnMessageDeleteListener(this::showMuteUserDeleteDialogInChat);
+        } else if (isDeaf) {
+            chatAdapter.setOnMessageDeleteListener(this::showDeafUserDeleteDialog);
+        } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(myRole)
+                || "Caregiver".equalsIgnoreCase(myRole)
+                || "admin_caregiver".equalsIgnoreCase(myRole)
+                || "admin".equalsIgnoreCase(myRole)) {
+            chatAdapter.setOnMessageDeleteListener(this::showCaregiverDeleteDialogInChat);
+        }
         rvMessages.setLayoutManager(new LinearLayoutManager(this));
         rvMessages.setAdapter(chatAdapter);
 
@@ -723,6 +803,251 @@ public class ChatActivity extends AppCompatActivity {
                     loadLocalMessagesFallback();
                     Toast.makeText(ChatActivity.this, "Saved locally (Offline)", Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    public void showDeafUserDeleteDialog(@NonNull ChatMessage message) {
+        String myUid = currentUserId;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: outgoing message sent by currently authenticated deaf user only
+        if (myUid == null || !myUid.equals(message.getSenderId())) {
+            Toast.makeText(this, "Cannot delete caregiver messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Message")
+                .setMessage("Are you sure you want to delete this message?\n\n\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    String messageId = message.getId();
+                    if (messageId == null || messageId.trim().isEmpty()) {
+                        Toast.makeText(ChatActivity.this, "Invalid message ID", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (db == null) {
+                        db = FirebaseFirestore.getInstance();
+                    }
+                    db.collection("caregiver_messages").document(messageId)
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                runOnUiThread(() -> {
+                                    if (chatAdapter != null) {
+                                        chatAdapter.removeMessageById(messageId);
+                                    }
+                                    Toast.makeText(ChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                                });
+                            })
+                            .addOnFailureListener(e -> {
+                                runOnUiThread(() -> {
+                                    Toast.makeText(ChatActivity.this, "Failed to delete message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                            });
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private final java.util.Set<String> deletingMuteChatMessageIds = new java.util.HashSet<>();
+
+    public void showMuteUserDeleteDialogInChat(@NonNull ChatMessage message) {
+        String myUid = currentUserId;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: outgoing message sent by currently authenticated mute user only
+        if (myUid == null || myUid.isEmpty() || !myUid.equals(message.getSenderId())) {
+            Toast.makeText(this, "Cannot delete caregiver messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete this message?")
+                .setMessage("\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    final String messageId = message.getId();
+                    final String messageText = message.getMessage();
+                    String trackingKey = (messageId != null && !messageId.isEmpty()) ? messageId : messageText;
+                    if (trackingKey != null && deletingMuteChatMessageIds.contains(trackingKey)) {
+                        return;
+                    }
+                    if (trackingKey != null) {
+                        deletingMuteChatMessageIds.add(trackingKey);
+                    }
+
+                    // Clean up exclusively associated media from Firebase Storage if present
+                    String audioUrl = message.getAudioUrl();
+                    if (audioUrl != null && !audioUrl.isEmpty() && audioUrl.contains("firebasestorage.googleapis.com")) {
+                        try {
+                            com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(audioUrl).delete()
+                                    .addOnFailureListener(err -> Log.w(TAG, "Failed to clean audio media file", err));
+                        } catch (Exception ignored) {}
+                    }
+
+                    if (messageId != null && !messageId.trim().isEmpty()) {
+                        if (db == null) {
+                            db = FirebaseFirestore.getInstance();
+                        }
+                        db.collection("caregiver_messages").document(messageId)
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    if (trackingKey != null) deletingMuteChatMessageIds.remove(trackingKey);
+                                    if (chatId != null) {
+                                        LocalConnectionSimulator.deleteLocalMessage(ChatActivity.this, chatId, messageId);
+                                    }
+                                    runOnUiThread(() -> {
+                                        if (chatAdapter != null) {
+                                            chatAdapter.removeMessageById(messageId);
+                                        }
+                                        Toast.makeText(ChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                                    });
+                                })
+                                .addOnFailureListener(e -> {
+                                    if (trackingKey != null) deletingMuteChatMessageIds.remove(trackingKey);
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(ChatActivity.this, "Failed to delete message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                                });
+                    } else {
+                        if (trackingKey != null) deletingMuteChatMessageIds.remove(trackingKey);
+                        if (chatId != null) {
+                            LocalConnectionSimulator.deleteLocalMessage(ChatActivity.this, chatId, messageText);
+                        }
+                        runOnUiThread(() -> {
+                            if (chatAdapter != null) {
+                                chatAdapter.removeMessageById(messageId);
+                            }
+                            Toast.makeText(ChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private final java.util.Set<String> deletingCaregiverChatMessageIds = new java.util.HashSet<>();
+
+    public void showCaregiverDeleteDialogInChat(@NonNull ChatMessage message) {
+        String myUid = currentUserId;
+        if (myUid == null || myUid.isEmpty()) {
+            if (sessionManager != null) {
+                myUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+        }
+        if (myUid == null || myUid.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser u = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (u != null) myUid = u.getUid();
+        }
+
+        // Safeguard: outgoing message sent by currently authenticated caregiver only
+        if (myUid == null || myUid.isEmpty() || !myUid.equals(message.getSenderId())) {
+            Toast.makeText(this, "Cannot delete patient messages.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String rawText = message.getMessageText();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            rawText = message.getMessage();
+        }
+        String previewText = (rawText != null && !rawText.trim().isEmpty()) ? rawText.trim() : "Message";
+        if (previewText.length() > 40) {
+            previewText = previewText.substring(0, 37) + "...";
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete this message?")
+                .setMessage("\"" + previewText + "\"")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    final String messageId = message.getId();
+                    final String messageText = message.getMessage();
+                    String trackingKey = (messageId != null && !messageId.isEmpty()) ? messageId : messageText;
+                    if (trackingKey != null && deletingCaregiverChatMessageIds.contains(trackingKey)) {
+                        return;
+                    }
+                    if (trackingKey != null) {
+                        deletingCaregiverChatMessageIds.add(trackingKey);
+                    }
+
+                    // Clean up exclusively associated media from Firebase Storage if present
+                    String audioUrl = message.getAudioUrl();
+                    if (audioUrl != null && !audioUrl.isEmpty() && audioUrl.contains("firebasestorage.googleapis.com")) {
+                        try {
+                            com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(audioUrl).delete()
+                                    .addOnFailureListener(err -> Log.w(TAG, "Failed to clean audio media file", err));
+                        } catch (Exception ignored) {}
+                    }
+
+                    if (messageId != null && !messageId.trim().isEmpty()) {
+                        if (db == null) {
+                            db = FirebaseFirestore.getInstance();
+                        }
+                        db.collection("caregiver_messages").document(messageId)
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    if (trackingKey != null) deletingCaregiverChatMessageIds.remove(trackingKey);
+                                    if (chatId != null) {
+                                        LocalConnectionSimulator.deleteLocalMessage(ChatActivity.this, chatId, messageId);
+                                    }
+                                    runOnUiThread(() -> {
+                                        if (chatAdapter != null) {
+                                            chatAdapter.removeMessageById(messageId);
+                                        }
+                                        Toast.makeText(ChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                                    });
+                                })
+                                .addOnFailureListener(e -> {
+                                    if (trackingKey != null) deletingCaregiverChatMessageIds.remove(trackingKey);
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(ChatActivity.this, "Failed to delete message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    });
+                                });
+                    } else {
+                        if (trackingKey != null) deletingCaregiverChatMessageIds.remove(trackingKey);
+                        if (chatId != null) {
+                            LocalConnectionSimulator.deleteLocalMessage(ChatActivity.this, chatId, messageText);
+                        }
+                        runOnUiThread(() -> {
+                            if (chatAdapter != null) {
+                                chatAdapter.removeMessageById(messageId);
+                            }
+                            Toast.makeText(ChatActivity.this, "Message deleted", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void triggerEmergencySOS() {
@@ -1391,6 +1716,10 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void toggleVoiceMessageRecording() {
+        if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+            Toast.makeText(this, "Voice messages cannot be sent to Deaf users", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (isDeaf) {
             toggleVoiceInput();
             return;
@@ -1415,6 +1744,10 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void startAudioRecording() {
+        if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+            Toast.makeText(this, "Voice messages cannot be sent to Deaf users", Toast.LENGTH_SHORT).show();
+            return;
+        }
         ChatAdapter.stopAudioPlayback();
         CaregiverChatAdapter.stopAudioPlayback();
         try {
@@ -1424,10 +1757,7 @@ public class ChatActivity extends AppCompatActivity {
             } else {
                 chatMediaRecorder = new MediaRecorder();
             }
-            chatMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            chatMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            chatMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            chatMediaRecorder.setOutputFile(chatTempAudioFile.getAbsolutePath());
+            VoiceAudioHelper.configureSpeechMediaRecorder(chatMediaRecorder, chatTempAudioFile);
             chatMediaRecorder.prepare();
             chatMediaRecorder.start();
 
@@ -1501,6 +1831,9 @@ public class ChatActivity extends AppCompatActivity {
     private void resetChatMicUI() {
         if (btnMicInput != null) {
             btnMicInput.setSelected(false);
+            if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+                btnMicInput.setVisibility(View.GONE);
+            }
             if (btnMicInput instanceof MaterialButton) {
                 int primaryColor = getResources().getColor(R.color.primary);
                 ((MaterialButton) btnMicInput).setIconTint(ColorStateList.valueOf(primaryColor));
@@ -1513,71 +1846,24 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void uploadVoiceMessage(File audioFile, int durationSeconds) {
-        if (isDeaf) {
-            Log.w(TAG, "Voice recording upload disabled for Deaf user module.");
+        if (isDeaf || (isCaregiverRole(myRole) && isDeafUserRole(receiverRole))) {
+            Log.w(TAG, "Voice recording upload disabled for Deaf user conversation.");
             return;
         }
         if (audioFile == null || !audioFile.exists()) return;
         if (receiverId == null || receiverId.isEmpty()) return;
 
-        String storagePath = "voice_messages/" + currentUserId + "/" + System.currentTimeMillis() + ".m4a";
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(storagePath);
+        VoiceAudioHelper.uploadVoiceMessage(this, audioFile, durationSeconds, currentUserId, new VoiceAudioHelper.UploadVoiceCallback() {
+            @Override
+            public void onSuccess(@NonNull String downloadUrl, int durationSecs, @Nullable String base64Audio) {
+                runOnUiThread(() -> saveVoiceMessageToFirestore(downloadUrl, durationSecs, base64Audio, audioFile));
+            }
 
-        storageRef.putFile(Uri.fromFile(audioFile))
-                .addOnSuccessListener(taskSnapshot -> {
-                    storageRef.getDownloadUrl().addOnSuccessListener(downloadUri -> {
-                        String downloadUrl = downloadUri.toString();
-                        saveVoiceMessageToFirestore(downloadUrl, durationSeconds, audioFile);
-                    }).addOnFailureListener(e -> {
-                        uploadViaDirectStorage(audioFile, durationSeconds, storagePath);
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    uploadViaDirectStorage(audioFile, durationSeconds, storagePath);
-                });
-    }
-
-    private void uploadViaDirectStorage(File audioFile, int durationSeconds, String storagePath) {
-        networkExecutor.execute(() -> {
-            try {
-                URL url = new URL("https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/" + storagePath);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setDoOutput(true);
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(20000);
-                String apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmemR2emVhaHZoZmNia2h4aG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0Nzc5NDAsImV4cCI6MjA4MjA1Mzk0MH0.-UzIibKLFuOAyTeECHLal4wNkX8o73ctAuG8BhcsOYs";
-                conn.setRequestProperty("apikey", apiKey);
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-                conn.setRequestProperty("Content-Type", "audio/m4a");
-                conn.setFixedLengthStreamingMode(audioFile.length());
-
-                try (FileInputStream fis = new FileInputStream(audioFile);
-                     OutputStream os = conn.getOutputStream()) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = fis.read(buffer)) != -1) {
-                        os.write(buffer, 0, read);
-                    }
-                    os.flush();
-                }
-
-                int responseCode = conn.getResponseCode();
-                if (responseCode >= 200 && responseCode < 300) {
-                    String downloadUrl = "https://kfzdvzeahvhfcbkhxhmn.supabase.co/storage/v1/object/public/" + storagePath;
-                    runOnUiThread(() -> saveVoiceMessageToFirestore(downloadUrl, durationSeconds, audioFile));
-                } else {
-                    runOnUiThread(() -> {
-                        Toast.makeText(ChatActivity.this, "Unable to send voice message", Toast.LENGTH_SHORT).show();
-                        if (audioFile != null && audioFile.exists()) audioFile.delete();
-                        if (isBlindUserMode) {
-                            resetBlindMicUI();
-                        }
-                    });
-                }
-            } catch (Exception e) {
+            @Override
+            public void onFailure(@NonNull Exception error) {
+                Log.e(TAG, "Voice message upload error: " + error.getMessage(), error);
                 runOnUiThread(() -> {
-                    Toast.makeText(ChatActivity.this, "Unable to send voice message: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChatActivity.this, "Unable to send voice message: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     if (audioFile != null && audioFile.exists()) audioFile.delete();
                     if (isBlindUserMode) {
                         resetBlindMicUI();
@@ -1587,7 +1873,7 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
-    private void saveVoiceMessageToFirestore(String downloadUrl, int durationSeconds, File localFile) {
+    private void saveVoiceMessageToFirestore(String downloadUrl, int durationSeconds, @Nullable String base64Audio, File localFile) {
         String currentRole = sessionManager.getUserRole();
         String finalSenderRole = currentRole != null ? currentRole : RoleManager.ROLE_SPEECH_IMPAIRED;
         String finalReceiverRole = receiverRole != null ? receiverRole : RoleManager.ROLE_ADMIN_CAREGIVER;
@@ -1613,6 +1899,9 @@ public class ChatActivity extends AppCompatActivity {
         msg.put("type", "voice");
         msg.put("isVoice", true);
         msg.put("audioUrl", downloadUrl);
+        if (base64Audio != null && !base64Audio.isEmpty()) {
+            msg.put("audioBase64", base64Audio);
+        }
         msg.put("audioDuration", durationSeconds);
         msg.put("status", "sent");
         msg.put("readStatus", false);

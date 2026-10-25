@@ -220,4 +220,25 @@ public class LocalConnectionSimulator {
         SharedPreferences prefs = context.getSharedPreferences("LocalChatMessages_" + chatId, Context.MODE_PRIVATE);
         prefs.edit().remove("messages").apply();
     }
+
+    public static void deleteLocalMessage(Context context, String chatId, String messageIdOrText) {
+        if (messageIdOrText == null || messageIdOrText.isEmpty()) return;
+        SharedPreferences prefs = context.getSharedPreferences("LocalChatMessages_" + chatId, Context.MODE_PRIVATE);
+        try {
+            String existingJson = prefs.getString("messages", "[]");
+            org.json.JSONArray array = new org.json.JSONArray(existingJson);
+            org.json.JSONArray newArray = new org.json.JSONArray();
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+                String msgText = obj.optString("message");
+                String mId = obj.optString("messageId");
+                if (!messageIdOrText.equals(mId) && !messageIdOrText.equals(msgText)) {
+                    newArray.put(obj);
+                }
+            }
+            prefs.edit().putString("messages", newArray.toString()).apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

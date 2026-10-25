@@ -523,7 +523,7 @@ public class CaregiverSoundManager {
 
         if (isEmergency) {
             // Emergency Alert: If Deaf User, vibrate only silently. For other roles, play emergency sound & vibration loop.
-            if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(userRole)) {
+            if (isDeafUserRole(userRole)) {
                 vibrateNotification(context);
             } else {
                 playEmergencyAlertSoundAndVibration(context, currentUserId);
@@ -535,7 +535,7 @@ public class CaregiverSoundManager {
                 playNotificationSound2Times(context, currentUserId, messageId, () -> {
                     speakIncomingMessageTts(context, messageText, currentUserId, sm.getLanguage());
                 });
-            } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(userRole)) {
+            } else if (isDeafUserRole(userRole)) {
                 // Deaf User: Notification sound is disabled, vibrate only
                 vibrateNotification(context);
             } else {
@@ -543,6 +543,13 @@ public class CaregiverSoundManager {
                 playNotificationSound2Times(context, currentUserId, messageId, null);
             }
         }
+    }
+
+    private static boolean isDeafUserRole(String userRole) {
+        return RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(userRole)
+                || RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(userRole)
+                || "Deaf".equalsIgnoreCase(userRole)
+                || "Speech-Impaired".equalsIgnoreCase(userRole);
     }
 
     /**
