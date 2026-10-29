@@ -313,6 +313,15 @@ public class AppVoiceAssistant {
         Log.d(BLIND_LOG_TAG, "Voice Assistant temporarily paused.");
     }
 
+    public void resumeAssistantForActivity(@NonNull Activity activity) {
+        this.activeActivityRef = new WeakReference<>(activity);
+        if (this.currentState == AssistantState.TEMPORARILY_PAUSED || this.currentState == AssistantState.STOPPED) {
+            setAssistantState(AssistantState.IDLE);
+        }
+        commandHandled.set(false);
+        Log.d(BLIND_LOG_TAG, "Voice Assistant resumed for activity: " + activity.getClass().getSimpleName());
+    }
+
     private synchronized void cleanupSpeechRecognizer() {
         isListening = false;
         if (speechRecognizer != null) {
@@ -382,6 +391,7 @@ public class AppVoiceAssistant {
         }
         Activity active = (activeActivityRef != null) ? activeActivityRef.get() : null;
         if (active instanceof BlindUserDashboardActivity) return RoleManager.ROLE_BLIND_USER;
+        if (active instanceof ChatActivity && ((ChatActivity) active).isBlindUserMode()) return RoleManager.ROLE_BLIND_USER;
         if (active instanceof MuteUserDashboardActivity) return RoleManager.ROLE_MUTE_USER;
         if (active instanceof SpeechImpairedDashboardActivity) return RoleManager.ROLE_DEAF_USER;
         if (active instanceof AdminDashboardActivity) return RoleManager.ROLE_ADMIN_CAREGIVER;
@@ -763,6 +773,7 @@ public class AppVoiceAssistant {
     public void executeWakeWordCommand(@NonNull Activity activity,
                                        @NonNull String detectedPhrase,
                                        @Nullable VoiceAssistantCallback customCallback) {
+        this.activeActivityRef = new WeakReference<>(activity);
         Log.i(TAG, "WAKE_WORD_DETECTED: '" + detectedPhrase + "'");
         Log.i(TAG, "VOICE_ASSISTANT: Wake word detected");
         setAssistantState(AssistantState.WAITING_FOR_COMMAND);
@@ -814,7 +825,8 @@ public class AppVoiceAssistant {
         // Style 2: User said only the wake word ("Assistant", "Hey Assistant").
         // Prompt with an audible listening cue for blind users and open Android STT to capture their command.
         boolean isBlindOrDash = RoleManager.ROLE_BLIND_USER.equals(userRole)
-                || activity instanceof BlindUserDashboardActivity;
+                || activity instanceof BlindUserDashboardActivity
+                || (activity instanceof ChatActivity && ((ChatActivity) activity).isBlindUserMode());
 
         String listeningCue = VoiceLanguageConfig.getListeningReadyCue(langCode);
 
@@ -1713,8 +1725,9 @@ public class AppVoiceAssistant {
                                          @Nullable String userRole,
                                          @NonNull VoiceAssistantCallback callback) {
         if (VoiceCommandConstants.CMD_RECORD_VOICE_MESSAGE.equals(command.getCommandId())
+                || VoiceCommandConstants.CMD_OPEN_VOICE_MESSAGE.equals(command.getCommandId())
                 || (VoiceCommandConstants.CMD_OPEN_VOICE_RECORDER.equals(command.getCommandId())
-                && (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity))) {
+                && (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity || activity instanceof ChatActivity))) {
             handleVoiceRecordingFlow(activity, userRole, callback);
             return;
         }
@@ -1759,7 +1772,7 @@ public class AppVoiceAssistant {
             public void onSuccess(@NonNull String spokenResponse) {
                 Log.i(TAG, "COMMAND_EXECUTED_ONCE: " + command.getCommandId());
                 String finalResponse = spokenResponse;
-                if (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity) {
+                if (RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity || activity instanceof ChatActivity) {
                     finalResponse = getBlindUserSpokenResponse(command.getCommandId(), spokenResponse, getCurrentLanguageCode());
                 }
 
@@ -1792,7 +1805,7 @@ public class AppVoiceAssistant {
                 // If emergency was triggered, EmergencyActivity takes ownership of UI and accessible alarm/audio feedback
                 if (VoiceCommandConstants.CMD_OPEN_EMERGENCY.equals(command.getCommandId())
                         || VoiceCommandConstants.CMD_OPEN_EMERGENCY_ALERT.equals(command.getCommandId())) {
-                    if (!(activity instanceof BlindUserDashboardActivity) && !(activity instanceof SpeechImpairedDashboardActivity) && !isDeafUser(userRole)) {
+                    if (!(activity instanceof BlindUserDashboardActivity) && !(activity instanceof ChatActivity) && !(activity instanceof SpeechImpairedDashboardActivity) && !isDeafUser(userRole)) {
                         Log.i(TAG, "EMERGENCY_TRIGGERED: Yielding microphone and audio control to EmergencyActivity");
                         cleanupSpeechRecognizer();
                         WakeWordManager.getInstance(appContext).pauseListening();
@@ -2215,8 +2228,19 @@ public class AppVoiceAssistant {
         if (activity instanceof BlindUserDashboardActivity) {
             return ((BlindUserDashboardActivity) activity).isCaregiverConnected();
         }
+        if (activity instanceof ChatActivity) {
+            String receiverId = ((ChatActivity) activity).getReceiverId();
+            if (receiverId != null && !receiverId.trim().isEmpty()) {
+                return true;
+            }
+        }
         if (activity instanceof SpeechImpairedDashboardActivity) {
             return ((SpeechImpairedDashboardActivity) activity).isCaregiverConnected();
+        }
+        SharedPreferences blindPrefs = context.getSharedPreferences("BlindUserSettings", Context.MODE_PRIVATE);
+        String blindCaregiverUid = blindPrefs.getString("connectedCaregiverUid", "");
+        if (blindCaregiverUid != null && !blindCaregiverUid.trim().isEmpty()) {
+            return true;
         }
         SharedPreferences speechPrefs = context.getSharedPreferences("SpeechSettings", Context.MODE_PRIVATE);
         String deafCaregiverUid = speechPrefs.getString("connectedCaregiverUid", "");
@@ -2292,6 +2316,8 @@ public class AppVoiceAssistant {
 
                 if (activity instanceof BlindUserDashboardActivity) {
                     ((BlindUserDashboardActivity) activity).startHandsFreeRecording();
+                } else if (activity instanceof ChatActivity) {
+                    ((ChatActivity) activity).startHandsFreeRecording();
                 } else {
                     startInternalVoiceRecording(activity);
                 }
@@ -2421,6 +2447,8 @@ public class AppVoiceAssistant {
             setAssistantState(AssistantState.SENDING_MESSAGE);
             if (activity instanceof BlindUserDashboardActivity) {
                 ((BlindUserDashboardActivity) activity).sendHandsFreeVoiceMessage(audioFile, duration);
+            } else if (activity instanceof ChatActivity) {
+                ((ChatActivity) activity).sendHandsFreeVoiceMessage(audioFile, duration);
             }
             return;
         }
@@ -2463,6 +2491,8 @@ public class AppVoiceAssistant {
             setAssistantState(AssistantState.SENDING_MESSAGE);
             if (activity instanceof BlindUserDashboardActivity) {
                 ((BlindUserDashboardActivity) activity).sendHandsFreeVoiceMessage(audioToSend, durationToSend);
+            } else if (activity instanceof ChatActivity) {
+                ((ChatActivity) activity).sendHandsFreeVoiceMessage(audioToSend, durationToSend);
             }
             setAssistantState(AssistantState.SPEAKING);
             String sentResp = VoiceLanguageConfig.getVoiceMessageSentResponse(langCode);
@@ -2539,6 +2569,8 @@ public class AppVoiceAssistant {
         isHandsFreeVoiceRecordingActive = false;
         if (activity instanceof BlindUserDashboardActivity) {
             return ((BlindUserDashboardActivity) activity).stopHandsFreeRecording();
+        } else if (activity instanceof ChatActivity) {
+            return ((ChatActivity) activity).stopHandsFreeRecording();
         }
         if (internalMediaRecorder != null) {
             try {
@@ -2556,6 +2588,8 @@ public class AppVoiceAssistant {
     private int getHandsFreeRecordingDurationInternal(@NonNull Activity activity) {
         if (activity instanceof BlindUserDashboardActivity) {
             return ((BlindUserDashboardActivity) activity).getHandsFreeRecordingSeconds();
+        } else if (activity instanceof ChatActivity) {
+            return ((ChatActivity) activity).getHandsFreeRecordingSeconds();
         }
         return pendingRecordedAudioDuration > 0 ? pendingRecordedAudioDuration : 3;
     }
@@ -2565,6 +2599,8 @@ public class AppVoiceAssistant {
         isHandsFreeVoiceRecordingActive = false;
         if (activity instanceof BlindUserDashboardActivity) {
             ((BlindUserDashboardActivity) activity).cancelHandsFreeRecording();
+        } else if (activity instanceof ChatActivity) {
+            ((ChatActivity) activity).cancelHandsFreeRecording();
         }
         if (internalMediaRecorder != null) {
             try {

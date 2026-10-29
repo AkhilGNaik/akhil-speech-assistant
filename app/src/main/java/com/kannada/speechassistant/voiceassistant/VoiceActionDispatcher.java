@@ -381,6 +381,13 @@ public class VoiceActionDispatcher {
     }
 
     private static boolean handleOpenVoiceRecorder(@NonNull Activity activity) {
+        if (activity instanceof ChatActivity) {
+            ChatActivity ca = (ChatActivity) activity;
+            if (ca.isFinishing() || ca.isDestroyed()) return false;
+            if (ca.isRecordingActive()) return true;
+            ca.startHandsFreeRecording();
+            return true;
+        }
         View cardVoiceMessage = activity.findViewById(R.id.cardVoiceMessage);
         if (cardVoiceMessage != null) {
             BottomNavigationView bnv = findActiveBottomNav(activity);
@@ -398,6 +405,16 @@ public class VoiceActionDispatcher {
             ((BlindUserDashboardActivity) activity).startCaregiverVoiceCall();
             return true;
         }
+        if (activity instanceof ChatActivity) {
+            ChatActivity ca = (ChatActivity) activity;
+            if (ca.isFinishing() || ca.isDestroyed()) return false;
+            View btnCall = ca.findViewById(R.id.btnCall);
+            if (btnCall != null && btnCall.getVisibility() == View.VISIBLE) {
+                btnCall.performClick();
+                return true;
+            }
+            return false;
+        }
         View btnCall = activity.findViewById(R.id.btnVoiceCallCaregiver);
         if (btnCall != null) {
             btnCall.performClick();
@@ -412,10 +429,24 @@ public class VoiceActionDispatcher {
             return true;
         }
 
+        if (activity instanceof ChatActivity) {
+            ChatActivity ca = (ChatActivity) activity;
+            if (ca.isFinishing() || ca.isDestroyed()) return false;
+            View btnEmergency = ca.findViewById(R.id.btnSendEmergency);
+            if (btnEmergency != null && btnEmergency.getVisibility() == View.VISIBLE) {
+                btnEmergency.performClick();
+                return true;
+            }
+            return false;
+        }
+
         // 1. Check if the current activity has an emergency button/card wired up
         View btnEmergency = activity.findViewById(R.id.cardEmergency);
         if (btnEmergency == null) {
             btnEmergency = activity.findViewById(R.id.btnSOS);
+        }
+        if (btnEmergency == null) {
+            btnEmergency = activity.findViewById(R.id.btnSendEmergency);
         }
         if (btnEmergency != null) {
             btnEmergency.performClick();

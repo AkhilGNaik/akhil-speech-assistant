@@ -139,6 +139,8 @@ public class ChatActivity extends AppCompatActivity {
     private boolean isChatAudioRecording = false;
     private long chatRecordingStartTime = 0;
 
+    private long lastEmergencyTriggerTime = 0;
+
     // Blind User Voice Message Input (Image 5 Function - Only Large Microphone 🎤)
     private View layoutStandardChatInput;
     private View layoutBlindVoiceMessageInput;
@@ -480,6 +482,12 @@ public class ChatActivity extends AppCompatActivity {
 
         // Quick Send SOS Emergency message
         btnSendEmergency.setOnClickListener(v -> {
+            long now = System.currentTimeMillis();
+            if (now - lastEmergencyTriggerTime < 5000L) {
+                Log.d(TAG, "Emergency trigger debounced (< 5000ms)");
+                return;
+            }
+            lastEmergencyTriggerTime = now;
             String role = sessionManager.getUserRole();
             String userLang = sessionManager != null ? sessionManager.getLanguage() : LanguageManager.DEFAULT_LANGUAGE;
             String normLang = LanguageManager.normalizeLanguageCode(userLang);
@@ -1367,6 +1375,7 @@ public class ChatActivity extends AppCompatActivity {
             db.collection("users").document(currentUserId).update("online", true);
         }
         if (isBlindUserMode || (sessionManager != null && RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole()))) {
+            AppVoiceAssistant.getInstance(this).resumeAssistantForActivity(this);
             WakeWordManager.getInstance(this).setForegroundActivity(this);
             WakeWordManager.getInstance(this).startListening(this);
         }
@@ -1379,6 +1388,7 @@ public class ChatActivity extends AppCompatActivity {
             cancelAudioRecording();
         }
         if (isBlindUserMode || (sessionManager != null && RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole()))) {
+            AppVoiceAssistant.getInstance(this).pauseAssistant();
             WakeWordManager.getInstance(this).pauseListeningForActivity(this);
         }
         ChatAdapter.stopAudioPlayback();
@@ -1390,6 +1400,7 @@ public class ChatActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (isBlindUserMode || (sessionManager != null && RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole()))) {
+            AppVoiceAssistant.getInstance(this).stopListening();
             WakeWordManager.getInstance(this).pauseListeningForActivity(this);
         }
         if (isChatAudioRecording) {
@@ -2201,6 +2212,75 @@ public class ChatActivity extends AppCompatActivity {
 
         if (isBlindUserMode || (sessionManager != null && RoleManager.ROLE_BLIND_USER.equals(sessionManager.getUserRole()))) {
             WakeWordManager.getInstance(this).resumeListening(this);
+            AppVoiceAssistant.getInstance(this).onVoiceRecordingWorkflowFinished(this);
         }
+    }
+
+    public boolean isBlindUserMode() {
+        return isBlindUserMode;
+    }
+
+    public String getReceiverId() {
+        return receiverId;
+    }
+
+    public void startVoiceMessageRecordingFromAssistant() {
+        startHandsFreeRecording();
+    }
+
+    public void startHandsFreeRecording() {
+        runOnUiThread(() -> {
+            if (layoutBlindVoiceMessageInput != null) {
+                layoutBlindVoiceMessageInput.setVisibility(View.VISIBLE);
+            }
+            if (isBlindRecording) {
+                return;
+            }
+            checkPermissionAndStartBlindRecording();
+        });
+    }
+
+    public File stopHandsFreeRecording() {
+        if (!isBlindRecording) {
+            return (blindTempAudioFile != null && blindTempAudioFile.exists()) ? blindTempAudioFile : null;
+        }
+        isBlindRecording = false;
+        if (blindTimerRunnable != null) {
+            blindTimerHandler.removeCallbacks(blindTimerRunnable);
+        }
+        try {
+            if (blindMediaRecorder != null) {
+                blindMediaRecorder.stop();
+                blindMediaRecorder.release();
+                blindMediaRecorder = null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping blind media recorder in hands-free: " + e.getMessage(), e);
+        }
+        runOnUiThread(() -> {
+            if (txtBlindMicStatus != null) {
+                txtBlindMicStatus.setText("📤 Preparing message...");
+            }
+        });
+        return (blindTempAudioFile != null && blindTempAudioFile.exists() && blindTempAudioFile.length() > 0)
+                ? blindTempAudioFile : null;
+    }
+
+    public int getHandsFreeRecordingSeconds() {
+        return Math.max(1, blindRecordingSeconds);
+    }
+
+    public void cancelHandsFreeRecording() {
+        runOnUiThread(this::cancelBlindVoiceRecording);
+    }
+
+    public void sendHandsFreeVoiceMessage(File audioFile, int durationSeconds) {
+        runOnUiThread(() -> {
+            if (audioFile != null && audioFile.exists()) {
+                uploadVoiceMessage(audioFile, durationSeconds);
+            } else if (blindTempAudioFile != null && blindTempAudioFile.exists()) {
+                uploadVoiceMessage(blindTempAudioFile, Math.max(1, blindRecordingSeconds));
+            }
+        });
     }
 }

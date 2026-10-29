@@ -343,6 +343,10 @@ public class WakeWordManager {
         }
 
         AppVoiceAssistant va = AppVoiceAssistant.getInstance(appContext);
+        if (va.getAssistantState() == AppVoiceAssistant.AssistantState.TEMPORARILY_PAUSED
+                || va.getAssistantState() == AppVoiceAssistant.AssistantState.STOPPED) {
+            va.setAssistantState(AppVoiceAssistant.AssistantState.IDLE);
+        }
         if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
             Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
             setState(State.PAUSED);
@@ -721,7 +725,10 @@ public class WakeWordManager {
 
         // 3. Existing Voice Assistant is actively listening, executing, or speaking
         AppVoiceAssistant va = AppVoiceAssistant.getInstance(activity.getApplicationContext());
-        if (va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
+        AppVoiceAssistant.AssistantState vaState = va.getAssistantState();
+        if (va.isListening() || (vaState != AppVoiceAssistant.AssistantState.IDLE
+                && vaState != AppVoiceAssistant.AssistantState.TEMPORARILY_PAUSED
+                && vaState != AppVoiceAssistant.AssistantState.STOPPED)) {
             return true;
         }
 
