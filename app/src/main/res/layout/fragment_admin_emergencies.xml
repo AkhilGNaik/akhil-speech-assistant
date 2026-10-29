@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/background"
+    android:background="@color/caregiver_bg"
     android:visibility="visible">
 
     <androidx.core.widget.NestedScrollView
@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="16dp">
+            android:paddingTop="14dp">
 
             <!-- Search View -->
             <androidx.appcompat.widget.SearchView
@@ -28,22 +28,37 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
-                android:layout_marginBottom="12dp"
-                android:background="@color/surface"
+                android:layout_marginBottom="14dp"
+                android:background="@drawable/bg_caregiver_search"
                 app:iconifiedByDefault="false"
                 app:queryHint="Search patients..."
                 app:defaultQueryHint="Search patients..." />
 
             <!-- Active Alerts Header -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:layout_marginStart="16dp"
-                android:layout_marginBottom="8dp"
-                android:text="Active Emergency Alerts"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🚨"
+                    android:textSize="15sp"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Active Emergency Alerts"
+                    android:textColor="@color/caregiver_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Active Emergencies List -->
             <androidx.recyclerview.widget.RecyclerView
@@ -59,8 +74,8 @@
                 android:layout_margin="16dp"
                 android:gravity="center"
                 android:text="No patients found."
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                android:textColor="@color/caregiver_text_muted"
+                android:textSize="13sp"
                 android:visibility="gone" />
 
             <!-- History Header -->
@@ -70,9 +85,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="10dp"
                 android:text="Resolved Alerts"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_secondary"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
@@ -92,8 +107,8 @@
                 android:layout_margin="16dp"
                 android:gravity="center"
                 android:text="No patients found."
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
+                android:textColor="@color/caregiver_text_muted"
+                android:textSize="13sp"
                 android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

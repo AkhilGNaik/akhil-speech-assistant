@@ -5,14 +5,14 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@color/surface">
+    android:background="@color/caregiver_card">
 
     <TextView
         android:id="@+id/dialogTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="🚨 EMERGENCY ALERT"
-        android:textColor="#E11D48"
+        android:textColor="@color/caregiver_danger"
         android:textSize="18sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Patient: Akhil"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/caregiver_text_primary"
         android:textSize="15sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
@@ -32,7 +32,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Message: I need immediate help."
-        android:textColor="@color/text_primary"
+        android:textColor="@color/caregiver_text_primary"
         android:textSize="14sp"
         android:layout_marginBottom="8dp" />
 
@@ -41,7 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Date: 16 July 2026 | Time: 10:42 AM"
-        android:textColor="@color/text_secondary"
+        android:textColor="@color/caregiver_text_secondary"
         android:textSize="12sp"
         android:layout_marginBottom="20dp" />
 
@@ -58,7 +58,8 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="Open Alert"
-            app:backgroundTint="@color/accent"
+            app:backgroundTint="#334155"
+            android:textColor="@color/caregiver_text_primary"
             app:cornerRadius="8dp" />
 
         <com.google.android.material.button.MaterialButton
@@ -67,7 +68,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Acknowledge"
-            app:backgroundTint="#E11D48"
+            app:backgroundTint="@color/caregiver_danger"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
             app:cornerRadius="8dp" />
     </LinearLayout>
 </LinearLayout>

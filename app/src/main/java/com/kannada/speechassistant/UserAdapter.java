@@ -175,27 +175,27 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             holder.txtRegDate.setText("Registered: N/A");
         }
 
-        // Format Role Badge Color dynamically
+        // Format Role Badge Color dynamically (Dark Accessible Theme)
         int badgeBg;
         int badgeText;
         if (RoleManager.ROLE_MUTE_USER.equals(role)) {
-            badgeBg = Color.parseColor("#DBEAFE"); // Light Blue
-            badgeText = Color.parseColor("#1D4ED8");
+            badgeBg = Color.parseColor("#1E3A8A"); // Dark Blue
+            badgeText = Color.parseColor("#93C5FD"); // Light Blue
         } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
-            badgeBg = Color.parseColor("#E0E7FF"); // Light Indigo
-            badgeText = Color.parseColor("#4F46E5");
+            badgeBg = Color.parseColor("#312E81"); // Dark Indigo
+            badgeText = Color.parseColor("#C7D2FE"); // Light Indigo
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(role)) {
-            badgeBg = Color.parseColor("#CCFBF1"); // Light Teal
-            badgeText = Color.parseColor("#0F766E");
+            badgeBg = Color.parseColor("#134E4A"); // Dark Teal
+            badgeText = Color.parseColor("#5EEAD4"); // Light Teal
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
-            badgeBg = Color.parseColor("#FCE7F3"); // Light Pink
-            badgeText = Color.parseColor("#DB2777");
+            badgeBg = Color.parseColor("#4A044E"); // Dark Fuchsia
+            badgeText = Color.parseColor("#F472B6"); // Light Pink
         } else if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(role)) {
-            badgeBg = Color.parseColor("#FEF3C7"); // Warm Amber
-            badgeText = Color.parseColor("#B45309");
+            badgeBg = Color.parseColor("#451A03"); // Dark Amber
+            badgeText = Color.parseColor("#FCD34D"); // Light Amber
         } else {
-            badgeBg = Color.parseColor("#F1F5F9"); // Light Slate
-            badgeText = Color.parseColor("#475569");
+            badgeBg = Color.parseColor("#334155"); // Dark Slate
+            badgeText = Color.parseColor("#CBD5E1"); // Light Slate
         }
 
         if (RoleManager.ROLE_MUTE_USER.equals(role)) {
@@ -223,21 +223,21 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
             String normCode = LanguageManager.normalizeLanguageCode(rawLang);
             switch (normCode) {
                 case LanguageManager.LANG_HINDI:
-                    langBg = Color.parseColor("#FEF3C7"); // Warm Amber
-                    langText = Color.parseColor("#B45309");
+                    langBg = Color.parseColor("#451A03"); // Dark Amber
+                    langText = Color.parseColor("#FCD34D");
                     break;
                 case LanguageManager.LANG_MALAYALAM:
-                    langBg = Color.parseColor("#DCFCE7"); // Mint Green
-                    langText = Color.parseColor("#15803D");
+                    langBg = Color.parseColor("#064E3B"); // Dark Green
+                    langText = Color.parseColor("#6EE7B7");
                     break;
                 case LanguageManager.LANG_ENGLISH:
-                    langBg = Color.parseColor("#F3E8FF"); // Soft Purple
-                    langText = Color.parseColor("#7E22CE");
+                    langBg = Color.parseColor("#3B0764"); // Dark Purple
+                    langText = Color.parseColor("#D8B4FE");
                     break;
                 case LanguageManager.LANG_KANNADA:
                 default:
-                    langBg = Color.parseColor("#E0F2FE"); // Light Sky Blue
-                    langText = Color.parseColor("#0369A1");
+                    langBg = Color.parseColor("#0C4A6E"); // Dark Sky
+                    langText = Color.parseColor("#7DD3FC");
                     break;
             }
             holder.txtLanguageBadge.setBackgroundTintList(ColorStateList.valueOf(langBg));

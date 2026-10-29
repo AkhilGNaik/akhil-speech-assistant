@@ -1508,6 +1508,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         builder.setCancelable(false);
 
         activeEmergencyDialog = builder.create();
+        if (activeEmergencyDialog.getWindow() != null) {
+            activeEmergencyDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        }
         activeEmergencyDialog.setOnDismissListener(dialog -> stopEmergencyRingtoneSound());
 
         btnOpen.setOnClickListener(v -> {
@@ -1614,6 +1617,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             TabLayout.Tab tab = tabLayout.getTabAt(1);
             if (tab != null) {
                 BadgeDrawable badge = tab.getOrCreateBadge();
+                badge.setBackgroundColor(Color.parseColor("#EF4444"));
                 badge.setVisible(true);
             }
         }
@@ -1755,17 +1759,20 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } else {
             dRole.setText(role.replace(" User", ""));
         }
-        int badgeBg = Color.parseColor("#F1F5F9");
-        int badgeText = Color.parseColor("#475569");
+        int badgeBg = Color.parseColor("#334155");
+        int badgeText = Color.parseColor("#CBD5E1");
         if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
-            badgeBg = Color.parseColor("#E0E7FF");
-            badgeText = Color.parseColor("#4F46E5");
+            badgeBg = Color.parseColor("#312E81");
+            badgeText = Color.parseColor("#C7D2FE");
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(role)) {
-            badgeBg = Color.parseColor("#CCFBF1");
-            badgeText = Color.parseColor("#0F766E");
+            badgeBg = Color.parseColor("#134E4A");
+            badgeText = Color.parseColor("#5EEAD4");
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
-            badgeBg = Color.parseColor("#FEF3C7");
-            badgeText = Color.parseColor("#D97706");
+            badgeBg = Color.parseColor("#4A044E");
+            badgeText = Color.parseColor("#F472B6");
+        } else if (RoleManager.ROLE_MUTE_USER.equals(role)) {
+            badgeBg = Color.parseColor("#1E3A8A");
+            badgeText = Color.parseColor("#93C5FD");
         }
         dRole.setBackgroundTintList(ColorStateList.valueOf(badgeBg));
         dRole.setTextColor(badgeText);
@@ -1779,6 +1786,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
 
         AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        }
         dialog.show();
 
         MaterialButton dChat = dialogView.findViewById(R.id.dialogBtnChat);

@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/background"
+    android:background="@color/caregiver_bg"
     android:visibility="visible">
 
     <!-- Responsive Split Layout -->
@@ -16,7 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:background="@color/background">
+        android:background="@color/caregiver_bg">
 
         <!-- Left Pane: Patient List -->
         <LinearLayout
@@ -24,8 +24,8 @@
             android:layout_width="280dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:background="@color/surface"
-            android:elevation="1dp">
+            android:background="@color/caregiver_surface"
+            android:elevation="0dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -35,7 +35,7 @@
                 android:paddingTop="16dp"
                 android:paddingBottom="8dp"
                 android:text="Patients / Users"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -50,13 +50,13 @@
                 app:iconifiedByDefault="false"
                 app:queryHint="Search patients..."
                 app:queryBackground="@android:color/transparent"
-                android:background="@color/background"
-                app:cornerRadius="8dp" />
+                android:background="@drawable/bg_caregiver_search_nested"
+                app:cornerRadius="10dp" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="@color/background" />
+                android:background="@color/caregiver_border" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCommunicationMessages"
@@ -69,7 +69,7 @@
         <View
             android:layout_width="1dp"
             android:layout_height="match_parent"
-            android:background="@color/background" />
+            android:background="@color/caregiver_border" />
 
         <!-- Right Pane: Chat Window -->
         <RelativeLayout
@@ -77,7 +77,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@color/background">
+            android:background="@color/caregiver_bg">
 
             <!-- Empty State -->
             <LinearLayout
@@ -93,7 +93,7 @@
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:src="@drawable/ic_caregiver"
-                    app:tint="#94A3B8"
+                    app:tint="@color/caregiver_border"
                     android:layout_marginBottom="16dp"
                     android:contentDescription="Chat logo" />
 
@@ -101,7 +101,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Select a patient to start messaging"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/caregiver_text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -109,7 +109,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Real-time synchronized caregiver conversation stream."
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/caregiver_text_secondary"
                     android:textSize="13sp"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
@@ -128,10 +128,9 @@
                     android:layout_height="?attr/actionBarSize"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@color/surface"
+                    android:background="@color/caregiver_surface"
                     android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:elevation="1dp">
+                    android:paddingEnd="16dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -144,7 +143,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Patient Name"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/caregiver_text_primary"
                             android:textSize="15sp"
                             android:textStyle="bold" />
 
@@ -153,7 +152,7 @@
                              android:layout_width="wrap_content"
                              android:layout_height="wrap_content"
                              android:text="Offline"
-                             android:textColor="@color/text_secondary"
+                             android:textColor="@color/caregiver_text_secondary"
                              android:textSize="11sp" />
                     </LinearLayout>
 
@@ -163,7 +162,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:text="📞 Call"
-                        android:textColor="#0284C7"
+                        android:textColor="@color/caregiver_accent"
                         android:textStyle="bold"
                         android:textSize="13sp"
                         app:cornerRadius="8dp" />
@@ -173,7 +172,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/background" />
+                    android:background="@color/caregiver_border" />
 
                 <!-- Pinned Emergency Banner -->
                 <com.google.android.material.card.MaterialCardView
@@ -181,11 +180,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="#FEF2F2"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/caregiver_danger_bg"
                     app:strokeWidth="1.5dp"
-                    app:strokeColor="#FCA5A5"
+                    app:strokeColor="@color/caregiver_danger"
                     android:visibility="gone">
 
                     <LinearLayout
@@ -209,19 +208,19 @@
                             android:orientation="vertical">
 
                             <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="EMERGENCY ALERT"
-                                        android:textColor="#DC2626"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold" />
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="EMERGENCY ALERT"
+                                android:textColor="@color/caregiver_danger"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/txtPinnedEmergencyMsg"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="I need help immediately!"
-                                android:textColor="#991B1B"
+                                android:textColor="@color/caregiver_danger_text"
                                 android:textSize="13sp"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
@@ -232,7 +231,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="ACKNOWLEDGE"
-                            android:textColor="#DC2626"
+                            android:textColor="@color/caregiver_danger"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -251,7 +250,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/background" />
+                    android:background="@color/caregiver_border" />
 
                 <!-- Input Bar -->
                 <LinearLayout
@@ -260,7 +259,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@color/surface"
+                    android:background="@color/caregiver_surface"
                     android:padding="8dp">
 
                     <!-- Emoji Toggle Button -->
@@ -271,7 +270,7 @@
                         android:layout_height="40dp"
                         app:icon="@drawable/ic_mood"
                         app:iconGravity="textStart"
-                        app:iconTint="#64748B"
+                        app:iconTint="@color/caregiver_text_secondary"
                         android:padding="0dp"
                         android:layout_marginEnd="4dp" />
 
@@ -281,10 +280,12 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:hint="Type a message..."
-                        android:background="@android:color/transparent"
-                        android:padding="12dp"
+                        android:textColorHint="@color/caregiver_text_muted"
+                        android:background="@drawable/bg_caregiver_input_field"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
                         android:textSize="14sp"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/caregiver_text_primary"
                         android:inputType="textMultiLine"
                         android:maxLines="4" />
 
@@ -293,13 +294,13 @@
                         style="@style/Widget.MaterialComponents.Button.Icon"
                         android:layout_width="44dp"
                         android:layout_height="44dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginEnd="4dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="2dp"
                         app:icon="@drawable/ic_mic"
                         app:iconGravity="textStart"
-                        app:iconTint="@color/primary"
-                        app:backgroundTint="@color/surface"
-                        app:strokeColor="@color/primary"
+                        app:iconTint="@color/caregiver_accent"
+                        app:backgroundTint="@color/caregiver_surface"
+                        app:strokeColor="@color/caregiver_accent"
                         app:strokeWidth="1dp"
                         app:cornerRadius="22dp"
                         android:padding="0dp" />
@@ -312,8 +313,8 @@
                         android:layout_marginStart="4dp"
                         app:icon="@drawable/ic_send"
                         app:iconGravity="textStart"
-                        app:iconTint="@android:color/white"
-                        app:backgroundTint="@color/primary"
+                        app:iconTint="#0F172A"
+                        app:backgroundTint="@color/caregiver_accent"
                         app:cornerRadius="22dp"
                         android:padding="0dp" />
                 </LinearLayout>
@@ -325,7 +326,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center"
-                    android:background="@color/surface"
+                    android:background="@color/caregiver_surface"
                     android:padding="8dp"
                     android:visibility="gone">
 
@@ -359,16 +360,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="😉"
-                        android:textSize="24sp"
-                        android:padding="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="😍"
+                        android:text="🙏"
                         android:textSize="24sp"
                         android:padding="8dp"
                         android:clickable="true"
@@ -395,32 +387,18 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🙏"
-                        android:textSize="24sp"
-                        android:padding="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="😮"
-                        android:textSize="24sp"
-                        android:padding="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="😢"
+                        android:text="👋"
                         android:textSize="24sp"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:background="?attr/selectableItemBackgroundBorderless" />
                 </LinearLayout>
+
             </LinearLayout>
+
         </RelativeLayout>
+
     </LinearLayout>
+
 </LinearLayout>

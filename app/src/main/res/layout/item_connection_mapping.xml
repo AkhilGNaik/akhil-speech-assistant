@@ -6,17 +6,17 @@
     android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="12dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
-    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/caregiver_card"
     app:strokeWidth="1dp"
-    app:strokeColor="#E2E8F0">
+    app:strokeColor="@color/caregiver_border">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="16dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Caregiver - Patient Link"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_alignParentStart="true"
@@ -40,21 +40,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:background="@drawable/bg_badge"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="3dp"
+                android:background="@drawable/bg_caregiver_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
                 android:text="ACCEPTED"
-                android:textColor="#10B981"
-                android:textSize="10sp"
+                android:textColor="@color/caregiver_status_active"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </RelativeLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F1F5F9"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
+            android:background="@color/caregiver_border"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" />
 
         <!-- Caregiver Info -->
         <LinearLayout
@@ -67,7 +67,7 @@
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:text="Caregiver:"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/caregiver_text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -76,7 +76,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="caregiver@example.com"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_primary"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -86,13 +86,13 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="6dp">
 
             <TextView
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:text="Patient:"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/caregiver_text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -101,7 +101,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="John Doe (patient@example.com)"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_primary"
                 android:textSize="13sp" />
         </LinearLayout>
 

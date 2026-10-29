@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@color/surface">
+    android:background="@drawable/bg_caregiver_search">
 
     <!-- Header -->
     <LinearLayout
@@ -18,7 +18,7 @@
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:src="@drawable/ic_bell"
-            app:tint="@color/accent" />
+            app:tint="@color/caregiver_accent" />
 
         <TextView
             android:layout_width="0dp"
@@ -26,7 +26,7 @@
             android:layout_weight="1"
             android:layout_marginStart="12dp"
             android:text="App Sound &amp; Voice Settings"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/caregiver_text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="Select a custom notification ringtone and adjust master volume for all app voices, alerts, and notifications."
-        android:textColor="@color/text_secondary"
+        android:textColor="@color/caregiver_text_secondary"
         android:textSize="13sp" />
 
     <!-- Current Ringtone Display Card -->
@@ -45,45 +45,49 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         app:cardCornerRadius="10dp"
-        app:cardElevation="2dp"
-        app:cardBackgroundColor="#1F2937">
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/caregiver_bg"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/caregiver_border">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:padding="12dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Active Notification Ringtone:"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/caregiver_text_secondary"
                 android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/txtCurrentRingtoneName"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Default System Ringtone"
-                android:textColor="@color/accent"
+                android:textColor="@color/caregiver_accent"
                 android:textSize="15sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Pick from File Manager Button -->
+    <!-- Ringtone Action Buttons -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSelectFileRingtone"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="48dp"
         android:layout_marginTop="16dp"
         android:text="📁 Choose Sound from File Manager"
         android:textAllCaps="false"
+        android:textColor="#0F172A"
+        android:textStyle="bold"
         android:textSize="14sp"
         app:cornerRadius="10dp"
-        app:backgroundTint="@color/primary" />
+        app:backgroundTint="@color/caregiver_accent" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -98,11 +102,12 @@
             android:layout_height="46dp"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
-            android:text="▶ Test Play"
+            android:text="▶ Test Sound"
             android:textAllCaps="false"
-            android:textColor="@color/accent"
-            app:strokeColor="@color/accent"
-            app:cornerRadius="8dp" />
+            android:textColor="@color/caregiver_accent"
+            android:textSize="13sp"
+            app:strokeColor="@color/caregiver_accent"
+            app:cornerRadius="10dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnResetDefaultRingtone"
@@ -113,18 +118,19 @@
             android:layout_marginStart="6dp"
             android:text="🔇 Clear (Silent)"
             android:textAllCaps="false"
-            android:textColor="#EF4444"
-            app:strokeColor="#EF4444"
-            app:cornerRadius="8dp" />
+            android:textColor="@color/caregiver_warning"
+            android:textSize="13sp"
+            app:strokeColor="@color/caregiver_warning"
+            app:cornerRadius="10dp" />
     </LinearLayout>
 
-    <!-- Notification Volume Control Section -->
+    <!-- Volume Adjust Section -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="🔊 Notification Volume Level"
-        android:textColor="@color/text_primary"
+        android:text="Voice, Notification &amp; Sound Volume"
+        android:textColor="@color/caregiver_text_primary"
         android:textSize="14sp"
         android:textStyle="bold" />
 
@@ -141,17 +147,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:max="100"
-            android:progress="100"
-            android:progressTint="@color/accent"
-            android:thumbTint="@color/accent" />
+            android:progress="80"
+            android:progressTint="@color/caregiver_accent"
+            android:thumbTint="@color/caregiver_accent" />
 
         <TextView
             android:id="@+id/txtVolumePercentage"
             android:layout_width="48dp"
             android:layout_height="wrap_content"
             android:gravity="end"
-            android:text="100%"
-            android:textColor="@color/text_primary"
+            android:text="80%"
+            android:textColor="@color/caregiver_text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -170,7 +176,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🔊 Voice Assistant Volume"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/caregiver_text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -178,7 +184,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Manage the voice assistant speech volume and sound"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/caregiver_text_secondary"
             android:textSize="12sp"
             android:layout_marginTop="2dp" />
 
@@ -196,8 +202,8 @@
                 android:layout_weight="1"
                 android:max="100"
                 android:progress="100"
-                android:progressTint="@color/accent"
-                android:thumbTint="@color/accent" />
+                android:progressTint="@color/caregiver_accent"
+                android:thumbTint="@color/caregiver_accent" />
 
             <TextView
                 android:id="@+id/txtTtsVolumePercentage"
@@ -205,7 +211,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="end"
                 android:text="100%"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/caregiver_text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -219,27 +225,22 @@
             android:text="🗣️ Test Assistant Voice"
             android:textAllCaps="false"
             android:textSize="13sp"
-            android:textColor="@color/accent"
-            app:strokeColor="@color/accent"
+            android:textColor="@color/caregiver_accent"
+            app:strokeColor="@color/caregiver_accent"
             app:cornerRadius="8dp" />
     </LinearLayout>
 
-    <!-- Bottom Buttons -->
-    <LinearLayout
+    <!-- Save & Close Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveNotificationSettings"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_marginTop="24dp"
-        android:gravity="end">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveNotificationSettings"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="SAVE SOUND SETTINGS"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="10dp"
-            app:backgroundTint="@color/accent" />
-    </LinearLayout>
-
+        android:text="✓ Save &amp; Close"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:cornerRadius="10dp"
+        app:backgroundTint="@color/caregiver_success" />
 </LinearLayout>

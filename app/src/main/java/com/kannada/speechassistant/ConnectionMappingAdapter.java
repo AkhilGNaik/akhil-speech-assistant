@@ -56,14 +56,14 @@ public class ConnectionMappingAdapter extends RecyclerView.Adapter<ConnectionMap
         int statusColor;
         int statusBg;
         if ("Accepted".equalsIgnoreCase(status)) {
-            statusColor = Color.parseColor("#059669"); // Emerald Green
-            statusBg = Color.parseColor("#D1FAE5");
+            statusColor = Color.parseColor("#34D399"); // Accessible Emerald Green
+            statusBg = Color.parseColor("#064E3B"); // Dark Emerald Tint
         } else if ("Pending".equalsIgnoreCase(status)) {
-            statusColor = Color.parseColor("#D97706"); // Amber Orange
-            statusBg = Color.parseColor("#FEF3C7");
+            statusColor = Color.parseColor("#FBBF24"); // Accessible Amber
+            statusBg = Color.parseColor("#451A03"); // Dark Amber Tint
         } else {
-            statusColor = Color.parseColor("#DC2626"); // Red
-            statusBg = Color.parseColor("#FEE2E2");
+            statusColor = Color.parseColor("#F87171"); // Accessible Red
+            statusBg = Color.parseColor("#450A0A"); // Dark Red Tint
         }
 
         holder.txtConnectionStatus.setText(status.toUpperCase());

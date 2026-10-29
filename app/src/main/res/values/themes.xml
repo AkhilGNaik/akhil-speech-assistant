@@ -21,4 +21,19 @@
         <item name="android:statusBarColor">@color/background</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
+
+    <!-- Caregiver/Admin Premium Dark Accessibility Dashboard Theme -->
+    <style name="Theme.CaregiverDashboard" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/caregiver_accent</item>
+        <item name="colorPrimaryVariant">#1E293B</item>
+        <item name="colorOnPrimary">#0F172A</item>
+        <item name="colorSecondary">@color/caregiver_accent</item>
+        <item name="colorSecondaryVariant">#312E81</item>
+        <item name="colorOnSecondary">#0F172A</item>
+        <item name="android:statusBarColor">#1E293B</item>
+        <item name="android:windowBackground">@color/caregiver_bg</item>
+        <item name="android:navigationBarColor">#0F172A</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+    </style>
+
 </resources>
