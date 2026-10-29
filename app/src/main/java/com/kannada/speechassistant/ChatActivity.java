@@ -184,12 +184,14 @@ public class ChatActivity extends AppCompatActivity {
 
     private void updateMicVisibilityForDeafUser() {
         if (btnMicInput == null) return;
-        if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
-            // Caregiver communicating with Deaf User:
-            // Deaf users cannot hear voice notes, so voice message function is removed.
-            btnMicInput.setVisibility(View.GONE);
-        } else if (!isBlindUserMode) {
+        if (!isBlindUserMode) {
             btnMicInput.setVisibility(View.VISIBLE);
+            if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
+                // Caregiver communicating with Deaf User:
+                // Voice message function removed, mic works purely as STT (Speech-to-Text)
+                btnMicInput.setOnClickListener(v -> toggleVoiceInput());
+                btnMicInput.setOnLongClickListener(null);
+            }
         }
     }
 
@@ -318,8 +320,10 @@ public class ChatActivity extends AppCompatActivity {
         if (btnMicInput != null) {
             if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
                 // Caregiver communicating with Deaf User:
-                // Deaf users cannot hear voice notes, so voice message function is removed.
-                btnMicInput.setVisibility(View.GONE);
+                // Microphone operates purely as STT (Speech-to-Text) in the deaf user's language, NOT voice messages
+                btnMicInput.setVisibility(View.VISIBLE);
+                btnMicInput.setOnClickListener(v -> toggleVoiceInput());
+                btnMicInput.setOnLongClickListener(null);
             } else if (isDeaf) {
                 // Deaf User Module: Voice recording sending removed.
                 // Tapping the mic button activates STT (Speech to Text) into the message box directly.
@@ -762,9 +766,11 @@ public class ChatActivity extends AppCompatActivity {
             rEmail = settingsPref.getString("caregiverEmail", "caregiver@example.com");
         }
 
-        boolean isVoice = isVoiceInputMessage || "voice".equalsIgnoreCase(type);
+        boolean isVoice = (isVoiceInputMessage || "voice".equalsIgnoreCase(type)) && !isDeafOrMuteRole(receiverRole);
         if (isVoice) {
             type = "voice";
+            isVoiceInputMessage = false;
+        } else {
             isVoiceInputMessage = false;
         }
 
@@ -1831,8 +1837,10 @@ public class ChatActivity extends AppCompatActivity {
     private void resetChatMicUI() {
         if (btnMicInput != null) {
             btnMicInput.setSelected(false);
+            btnMicInput.setVisibility(View.VISIBLE);
             if (isCaregiverRole(myRole) && isDeafUserRole(receiverRole)) {
-                btnMicInput.setVisibility(View.GONE);
+                btnMicInput.setOnClickListener(v -> toggleVoiceInput());
+                btnMicInput.setOnLongClickListener(null);
             }
             if (btnMicInput instanceof MaterialButton) {
                 int primaryColor = getResources().getColor(R.color.primary);

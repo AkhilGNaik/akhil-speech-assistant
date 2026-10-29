@@ -111,11 +111,17 @@ public class AppVoiceAssistant {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     // Explicit Voice Assistant State Machine
+    // Explicit Voice Assistant State Machine with robust mutual exclusion
     public enum AssistantState {
         IDLE,
-        WAITING_FOR_COMMAND,
-        EXECUTING,
+        WAKE_WORD_LISTENING,
+        STARTING_COMMAND_RECOGNITION,
+        COMMAND_LISTENING,
+        WAITING_FOR_COMMAND, // Backward-compatible alias
+        PROCESSING_COMMAND,
+        EXECUTING,           // Backward-compatible alias
         SPEAKING,
+        SPEAKING_RESPONSE,   // Backward-compatible alias
         MESSAGE_COMPOSING,
         VOICE_MESSAGE_RECORDING,
         SENDING_MESSAGE,
@@ -125,7 +131,10 @@ public class AppVoiceAssistant {
         READING_NOTIFICATIONS,
         GOING_BACK,
         WAITING_FOR_CONFIRMATION,
-        WAITING_FOR_CLARIFICATION
+        WAITING_FOR_CLARIFICATION,
+        TEMPORARILY_PAUSED,
+        RECOVERING,
+        STOPPED
     }
 
     public enum ConfirmationType {
@@ -141,6 +150,15 @@ public class AppVoiceAssistant {
         CALL,
         MESSAGE
     }
+
+    private static final String BLIND_LOG_TAG = "BlindVoiceAssistant";
+
+    // Monotonic session token to strictly ignore callbacks from cancelled, expired, or superseded recognition sessions
+    private final java.util.concurrent.atomic.AtomicLong currentSessionToken = new java.util.concurrent.atomic.AtomicLong(0);
+
+    // Consecutive recognition failure tracking with exponential backoff & bound
+    private final java.util.concurrent.atomic.AtomicInteger consecutiveErrors = new java.util.concurrent.atomic.AtomicInteger(0);
+    private static final int MAX_CONSECUTIVE_ERRORS = 4;
 
     private volatile AssistantState currentState = AssistantState.IDLE;
     private final java.util.concurrent.atomic.AtomicBoolean commandHandled = new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -235,12 +253,64 @@ public class AppVoiceAssistant {
         this.pendingDeleteSenderUid = null;
     }
 
-    public void setAssistantState(@NonNull AssistantState newState) {
+    public static boolean isValidStateTransition(@NonNull AssistantState from, @NonNull AssistantState to) {
+        if (from == to) return true;
+        switch (to) {
+            case IDLE:
+            case STOPPED:
+            case TEMPORARILY_PAUSED:
+            case RECOVERING:
+                return true; // Always allowed recovery / stop / idle transitions
+            case WAKE_WORD_LISTENING:
+                return from == AssistantState.IDLE || from == AssistantState.SPEAKING
+                        || from == AssistantState.SPEAKING_RESPONSE || from == AssistantState.TEMPORARILY_PAUSED
+                        || from == AssistantState.RECOVERING;
+            case STARTING_COMMAND_RECOGNITION:
+            case WAITING_FOR_COMMAND:
+                return from == AssistantState.IDLE || from == AssistantState.WAKE_WORD_LISTENING
+                        || from == AssistantState.SPEAKING || from == AssistantState.SPEAKING_RESPONSE
+                        || from == AssistantState.WAITING_FOR_CONFIRMATION
+                        || from == AssistantState.WAITING_FOR_CLARIFICATION
+                        || from == AssistantState.RECOVERING;
+            case COMMAND_LISTENING:
+                return from == AssistantState.STARTING_COMMAND_RECOGNITION
+                        || from == AssistantState.WAITING_FOR_COMMAND
+                        || from == AssistantState.IDLE;
+            case PROCESSING_COMMAND:
+            case EXECUTING:
+                return from == AssistantState.COMMAND_LISTENING || from == AssistantState.WAITING_FOR_COMMAND
+                        || from == AssistantState.STARTING_COMMAND_RECOGNITION
+                        || from == AssistantState.WAKE_WORD_LISTENING;
+            case SPEAKING:
+            case SPEAKING_RESPONSE:
+                return true;
+            case WAITING_FOR_CONFIRMATION:
+            case WAITING_FOR_CLARIFICATION:
+                return from == AssistantState.SPEAKING || from == AssistantState.SPEAKING_RESPONSE
+                        || from == AssistantState.EXECUTING || from == AssistantState.PROCESSING_COMMAND;
+            default:
+                return true;
+        }
+    }
+
+    public synchronized void setAssistantState(@NonNull AssistantState newState) {
         if (this.currentState != newState) {
+            if (!isValidStateTransition(this.currentState, newState)) {
+                Log.w(BLIND_LOG_TAG, "Unexpected state transition requested: " + this.currentState + " -> " + newState);
+            }
+            Log.d(BLIND_LOG_TAG, "State transition: " + this.currentState + " -> " + newState);
             Log.i(TAG, "STATE: " + newState);
             Log.i(TAG, "VOICE_ASSISTANT_STATE: " + newState);
             this.currentState = newState;
         }
+    }
+
+    public void pauseAssistant() {
+        currentSessionToken.incrementAndGet();
+        cleanupSpeechRecognizer();
+        setAssistantState(AssistantState.TEMPORARILY_PAUSED);
+        commandHandled.set(false);
+        Log.d(BLIND_LOG_TAG, "Voice Assistant temporarily paused.");
     }
 
     private synchronized void cleanupSpeechRecognizer() {
@@ -446,6 +516,15 @@ public class AppVoiceAssistant {
             applyUserLanguageToTts();
         }
 
+        int volPercent = CaregiverSoundManager.getTtsVolumePercent(appContext, CaregiverSoundManager.getCurrentUserId(appContext));
+        if (volPercent <= 0) {
+            Log.i(BLIND_LOG_TAG, "TTS is muted (0%). Proceeding with complete callback immediately.");
+            if (onComplete != null) {
+                mainHandler.post(onComplete);
+            }
+            return;
+        }
+
         String utteranceId = "VoiceAssistantResponse_" + System.currentTimeMillis();
 
         if (onComplete != null) {
@@ -456,8 +535,8 @@ public class AppVoiceAssistant {
                 }
             };
 
-            // Estimate duration: ~100ms per char, min 1.5s, max 10s fallback
-            long fallbackDelayMs = Math.max(1500L, Math.min(10000L, text.length() * 100L + 1500L));
+            // Estimate duration: ~80ms per char, min 1.5s, max 6s fallback
+            long fallbackDelayMs = Math.max(1500L, Math.min(6000L, text.length() * 80L + 1500L));
             final Runnable fallbackRunnable = () -> {
                 Log.w(TAG, "TTS safety fallback triggered for: " + utteranceId);
                 safeCompleteAction.run();
@@ -481,13 +560,20 @@ public class AppVoiceAssistant {
                     if (utteranceId.equals(id)) {
                         Log.w(TAG, "TTS onError encountered for utterance: " + id);
                         mainHandler.removeCallbacks(fallbackRunnable);
-                        mainHandler.postDelayed(safeCompleteAction, 800);
+                        mainHandler.post(safeCompleteAction);
                     }
                 }
             });
         }
 
-        CaregiverSoundManager.speakWithVolume(textToSpeech, text, utteranceId, appContext);
+        try {
+            CaregiverSoundManager.speakWithVolume(textToSpeech, text, utteranceId, appContext);
+        } catch (Throwable t) {
+            Log.e(BLIND_LOG_TAG, "Failed calling speakWithVolume: " + t.getMessage(), t);
+            if (onComplete != null) {
+                mainHandler.post(onComplete);
+            }
+        }
     }
 
     public boolean isTtsReady() {
@@ -955,6 +1041,21 @@ public class AppVoiceAssistant {
                                         @NonNull String langCode,
                                         @Nullable String userRole,
                                         @NonNull VoiceAssistantCallback callback) {
+        final long sessionToken = currentSessionToken.incrementAndGet();
+        Log.d(BLIND_LOG_TAG, "Launching SpeechRecognizer session #" + sessionToken + " in lang: " + langCode);
+
+        // Check if Android speech recognition service is available
+        if (!SpeechRecognizer.isRecognitionAvailable(appContext)) {
+            Log.w(BLIND_LOG_TAG, "SpeechRecognizer service is not available on this device.");
+            String unavailText = VoiceLanguageConfig.getSpeechServiceUnavailableMessage(langCode);
+            setAssistantState(AssistantState.SPEAKING);
+            speakResponse(unavailText, () -> {
+                callback.onError(unavailText, ERROR_STT_INITIALIZATION);
+                onAssistantFinished(activity);
+            });
+            return;
+        }
+
         if (speechRecognizer != null) {
             try {
                 speechRecognizer.destroy();
@@ -965,7 +1066,7 @@ public class AppVoiceAssistant {
         try {
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(appContext);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to create SpeechRecognizer", e);
+            Log.e(BLIND_LOG_TAG, "Failed to create SpeechRecognizer: " + e.getMessage(), e);
             callback.onError("Failed to instantiate speech recognizer.", ERROR_STT_INITIALIZATION);
             return;
         }
@@ -982,7 +1083,13 @@ public class AppVoiceAssistant {
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle params) {
+                if (sessionToken != currentSessionToken.get()) {
+                    Log.d(BLIND_LOG_TAG, "Ignoring onReadyForSpeech from superseded session #" + sessionToken);
+                    return;
+                }
                 isListening = true;
+                setAssistantState(AssistantState.COMMAND_LISTENING);
+                Log.i(BLIND_LOG_TAG, "Command listening started for session #" + sessionToken);
                 Log.i(TAG, "VOICE_ASSISTANT: Command listening started");
                 Log.i(TAG, "VOICE_MIC_OWNER = COMMAND_STT");
                 Log.i(TAG, "COMMAND_LISTENING_STARTED");
@@ -997,7 +1104,9 @@ public class AppVoiceAssistant {
             }
 
             @Override
-            public void onBeginningOfSpeech() {}
+            public void onBeginningOfSpeech() {
+                if (sessionToken != currentSessionToken.get()) return;
+            }
 
             @Override
             public void onRmsChanged(float rmsdB) {}
@@ -1007,7 +1116,13 @@ public class AppVoiceAssistant {
 
             @Override
             public void onEndOfSpeech() {
+                if (sessionToken != currentSessionToken.get()) {
+                    Log.d(BLIND_LOG_TAG, "Ignoring onEndOfSpeech from superseded session #" + sessionToken);
+                    return;
+                }
                 isListening = false;
+                setAssistantState(AssistantState.PROCESSING_COMMAND);
+                Log.i(BLIND_LOG_TAG, "Command speech ended for session #" + sessionToken);
                 Log.i(TAG, "COMMAND_STT_STOPPED");
                 if (isDeafUser(userRole)) {
                     DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
@@ -1020,9 +1135,16 @@ public class AppVoiceAssistant {
 
             @Override
             public void onError(int error) {
+                if (sessionToken != currentSessionToken.get()) {
+                    Log.d(BLIND_LOG_TAG, "Ignoring onError from superseded session #" + sessionToken + " (code: " + error + ")");
+                    return;
+                }
                 isListening = false;
                 callback.onListeningStopped();
                 cleanupSpeechRecognizer();
+
+                int errors = consecutiveErrors.incrementAndGet();
+                Log.w(BLIND_LOG_TAG, "STT Recognition error in session #" + sessionToken + ": code " + error + " (consecutive: " + errors + ")");
 
                 if (isDeafUser(userRole)) {
                     DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
@@ -1043,6 +1165,19 @@ public class AppVoiceAssistant {
                 Log.w(TAG, "STT Recognition error: code " + error);
                 Log.i(TAG, "VOICE_ERROR_HANDLED_ONCE");
 
+                // Consecutive Error Recovery: If repeated failures occur, enter RECOVERING state and reset
+                if (errors >= MAX_CONSECUTIVE_ERRORS) {
+                    Log.w(BLIND_LOG_TAG, "Consecutive errors threshold reached (" + errors + "). Entering RECOVERING state.");
+                    setAssistantState(AssistantState.RECOVERING);
+                    consecutiveErrors.set(0);
+                    String recoveryMsg = VoiceLanguageConfig.getRecoveringAssistantMessage(langCode);
+                    speakResponse(recoveryMsg, () -> {
+                        callback.onError(recoveryMsg, ERROR_STT_RECOGNITION);
+                        onAssistantFinished(activity);
+                    });
+                    return;
+                }
+
                 // If waiting for delete confirmation and error/timeout occurs, safely cancel without deleting
                 if (pendingConfirmationType == ConfirmationType.DELETE_LAST_MESSAGE) {
                     clearDeleteMessageConfirmation();
@@ -1062,7 +1197,7 @@ public class AppVoiceAssistant {
                 }
 
                 // If the assistant was actively awaiting a command, speak at most one short notification
-                if (currentState == AssistantState.WAITING_FOR_COMMAND) {
+                if (currentState == AssistantState.WAITING_FOR_COMMAND || currentState == AssistantState.COMMAND_LISTENING) {
                     setAssistantState(AssistantState.SPEAKING);
                     String errorText = RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity
                             ? AccessibleMicFeedbackManager.getNoSpeechErrorText(langCode)
@@ -1080,12 +1215,17 @@ public class AppVoiceAssistant {
 
             @Override
             public void onResults(Bundle results) {
+                if (sessionToken != currentSessionToken.get()) {
+                    Log.d(BLIND_LOG_TAG, "Ignoring onResults from superseded session #" + sessionToken);
+                    return;
+                }
                 isListening = false;
                 callback.onListeningStopped();
                 cleanupSpeechRecognizer();
 
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches == null || matches.isEmpty()) {
+                    int errors = consecutiveErrors.incrementAndGet();
                     if (isDeafUser(userRole)) {
                         DeafAssistantResponseManager deafResp = getDeafAssistantResponseManager();
                         if (deafResp != null) {
@@ -1094,6 +1234,17 @@ public class AppVoiceAssistant {
                     }
                     if (commandHandled.compareAndSet(false, true)) {
                         Log.i(TAG, "VOICE_ERROR_HANDLED_ONCE");
+                        if (errors >= MAX_CONSECUTIVE_ERRORS) {
+                            Log.w(BLIND_LOG_TAG, "Consecutive empty results reached (" + errors + "). Entering RECOVERING state.");
+                            setAssistantState(AssistantState.RECOVERING);
+                            consecutiveErrors.set(0);
+                            String recoveryMsg = VoiceLanguageConfig.getRecoveringAssistantMessage(langCode);
+                            speakResponse(recoveryMsg, () -> {
+                                callback.onError(recoveryMsg, ERROR_STT_RECOGNITION);
+                                onAssistantFinished(activity);
+                            });
+                            return;
+                        }
                         if (pendingConfirmationType == ConfirmationType.DELETE_LAST_MESSAGE) {
                             clearDeleteMessageConfirmation();
                             setAssistantState(AssistantState.SPEAKING);
@@ -1110,7 +1261,7 @@ public class AppVoiceAssistant {
                             });
                             return;
                         }
-                        if (currentState == AssistantState.WAITING_FOR_COMMAND) {
+                        if (currentState == AssistantState.WAITING_FOR_COMMAND || currentState == AssistantState.COMMAND_LISTENING) {
                             setAssistantState(AssistantState.SPEAKING);
                             String errorText = RoleManager.ROLE_BLIND_USER.equals(userRole) || activity instanceof BlindUserDashboardActivity
                                     ? AccessibleMicFeedbackManager.getNoSpeechErrorText(langCode)
@@ -1128,17 +1279,22 @@ public class AppVoiceAssistant {
                     return;
                 }
 
+                // Successful recognition resets consecutive error counter
+                consecutiveErrors.set(0);
+
                 String recognizedUtterance = matches.get(0);
                 Log.i(TAG, "COMMAND_RECOGNIZED: " + recognizedUtterance);
                 Log.i(TAG, "VOICE_ASSISTANT: Recognized command = " + recognizedUtterance);
 
                 // Robust Command Gate:
                 // Process if either:
-                // 1) The assistant was previously placed in WAITING_FOR_COMMAND (e.g. by wake word detection or mic button)
+                // 1) The assistant was previously placed in WAITING_FOR_COMMAND or COMMAND_LISTENING
                 // 2) The utterance itself starts with or contains the wake word ("Assistant", "Hey Assistant", "ಹೇ ಅಸಿಸ್ಟೆಂಟ್")
                 // 3) Or the utterance itself matches any recognized system command (e.g. "go back", "ಹಿಂದೆ ಹೋಗು")
                 boolean hasWake = VoiceIntentMatcher.hasWakeWord(recognizedUtterance);
-                boolean wasWaiting = (currentState == AssistantState.WAITING_FOR_COMMAND);
+                boolean wasWaiting = (currentState == AssistantState.WAITING_FOR_COMMAND
+                        || currentState == AssistantState.COMMAND_LISTENING
+                        || currentState == AssistantState.PROCESSING_COMMAND);
                 boolean hasValidIntent = VoiceIntentMatcher.match(recognizedUtterance) != VoiceIntentType.UNKNOWN;
 
                 if (!wasWaiting && !hasWake && !hasValidIntent) {
@@ -3615,12 +3771,15 @@ public class AppVoiceAssistant {
     }
 
     public void stopListening() {
+        currentSessionToken.incrementAndGet();
         if (speechRecognizer != null && isListening) {
             try {
                 speechRecognizer.stopListening();
             } catch (Exception ignored) {}
         }
-        isListening = false;
+        cleanupSpeechRecognizer();
+        setAssistantState(AssistantState.IDLE);
+        commandHandled.set(false);
     }
 
     public boolean isListening() {

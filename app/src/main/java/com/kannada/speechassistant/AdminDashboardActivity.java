@@ -667,7 +667,13 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         btnCaregiverChatMic = layoutCommunicationTab != null ? layoutCommunicationTab.findViewById(R.id.btnCaregiverChatMic) : findViewById(R.id.btnCaregiverChatMic);
         if (btnCaregiverChatMic != null) {
-            btnCaregiverChatMic.setOnClickListener(v -> toggleCaregiverVoiceRecording());
+            btnCaregiverChatMic.setOnClickListener(v -> {
+                if (isDeafUserRole(selectedPatientRole)) {
+                    toggleCaregiverVoiceInput();
+                } else {
+                    toggleCaregiverVoiceRecording();
+                }
+            });
             btnCaregiverChatMic.setOnLongClickListener(v -> {
                 toggleCaregiverVoiceInput();
                 return true;
@@ -1805,6 +1811,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             intent.putExtra("receiverName", finalName);
             intent.putExtra("receiverRole", finalRole);
             intent.putExtra("receiverEmail", finalEmail);
+            intent.putExtra("receiverLanguage", rawLang);
             startActivity(intent);
         });
 
@@ -2491,12 +2498,22 @@ public class AdminDashboardActivity extends AppCompatActivity {
         selectedPatientName = patient.getString("name");
         selectedPatientRole = patient.getString("role");
         selectedPatientEmail = patient.getString("email");
-        selectedPatientLanguage = patient.getString("language");
+        selectedPatientLanguage = patient.getLanguage();
         if (btnCaregiverCallPatient != null) {
             btnCaregiverCallPatient.setVisibility(isDeafOrMuteRole(selectedPatientRole) ? View.GONE : View.VISIBLE);
         }
         if (btnCaregiverChatMic != null) {
-            btnCaregiverChatMic.setVisibility(isDeafUserRole(selectedPatientRole) ? View.GONE : View.VISIBLE);
+            btnCaregiverChatMic.setVisibility(View.VISIBLE);
+            if (isDeafUserRole(selectedPatientRole)) {
+                btnCaregiverChatMic.setOnClickListener(v -> toggleCaregiverVoiceInput());
+                btnCaregiverChatMic.setOnLongClickListener(null);
+            } else {
+                btnCaregiverChatMic.setOnClickListener(v -> toggleCaregiverVoiceRecording());
+                btnCaregiverChatMic.setOnLongClickListener(v -> {
+                    toggleCaregiverVoiceInput();
+                    return true;
+                });
+            }
         }
         String name = selectedPatientName;
 
@@ -2742,9 +2759,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         String lang = LanguageManager.detectLanguageFromText(msg, "en");
 
-        boolean isVoice = isCaregiverVoiceInputMessage;
+        boolean isVoice = isCaregiverVoiceInputMessage && !isDeafUserRole(selectedPatientRole);
         String msgType = isVoice ? "voice" : "text";
-        if (isVoice) {
+        if (isCaregiverVoiceInputMessage) {
             isCaregiverVoiceInputMessage = false;
         }
 

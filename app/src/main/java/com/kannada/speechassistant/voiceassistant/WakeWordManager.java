@@ -102,6 +102,15 @@ public class WakeWordManager {
     private WeakReference<Activity> currentActivityRef;
     private WakeWordListener listener;
 
+    private final java.util.concurrent.atomic.AtomicInteger retryAttempts = new java.util.concurrent.atomic.AtomicInteger(0);
+    private static final int MAX_RETRY_ATTEMPTS = 5;
+    private static final long MAX_RETRY_DELAY_MS = 4000L;
+
+    public void resetRetryCount() {
+        retryAttempts.set(0);
+        mainHandler.removeCallbacks(retryRunnable);
+    }
+
     private final Runnable retryRunnable = new Runnable() {
         @Override
         public void run() {
@@ -123,8 +132,16 @@ public class WakeWordManager {
     }
 
     private void scheduleRetry(@NonNull Activity activity, long delayMs) {
+        int attempt = retryAttempts.incrementAndGet();
+        if (attempt > MAX_RETRY_ATTEMPTS) {
+            Log.w(TAG, "WakeWordManager: Max retry attempts (" + MAX_RETRY_ATTEMPTS + ") reached. Pausing wake word listener.");
+            setState(State.PAUSED);
+            return;
+        }
+        long computedDelay = Math.min(MAX_RETRY_DELAY_MS, delayMs * (1L << (attempt - 1)));
+        Log.d(TAG, "WakeWordManager: Scheduling retry #" + attempt + " in " + computedDelay + "ms");
         mainHandler.removeCallbacks(retryRunnable);
-        mainHandler.postDelayed(retryRunnable, delayMs);
+        mainHandler.postDelayed(retryRunnable, computedDelay);
     }
 
     private WakeWordManager(@NonNull Context context) {
@@ -329,8 +346,7 @@ public class WakeWordManager {
         if (isTriggered.get() || va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
             Log.d(TAG, "WakeWordManager: Assistant session already in progress (" + va.getAssistantState() + "). Holding wake word.");
             setState(State.PAUSED);
-            mainHandler.removeCallbacks(retryRunnable);
-            mainHandler.postDelayed(retryRunnable, 1000);
+            scheduleRetry(activity, 800);
             return;
         }
 
@@ -376,7 +392,7 @@ public class WakeWordManager {
             }
 
             audioRecord.startRecording();
-            mainHandler.removeCallbacks(retryRunnable);
+            resetRetryCount();
             isRecordingRunning.set(true);
             isTriggered.set(false);
             setState(State.LISTENING);
@@ -595,19 +611,15 @@ public class WakeWordManager {
             @Override
             public void onResponseSpoken(@NonNull String ttsResponse) {
                 isTriggered.set(false);
-                Activity act = (currentActivityRef != null) ? currentActivityRef.get() : null;
-                if (act != null && !act.isFinishing() && !act.isDestroyed()) {
-                    mainHandler.postDelayed(() -> resumeListening(act), 600);
-                }
+                // Centralized resumption is handled deterministically by AppVoiceAssistant.onAssistantFinished
+                // after TTS completion and acoustic settling, avoiding duplicate resume race conditions.
             }
 
             @Override
             public void onError(@NonNull String errorMessage, int errorCode) {
                 isTriggered.set(false);
-                Activity act = (currentActivityRef != null) ? currentActivityRef.get() : null;
-                if (act != null && !act.isFinishing() && !act.isDestroyed()) {
-                    mainHandler.postDelayed(() -> resumeListening(act), 800);
-                }
+                // Centralized resumption is handled deterministically by AppVoiceAssistant.onAssistantFinished
+                // after error feedback completion and acoustic settling, avoiding duplicate resume race conditions.
             }
         });
     }
@@ -667,7 +679,11 @@ public class WakeWordManager {
         if (threadToJoin != null && threadToJoin != Thread.currentThread()) {
             try {
                 threadToJoin.interrupt();
-                threadToJoin.join(800);
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    threadToJoin.join(150);
+                } else {
+                    threadToJoin.join(800);
+                }
             } catch (Exception ignored) {}
         }
 
@@ -703,8 +719,9 @@ public class WakeWordManager {
             return true;
         }
 
-        // 3. Existing Voice Assistant is actively listening
-        if (AppVoiceAssistant.getInstance(activity.getApplicationContext()).isListening()) {
+        // 3. Existing Voice Assistant is actively listening, executing, or speaking
+        AppVoiceAssistant va = AppVoiceAssistant.getInstance(activity.getApplicationContext());
+        if (va.isListening() || va.getAssistantState() != AppVoiceAssistant.AssistantState.IDLE) {
             return true;
         }
 

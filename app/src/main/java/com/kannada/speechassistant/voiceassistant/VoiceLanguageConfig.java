@@ -958,4 +958,59 @@ public final class VoiceLanguageConfig {
                 return getLocalizedResponse(commandId, defaultResponse, code);
         }
     }
+
+    @NonNull
+    public static String getSpeechServiceUnavailableMessage(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_HINDI: return "वाक् पहचान सेवा उपलब्ध नहीं है।";
+            case LANG_MALAYALAM: return "സംഭാഷണ തിരിച്ചറിയൽ സേവനം ലഭ്യമല്ല.";
+            case LANG_ENGLISH: return "Speech service is unavailable.";
+            case LANG_KANNADA: default: return "ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಸೇವೆ ಲಭ್ಯವಿಲ್ಲ.";
+        }
+    }
+
+    @NonNull
+    public static String getMicrophoneUnavailableMessage(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_HINDI: return "माइक्रोफ़ोन वर्तमान में अनुपलब्ध है।";
+            case LANG_MALAYALAM: return "മൈക്രോഫോൺ ഇപ്പോൾ ലഭ്യമല്ല.";
+            case LANG_ENGLISH: return "Microphone is temporarily unavailable.";
+            case LANG_KANNADA: default: return "ಮೈಕ್ರೊಫೋನ್ ಪ್ರಸ್ತುತ ಲಭ್ಯವಿಲ್ಲ.";
+        }
+    }
+
+    @NonNull
+    public static String getRecoveringAssistantMessage(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_HINDI: return "वॉइस असिस्टेंट को रीसेट किया जा रहा है।";
+            case LANG_MALAYALAM: return "വോയ്‌സ് അസിസ്റ്റന്റ് പുനഃസ്ഥാപിക്കുന്നു.";
+            case LANG_ENGLISH: return "Recovering voice assistant.";
+            case LANG_KANNADA: default: return "ಧ್ವನಿ ಸಹಾಯಕವನ್ನು ಮರುಪಡೆಯಲಾಗುತ್ತಿದೆ.";
+        }
+    }
+
+    @NonNull
+    public static String getAssistantReadyText(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_HINDI: return "वॉइस असिस्टेंट तैयार है।";
+            case LANG_MALAYALAM: return "വോയ്സ് അസിസ്റ്റന്റ് തയ്യാറാണ്.";
+            case LANG_ENGLISH: return "Voice assistant is ready.";
+            case LANG_KANNADA: default: return "ಧ್ವನಿ ಸಹಾಯಕ ಸಿದ್ಧವಾಗಿದೆ.";
+        }
+    }
+
+    @NonNull
+    public static String getListeningResumedMessage(@Nullable String langCode) {
+        String code = LanguageManager.normalizeLanguageCode(langCode);
+        switch (code) {
+            case LANG_HINDI: return "सुनना फिर से शुरू हुआ।";
+            case LANG_MALAYALAM: return "കേൾക്കൽ പുനരാരംഭിച്ചു.";
+            case LANG_ENGLISH: return "Listening resumed.";
+            case LANG_KANNADA: default: return "ಕೇಳಿಸಿಕೊಳ್ಳುವುದು ಮುಂದುವರಿದಿದೆ.";
+        }
+    }
 }

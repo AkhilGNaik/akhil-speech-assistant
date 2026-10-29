@@ -3313,6 +3313,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).pauseAssistant();
         WakeWordManager.getInstance(this).pauseListeningForActivity(this);
         com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppBackgrounded(this);
         ChatAdapter.stopAudioPlayback();
@@ -3325,6 +3326,7 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).stopListening();
         WakeWordManager.getInstance(this).stopListening();
         ChatAdapter.stopAudioPlayback();
         CaregiverChatAdapter.stopAudioPlayback();

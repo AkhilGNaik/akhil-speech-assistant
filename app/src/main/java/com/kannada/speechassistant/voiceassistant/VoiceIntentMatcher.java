@@ -553,6 +553,7 @@ public class VoiceIntentMatcher {
 
     public static boolean isGenericEnglishCaregiverInquiry(@NonNull String s, @NonNull Set<String> words) {
         if (s.equals("who is my caregiver") || s.equals("who is my carer") ||
+                s.equals("where is my caregiver") || s.equals("where is my carer") ||
                 s.equals("what is a caretaker") || s.equals("what is a care worker") ||
                 s.equals("who is my helper") || s.equals("what is a caregiver") ||
                 s.equals("what is a carer") || s.equals("who is a carer") ||
@@ -563,7 +564,7 @@ public class VoiceIntentMatcher {
                 s.equals("help me") || s.equals("find a helper")) {
             return true;
         }
-        if (s.startsWith("who is ") || s.startsWith("what is ") || s.startsWith("tell me about ") ||
+        if (s.startsWith("who is ") || s.startsWith("where is ") || s.startsWith("what is ") || s.startsWith("tell me about ") ||
                 s.startsWith("what does ") || s.startsWith("find a ") ||
                 (s.startsWith("i need ") && !s.contains("talk") && !s.contains("speak") && !s.contains("call") && !s.contains("contact") && !s.contains("reach"))) {
             if (containsEnglishCaregiverAny(s, words) || s.contains("help")) {
@@ -612,10 +613,30 @@ public class VoiceIntentMatcher {
     }
 
     /**
+    /**
+     * Detects Indic script family (Kannada, Hindi, Malayalam) from raw text.
+     * Returns null if text is Latin (English), ASCII, or contains no Indic characters.
+     */
+    @Nullable
+    public static String detectScript(@NonNull String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c >= '\u0C80' && c <= '\u0CFF') return com.kannada.speechassistant.LanguageManager.LANG_KANNADA;
+            if (c >= '\u0900' && c <= '\u097F') return com.kannada.speechassistant.LanguageManager.LANG_HINDI;
+            if (c >= '\u0D00' && c <= '\u0D7F') return com.kannada.speechassistant.LanguageManager.LANG_MALAYALAM;
+        }
+        return null;
+    }
+
+    /**
      * Matches input speech and returns the detected VoiceIntent.
      */
     @NonNull
     public static VoiceIntent matchIntent(@NonNull String rawQuery) {
+        String script = detectScript(rawQuery);
+        if (script != null) {
+            return matchIntent(rawQuery, script);
+        }
         return matchIntent(rawQuery, "en");
     }
 
@@ -624,6 +645,10 @@ public class VoiceIntentMatcher {
      */
     @NonNull
     public static VoiceIntentType match(@NonNull String rawQuery) {
+        String script = detectScript(rawQuery);
+        if (script != null) {
+            return matchIntent(rawQuery, script).getIntentType();
+        }
         return matchIntent(rawQuery, "en").getIntentType();
     }
 
@@ -635,6 +660,22 @@ public class VoiceIntentMatcher {
         String s = normalizeText(rawQuery);
         if (s.isEmpty()) {
             return new VoiceIntent(VoiceIntentType.UNKNOWN, rawQuery, 0.0f, null);
+        }
+
+        // Multilingual Isolation:
+        // - Kannada mode: accepts Kannada script and English fallback; rejects Hindi & Malayalam scripts.
+        // - Hindi mode: accepts Hindi (Devanagari) script and English fallback; rejects Kannada & Malayalam scripts.
+        // - Malayalam mode: accepts Malayalam script and English fallback; rejects Kannada & Devanagari scripts.
+        // - English mode: accepts English commands; rejects Indic scripts.
+        String normLang = com.kannada.speechassistant.LanguageManager.normalizeLanguageCode(languageCode);
+        String detectedScript = detectScript(rawQuery);
+        if (detectedScript != null) {
+            if (com.kannada.speechassistant.LanguageManager.LANG_ENGLISH.equals(normLang)) {
+                return new VoiceIntent(VoiceIntentType.UNKNOWN, rawQuery, 0.0f, null);
+            }
+            if (!normLang.equals(detectedScript)) {
+                return new VoiceIntent(VoiceIntentType.UNKNOWN, rawQuery, 0.0f, null);
+            }
         }
 
         Set<String> words = new HashSet<>(Arrays.asList(s.split(" ")));
