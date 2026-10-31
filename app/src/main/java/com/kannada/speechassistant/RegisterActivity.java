@@ -170,7 +170,7 @@ public class RegisterActivity extends AppCompatActivity {
      */
     private void attemptRegistration() {
         // Reset visual layout error states
-        errorCardView.setVisibility(View.GONE); 
+        errorCardView.setVisibility(View.GONE);
         nameInputLayout.setError(null);
         emailInputLayout.setError(null);
         passwordInputLayout.setError(null);

@@ -179,6 +179,8 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     private LinearLayout layoutCaregiverChatEmptyState;
     private ListenerRegistration caregiverChatListener;
     private final Set<String> autoPlayedVoiceMsgIds = new HashSet<>();
+    private ListenerRegistration dashboardIncomingVoiceCallListener;
+    private final Set<String> dashboardHandledIncomingCallIds = new HashSet<>();
 
     // Auth & Identity State
     private String currentUid;
@@ -2591,6 +2593,10 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
     }
 
     private void startCaregiverChatListener(String caregiverUid) {
+        if (dashboardIncomingVoiceCallListener != null) {
+            dashboardIncomingVoiceCallListener.remove();
+            dashboardIncomingVoiceCallListener = null;
+        }
         if (caregiverChatListener != null) {
             caregiverChatListener.remove();
             caregiverChatListener = null;
@@ -3304,15 +3310,75 @@ public class BlindUserDashboardActivity extends AppCompatActivity {
         if (connectedCaregiverUid != null && !connectedCaregiverUid.isEmpty() && caregiverChatListener == null) {
             startCaregiverChatListener(connectedCaregiverUid);
         }
+        startIncomingVoiceCallListener();
 
         com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppForegrounded();
         WakeWordManager.getInstance(this).setForegroundActivity(this);
         WakeWordManager.getInstance(this).startListening(this);
     }
 
+    private void startIncomingVoiceCallListener() {
+        if (currentUid == null || currentUid.isEmpty()) {
+            if (sessionManager != null) {
+                currentUid = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+            if ((currentUid == null || currentUid.isEmpty()) && com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
+                currentUid = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+            }
+        }
+        if (currentUid == null || currentUid.isEmpty()) return;
+
+        if (dashboardIncomingVoiceCallListener != null) {
+            dashboardIncomingVoiceCallListener.remove();
+            dashboardIncomingVoiceCallListener = null;
+        }
+
+        dashboardIncomingVoiceCallListener = db.collection("voice_calls")
+                .whereEqualTo("calleeUid", currentUid)
+                .whereEqualTo("status", "RINGING")
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
+                    for (com.google.firebase.firestore.DocumentChange dc : snapshots.getDocumentChanges()) {
+                        if (dc.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED || dc.getType() == com.google.firebase.firestore.DocumentChange.Type.MODIFIED) {
+                            DocumentSnapshot doc = dc.getDocument();
+                            String callId = doc.getId();
+                            if (dashboardHandledIncomingCallIds.contains(callId)) continue;
+
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                            if (ts != null && ts.toDate().getTime() < System.currentTimeMillis() - 60000) {
+                                continue;
+                            }
+                            dashboardHandledIncomingCallIds.add(callId);
+
+                            String callerUid = doc.getString("callerUid");
+                            String callerName = doc.getString("callerName");
+                            String callerRole = doc.getString("callerRole");
+
+                            try {
+                                WakeWordManager.getInstance(BlindUserDashboardActivity.this).pauseListening();
+                                com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(BlindUserDashboardActivity.this).stopListening();
+                            } catch (Throwable ignored) {}
+
+                            Intent callIntent = new Intent(BlindUserDashboardActivity.this, IncomingCallActivity.class);
+                            callIntent.putExtra("callId", callId);
+                            callIntent.putExtra("callerUid", callerUid);
+                            callIntent.putExtra("callerName", callerName);
+                            callIntent.putExtra("callerRole", callerRole);
+                            callIntent.putExtra("calleeUid", currentUid);
+                            callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            startActivity(callIntent);
+                        }
+                    }
+                });
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
+        if (dashboardIncomingVoiceCallListener != null) {
+            dashboardIncomingVoiceCallListener.remove();
+            dashboardIncomingVoiceCallListener = null;
+        }
         com.kannada.speechassistant.voiceassistant.AppVoiceAssistant.getInstance(this).pauseAssistant();
         WakeWordManager.getInstance(this).pauseListeningForActivity(this);
         com.kannada.speechassistant.voiceassistant.BlindWakeWordService.notifyAppBackgrounded(this);

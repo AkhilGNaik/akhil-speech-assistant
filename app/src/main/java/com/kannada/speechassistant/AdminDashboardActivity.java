@@ -188,6 +188,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private String selectedPatientLanguage = null;
     private ListenerRegistration caregiverChatListener = null;
     private ListenerRegistration activeChatUserPresenceListener = null;
+    private ListenerRegistration caregiverIncomingMessagesListener = null;
+    private final Set<String> processedAdminMessageIds = new HashSet<>();
     private List<UserRecord> connectedPatientsList = new ArrayList<>();
     private final Set<String> connectedPatientUids = new HashSet<>();
     private final Set<String> connectedPatientEmails = new HashSet<>();
@@ -919,6 +921,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     txtRole.setText("Role: " + otherRole);
                 }
                 btnDisc.setOnClickListener(v -> disconnectUser(docId));
+                final String finalOtherUid = otherUid;
+                final String finalOtherName = otherName;
+                final String finalOtherRole = otherRole;
+                final String finalOtherEmail = otherEmail;
+                cardView.setOnClickListener(v -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("uid", finalOtherUid);
+                    userMap.put("name", finalOtherName);
+                    userMap.put("role", finalOtherRole);
+                    userMap.put("email", finalOtherEmail);
+                    showUserDetailsDialog(new UserRecord(userMap));
+                });
 
                 layoutActiveConnectionsList.addView(cardView);
             }
@@ -1117,6 +1131,43 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     latestUsersSnapshot = value;
                     updateUsersAdapter();
                 });
+
+        // Caregiver Real-Time Notification & Vibration Listener for incoming messages from all users
+        if (currentUid != null && !currentUid.isEmpty()) {
+            final long adminStartTime = System.currentTimeMillis();
+            caregiverIncomingMessagesListener = db.collection("caregiver_messages")
+                    .whereEqualTo("receiverId", currentUid)
+                    .addSnapshotListener((value, error) -> {
+                        if (error != null || value == null) return;
+                        for (com.google.firebase.firestore.DocumentChange dc : value.getDocumentChanges()) {
+                            if (dc.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
+                                String msgId = dc.getDocument().getId();
+                                if (processedAdminMessageIds.contains(msgId)) continue;
+
+                                com.google.firebase.Timestamp ts = dc.getDocument().getTimestamp("timestamp");
+                                if (ts != null && ts.toDate().getTime() < adminStartTime - 10000) {
+                                    processedAdminMessageIds.add(msgId);
+                                    continue;
+                                }
+                                processedAdminMessageIds.add(msgId);
+
+                                String senderId = dc.getDocument().getString("senderId");
+                                String text = dc.getDocument().getString("message");
+                                if (text == null || text.trim().isEmpty()) {
+                                    text = dc.getDocument().getString("messageText");
+                                }
+                                String type = dc.getDocument().getString("type");
+                                String senderName = dc.getDocument().getString("senderName");
+                                String senderRole = dc.getDocument().getString("senderRole");
+
+                                if (senderId != null && !senderId.equals(currentUid) && text != null && !text.trim().isEmpty()) {
+                                    Log.i(TAG, "Incoming user message detected in AdminDashboard: " + text);
+                                    CaregiverSoundManager.handleIncomingMessage(AdminDashboardActivity.this, msgId, senderId, text, type, senderName, senderRole);
+                                }
+                            }
+                        }
+                    });
+        }
 
         // D. Listen to caregiver direct messages
         if (currentEmail != null) {
@@ -1508,9 +1559,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
         builder.setCancelable(false);
 
         activeEmergencyDialog = builder.create();
-        if (activeEmergencyDialog.getWindow() != null) {
-            activeEmergencyDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-        }
         activeEmergencyDialog.setOnDismissListener(dialog -> stopEmergencyRingtoneSound());
 
         btnOpen.setOnClickListener(v -> {
@@ -1617,7 +1665,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
             TabLayout.Tab tab = tabLayout.getTabAt(1);
             if (tab != null) {
                 BadgeDrawable badge = tab.getOrCreateBadge();
-                badge.setBackgroundColor(Color.parseColor("#EF4444"));
                 badge.setVisible(true);
             }
         }
@@ -1759,20 +1806,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
         } else {
             dRole.setText(role.replace(" User", ""));
         }
-        int badgeBg = Color.parseColor("#334155");
-        int badgeText = Color.parseColor("#CBD5E1");
+        int badgeBg = Color.parseColor("#F1F5F9");
+        int badgeText = Color.parseColor("#475569");
         if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
-            badgeBg = Color.parseColor("#312E81");
-            badgeText = Color.parseColor("#C7D2FE");
+            badgeBg = Color.parseColor("#E0E7FF");
+            badgeText = Color.parseColor("#4F46E5");
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(role)) {
-            badgeBg = Color.parseColor("#134E4A");
-            badgeText = Color.parseColor("#5EEAD4");
+            badgeBg = Color.parseColor("#CCFBF1");
+            badgeText = Color.parseColor("#0F766E");
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
-            badgeBg = Color.parseColor("#4A044E");
-            badgeText = Color.parseColor("#F472B6");
-        } else if (RoleManager.ROLE_MUTE_USER.equals(role)) {
-            badgeBg = Color.parseColor("#1E3A8A");
-            badgeText = Color.parseColor("#93C5FD");
+            badgeBg = Color.parseColor("#FEF3C7");
+            badgeText = Color.parseColor("#D97706");
         }
         dRole.setBackgroundTintList(ColorStateList.valueOf(badgeBg));
         dRole.setTextColor(badgeText);
@@ -1786,9 +1830,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
 
         AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-        }
         dialog.show();
 
         MaterialButton dChat = dialogView.findViewById(R.id.dialogBtnChat);
@@ -1931,6 +1972,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     .update("online", false, "lastSeen", com.google.firebase.Timestamp.now(), "typingTo", null);
         }
 
+        if (caregiverIncomingMessagesListener != null) {
+            caregiverIncomingMessagesListener.remove();
+            caregiverIncomingMessagesListener = null;
+        }
         if (activeChatUserPresenceListener != null) {
             activeChatUserPresenceListener.remove();
         }
@@ -2644,6 +2689,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
                 if (!docs.isEmpty()) {
                     LocalConnectionSimulator.clearLocalMessages(AdminDashboardActivity.this, chatId);
+                }
+
+                // Scan for incoming patient messages in active chat
+                boolean isFirstChatLoad = playedMessageIds.isEmpty();
+                for (ChatMessage m : chatMsgs) {
+                    if (!currentUid.equals(m.getSenderId())) {
+                        if (!playedMessageIds.contains(m.getId())) {
+                            playedMessageIds.add(m.getId());
+                            if (!isFirstChatLoad) {
+                                CaregiverSoundManager.handleIncomingMessage(AdminDashboardActivity.this, m.getId(), m.getSenderId(), m.getMessage(), m.getType(), selectedPatientName, selectedPatientRole);
+                            }
+                        }
+                    }
                 }
 
                 // Sort messages chronologically by timestamp in Java memory

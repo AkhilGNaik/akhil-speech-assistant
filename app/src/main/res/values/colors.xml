@@ -26,7 +26,6 @@
     <color name="caregiver_border_subtle">#1E293B</color>
     <color name="caregiver_border_focused">#818CF8</color>
     <color name="caregiver_success">#10B981</color>
-    <color name="caregiver_status_active">#10B981</color>
     <color name="caregiver_success_bg">#064E3B</color>
     <color name="caregiver_success_text">#34D399</color>
     <color name="caregiver_danger">#EF4444</color>

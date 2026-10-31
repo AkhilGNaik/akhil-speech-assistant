@@ -530,26 +530,86 @@ public class CaregiverSoundManager {
             }
         } else {
             // Regular Message:
-            if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(userRole)) {
-                // Physically Disabled User: Play sound 2 times -> Speak received message using TTS in user's saved language
+            if (isBlindUserRole(userRole)) {
+                // Blind User: Play sound 2 times -> Speak Voice Assistant announcement & command instructions (Kannada/Hindi/Malayalam/English)
                 playNotificationSound2Times(context, currentUserId, messageId, () -> {
-                    speakIncomingMessageTts(context, messageText, currentUserId, sm.getLanguage());
-                });
+                    speakIncomingMessageForBlindUser(context, senderName, messageText, currentUserId, sm.getLanguage());
+                }, false);
+            } else if (isMuteUserRole(userRole)) {
+                // Mute User: Only notification sound (No vibration, No TTS)
+                playNotificationSound2Times(context, currentUserId, messageId, null, false);
             } else if (isDeafUserRole(userRole)) {
-                // Deaf User: Notification sound is disabled, vibrate only
-                vibrateNotification(context);
+                // Deaf User: Notification sound + vibration
+                playNotificationSound2Times(context, currentUserId, messageId, null, true);
+            } else if (isCaregiverRole(userRole)) {
+                // Caregiver/Admin: Notification sound + vibration
+                playNotificationSound2Times(context, currentUserId, messageId, null, true);
             } else {
-                // Caregiver/Admin & Mute User: Play sound 2 times -> STOP (No TTS)
-                playNotificationSound2Times(context, currentUserId, messageId, null);
+                // Fallback: Notification sound + vibration
+                playNotificationSound2Times(context, currentUserId, messageId, null, true);
             }
         }
+    }
+
+    public static boolean isBlindUserRole(String userRole) {
+        return RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(userRole)
+                || RoleManager.ROLE_PHYSICALLY_DISABLED.equalsIgnoreCase(userRole)
+                || "Blind".equalsIgnoreCase(userRole)
+                || "Blind User".equalsIgnoreCase(userRole)
+                || "Physically Disabled User".equalsIgnoreCase(userRole);
+    }
+
+    public static boolean isMuteUserRole(String userRole) {
+        return RoleManager.ROLE_MUTE_USER.equalsIgnoreCase(userRole)
+                || "Mute".equalsIgnoreCase(userRole)
+                || "Mute User".equalsIgnoreCase(userRole);
+    }
+
+    public static boolean isCaregiverRole(String userRole) {
+        return RoleManager.ROLE_ADMIN_CAREGIVER.equalsIgnoreCase(userRole)
+                || "Caregiver".equalsIgnoreCase(userRole)
+                || "Admin".equalsIgnoreCase(userRole)
+                || "Admin/Caregiver".equalsIgnoreCase(userRole);
     }
 
     private static boolean isDeafUserRole(String userRole) {
         return RoleManager.ROLE_DEAF_USER.equalsIgnoreCase(userRole)
                 || RoleManager.ROLE_SPEECH_IMPAIRED.equalsIgnoreCase(userRole)
                 || "Deaf".equalsIgnoreCase(userRole)
-                || "Speech-Impaired".equalsIgnoreCase(userRole);
+                || "Deaf User".equalsIgnoreCase(userRole)
+                || "Speech-Impaired".equalsIgnoreCase(userRole)
+                || "Speech-Impaired User".equalsIgnoreCase(userRole);
+    }
+
+    /**
+     * Speaks incoming message and available voice commands for Blind User in selected language.
+     */
+    public static synchronized void speakIncomingMessageForBlindUser(Context context, String senderName, String messageText, String userId, String userLanguage) {
+        if (context == null) return;
+        int ttsVol = getTtsVolumePercent(context, userId);
+        if (ttsVol <= 0) return;
+
+        String langCode = userLanguage;
+        if (langCode == null || langCode.trim().isEmpty()) {
+            try {
+                SessionManager sm = new SessionManager(context);
+                langCode = sm.getLanguage();
+            } catch (Exception ignored) {}
+        }
+        String normLang = LanguageManager.normalizeLanguageCode(langCode);
+        String name = (senderName != null && !senderName.trim().isEmpty()) ? senderName.trim() : "Caregiver";
+        String content = (messageText != null && !messageText.trim().isEmpty()) ? messageText.trim() : "";
+        String announcement;
+        if ("kn".equalsIgnoreCase(normLang)) {
+            announcement = name + " ಅವರಿಂದ ಹೊಸ ಸಂದೇಶ ಬಂದಿದೆ: " + content + ". ಉತ್ತರಿಸಲು ಧ್ವನಿ ಸಂದೇಶ ರೆಕಾರ್ಡ್ ಮಾಡಿ ಅಥವಾ ಕರೆ ಮಾಡಿ ಎಂದು ಹೇಳಿ.";
+        } else if ("hi".equalsIgnoreCase(normLang)) {
+            announcement = name + " से नया संदेश आया है: " + content + "। उत्तर देने के लिए वॉइस मैसेज रिकॉर्ड करें या कॉल करें बोलें।";
+        } else if ("ml".equalsIgnoreCase(normLang)) {
+            announcement = name + "-ൽ നിന്ന് പുതിയ സന്ദേശം: " + content + ". മറുപടി നൽകാൻ വോയ്‌സ് മെസ്സേജ് റെക്കോർഡ് ചെയ്യുക അല്ലെങ്കിൽ കോൾ ചെയ്യുക എന്ന് പറയുക.";
+        } else {
+            announcement = "New message from " + name + ": " + content + ". Say record voice message to reply, or call caregiver.";
+        }
+        speakIncomingMessageTts(context, announcement, userId, normLang);
     }
 
     /**
@@ -576,18 +636,22 @@ public class CaregiverSoundManager {
      * Plays notification sound EXACTLY 2 TIMES sequentially for regular incoming messages using current user settings.
      */
     public static synchronized void playNotificationSound2Times(Context context) {
-        playNotificationSound2Times(context, getCurrentUserId(context), null, null);
+        playNotificationSound2Times(context, getCurrentUserId(context), null, null, true);
     }
 
     public static synchronized void playNotificationSound2Times(Context context, String recipientUserId) {
-        playNotificationSound2Times(context, recipientUserId, null, null);
+        playNotificationSound2Times(context, recipientUserId, null, null, true);
     }
 
     public static synchronized void playNotificationSound2Times(Context context, String recipientUserId, String messageId) {
-        playNotificationSound2Times(context, recipientUserId, messageId, null);
+        playNotificationSound2Times(context, recipientUserId, messageId, null, true);
     }
 
     public static synchronized void playNotificationSound2Times(Context context, String recipientUserId, String messageId, Runnable onFinished) {
+        playNotificationSound2Times(context, recipientUserId, messageId, onFinished, true);
+    }
+
+    public static synchronized void playNotificationSound2Times(Context context, String recipientUserId, String messageId, Runnable onFinished, boolean shouldVibrate) {
         if (context == null) {
             if (onFinished != null) onFinished.run();
             return;
@@ -603,8 +667,9 @@ public class CaregiverSoundManager {
                 return;
             }
 
-            // Always trigger vibration for incoming regular messages
-            vibrateNotification(context);
+            if (shouldVibrate) {
+                vibrateNotification(context);
+            }
 
             int volPercent = getNotificationVolumePercent(context, recipientUserId);
             String mode = getSoundMode(context, recipientUserId);
@@ -998,7 +1063,19 @@ public class CaregiverSoundManager {
             activeMediaPlayer.setVolume(volume, volume);
             activeMediaPlayer.start();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to play default ringtone via MediaPlayer", e);
+            Log.e(TAG, "Failed to play default ringtone via MediaPlayer, attempting Ringtone fallback", e);
+            try {
+                Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                if (notificationUri == null) {
+                    notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                }
+                android.media.Ringtone ringtone = RingtoneManager.getRingtone(context.getApplicationContext(), notificationUri);
+                if (ringtone != null) {
+                    ringtone.play();
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "Ringtone fallback also failed", t);
+            }
             if (onComplete != null) onComplete.run();
         }
     }

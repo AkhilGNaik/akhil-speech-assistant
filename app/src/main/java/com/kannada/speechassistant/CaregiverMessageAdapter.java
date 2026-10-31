@@ -110,20 +110,17 @@ public class CaregiverMessageAdapter extends RecyclerView.Adapter<CaregiverMessa
         }
         int badgeBg, badgeText;
         if (RoleManager.ROLE_MUTE_USER.equals(senderRole)) {
-            badgeBg = Color.parseColor("#1E3A8A");
-            badgeText = Color.parseColor("#93C5FD");
-        } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(senderRole) || RoleManager.ROLE_DEAF_USER.equals(senderRole)) {
-            badgeBg = Color.parseColor("#312E81");
-            badgeText = Color.parseColor("#C7D2FE");
+            badgeBg = Color.parseColor("#DBEAFE");
+            badgeText = Color.parseColor("#1D4ED8");
+        } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(senderRole)) {
+            badgeBg = Color.parseColor("#E0E7FF");
+            badgeText = Color.parseColor("#4F46E5");
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(senderRole)) {
-            badgeBg = Color.parseColor("#134E4A");
-            badgeText = Color.parseColor("#5EEAD4");
-        } else if (RoleManager.ROLE_BLIND_USER.equals(senderRole)) {
-            badgeBg = Color.parseColor("#4A044E");
-            badgeText = Color.parseColor("#F472B6");
+            badgeBg = Color.parseColor("#CCFBF1");
+            badgeText = Color.parseColor("#0F766E");
         } else {
-            badgeBg = Color.parseColor("#334155");
-            badgeText = Color.parseColor("#CBD5E1");
+            badgeBg = Color.parseColor("#F1F5F9");
+            badgeText = Color.parseColor("#475569");
         }
         holder.txtRoleBadge.setBackgroundTintList(ColorStateList.valueOf(badgeBg));
         holder.txtRoleBadge.setTextColor(badgeText);

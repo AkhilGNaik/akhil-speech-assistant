@@ -119,9 +119,15 @@ public class VoiceCallActivity extends AppCompatActivity implements VoiceCallMan
         updateMuteButtonUI(voiceCallManager.isMuted());
         updateSpeakerButtonUI(voiceCallManager.isSpeakerOn());
 
-        // Initial TTS state feedback for Blind User
+        // Initial TTS state feedback
         if (voiceCallManager.isCaller()) {
-            speakAccessibleFeedback("Calling caregiver", null);
+            String myRole = sessionManager != null ? sessionManager.getUserRole() : "";
+            if (RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(myRole)) {
+                speakAccessibleFeedback("Calling caregiver", null);
+            } else {
+                String name = voiceCallManager.getRemoteName();
+                speakAccessibleFeedback("Calling " + (name != null ? name : "user"), null);
+            }
         }
     }
 
@@ -377,7 +383,7 @@ public class VoiceCallActivity extends AppCompatActivity implements VoiceCallMan
                 stopTimer();
                 if (!isEndingCall) {
                     isEndingCall = true;
-                    speakAccessibleFeedback("Caregiver rejected the call.", this::finish);
+                    speakAccessibleFeedback("Call was rejected.", this::finish);
                 }
                 break;
             case ENDED:

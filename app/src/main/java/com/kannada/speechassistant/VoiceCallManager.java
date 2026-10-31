@@ -121,8 +121,9 @@ public class VoiceCallManager implements WebRTCManager.WebRTCListener, VoiceCall
 
             this.currentCallId = localUid + "_" + remoteUid + "_" + System.currentTimeMillis();
 
-            Log.d(TAG, "VOICE_CALL_BUTTON_CLICKED: Starting call to " + remoteName + " (UID: " + remoteUid + ")");
-            updateState(CallState.CALLING, "Calling caregiver...");
+            String targetLabel = (remoteName != null && !remoteName.trim().isEmpty()) ? remoteName.trim() : "user";
+            Log.d(TAG, "VOICE_CALL_BUTTON_CLICKED: Starting call to " + targetLabel + " (UID: " + remoteUid + ")");
+            updateState(CallState.CALLING, "Calling " + targetLabel + "...");
 
             // Initialize WebRTC
             webRTCManager = new WebRTCManager(context);
@@ -139,7 +140,8 @@ public class VoiceCallManager implements WebRTCManager.WebRTCListener, VoiceCall
                     if (webRTCManager != null) {
                         webRTCManager.createOffer();
                     }
-                    updateState(CallState.RINGING, "Ringing caregiver...");
+                    String ringLabel = (remoteName != null && !remoteName.trim().isEmpty()) ? remoteName.trim() : "user";
+                    updateState(CallState.RINGING, "Ringing " + ringLabel + "...");
                     startRingTimeoutTimer();
                 } catch (Exception e) {
                     Log.e(TAG, "VOICE_CALL_ERROR initiating offer: " + e.getMessage(), e);
@@ -210,7 +212,7 @@ public class VoiceCallManager implements WebRTCManager.WebRTCListener, VoiceCall
             signalingManager.init(callId, null);
             signalingManager.updateCallStatus("REJECTED");
         }
-        updateState(CallState.REJECTED, "Caregiver rejected the call.");
+        updateState(CallState.REJECTED, "Call was rejected.");
         cleanup();
     }
 
@@ -268,7 +270,7 @@ public class VoiceCallManager implements WebRTCManager.WebRTCListener, VoiceCall
                 if (signalingManager != null && currentCallId != null) {
                     signalingManager.updateCallStatus("MISSED");
                 }
-                updateState(CallState.MISSED, "Caregiver did not answer.");
+                updateState(CallState.MISSED, "No answer.");
                 cleanup();
             }
         };
@@ -363,7 +365,7 @@ public class VoiceCallManager implements WebRTCManager.WebRTCListener, VoiceCall
                 break;
             case "REJECTED":
                 cancelRingTimeoutTimer();
-                updateState(CallState.REJECTED, "Caregiver rejected the call.");
+                updateState(CallState.REJECTED, "Call was rejected.");
                 cleanup();
                 break;
             case "ENDED":

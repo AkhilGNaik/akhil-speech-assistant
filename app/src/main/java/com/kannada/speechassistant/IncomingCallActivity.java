@@ -104,6 +104,14 @@ public class IncomingCallActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
                 WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
                 WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+            android.app.KeyguardManager km = (android.app.KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            if (km != null) {
+                km.requestDismissKeyguard(this, null);
+            }
+        }
 
         setContentView(R.layout.activity_incoming_call);
 
@@ -352,14 +360,15 @@ public class IncomingCallActivity extends AppCompatActivity {
     }
 
     private boolean isBlindUser() {
-        if (RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(currentRole)) {
-            return true;
+        String role = currentRole;
+        if (role == null && sessionManager != null) {
+            role = sessionManager.getUserRole();
         }
-        if (sessionManager != null) {
-            String role = sessionManager.getUserRole();
-            return RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(role);
-        }
-        return false;
+        if (role == null) return false;
+        String r = role.trim().toLowerCase(java.util.Locale.ROOT);
+        return r.contains("blind") || r.contains("physically")
+                || RoleManager.ROLE_BLIND_USER.equalsIgnoreCase(role)
+                || RoleManager.ROLE_PHYSICALLY_DISABLED.equalsIgnoreCase(role);
     }
 
     private void initTtsAndVoiceForBlindUser() {

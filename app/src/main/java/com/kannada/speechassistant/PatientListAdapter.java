@@ -138,19 +138,19 @@ public class PatientListAdapter extends RecyclerView.Adapter<PatientListAdapter.
         String role = patient.getString("role");
         if (RoleManager.ROLE_MUTE_USER.equals(role)) {
             holder.txtUserType.setText("Mute User");
-            holder.txtUserType.setTextColor(Color.parseColor("#93C5FD")); // Accessible Blue
+            holder.txtUserType.setTextColor(Color.parseColor("#2563EB")); // Blue
         } else if (RoleManager.ROLE_SPEECH_IMPAIRED.equals(role) || RoleManager.ROLE_DEAF_USER.equals(role)) {
             holder.txtUserType.setText("Deaf User");
-            holder.txtUserType.setTextColor(Color.parseColor("#C7D2FE")); // Accessible Indigo
+            holder.txtUserType.setTextColor(Color.parseColor("#0D9488")); // Teal
         } else if (RoleManager.ROLE_PHYSICALLY_DISABLED.equals(role)) {
             holder.txtUserType.setText("Physically Disabled");
-            holder.txtUserType.setTextColor(Color.parseColor("#A78BFA")); // Accessible Purple
+            holder.txtUserType.setTextColor(Color.parseColor("#7C3AED")); // Purple
         } else if (RoleManager.ROLE_BLIND_USER.equals(role)) {
             holder.txtUserType.setText("Blind User");
-            holder.txtUserType.setTextColor(Color.parseColor("#F472B6")); // Accessible Pink
+            holder.txtUserType.setTextColor(Color.parseColor("#D97706")); // Amber/Orange
         } else {
             holder.txtUserType.setText(role != null ? role : "Patient");
-            holder.txtUserType.setTextColor(Color.parseColor("#94A3B8"));
+            holder.txtUserType.setTextColor(Color.parseColor("#64748B"));
         }
 
         // Set Avatar initials
@@ -203,13 +203,13 @@ public class PatientListAdapter extends RecyclerView.Adapter<PatientListAdapter.
 
             holder.txtName.setTypeface(null, android.graphics.Typeface.BOLD);
             holder.txtLastMessage.setTypeface(null, android.graphics.Typeface.BOLD);
-            holder.txtLastMessage.setTextColor(Color.parseColor("#F8FAFC"));
+            holder.txtLastMessage.setTextColor(Color.parseColor("#1E293B"));
         } else {
             holder.cardUnreadBadge.setVisibility(View.GONE);
 
             holder.txtName.setTypeface(null, android.graphics.Typeface.NORMAL);
             holder.txtLastMessage.setTypeface(null, android.graphics.Typeface.NORMAL);
-            holder.txtLastMessage.setTextColor(Color.parseColor("#94A3B8"));
+            holder.txtLastMessage.setTextColor(Color.parseColor("#64748B"));
         }
 
         // Highlight selected patient item

@@ -140,12 +140,20 @@ public class FirestoreRealtimeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Service started");
-        if (sessionManager.isLoggedIn()) {
+        if (sessionManager.isLoggedIn() || com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
             HashMap<String, String> details = sessionManager.getUserDetails();
-            userUid = details.get(SessionManager.KEY_USER_UID);
+            String sUid = details.get(SessionManager.KEY_USER_UID);
+            if (sUid != null && !sUid.isEmpty()) {
+                userUid = sUid;
+            } else if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
+                userUid = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+            }
             userRole = details.get(SessionManager.KEY_USER_ROLE);
+            if (userRole == null && sessionManager != null) {
+                userRole = sessionManager.getUserRole();
+            }
 
-            if (emergenciesListener == null && chatsListener == null) {
+            if (emergenciesListener == null || chatsListener == null || voiceCallsListener == null) {
                 startListening();
             }
         }
@@ -265,7 +273,7 @@ public class FirestoreRealtimeService extends Service {
                     String callerRole = dc.getDocument().getString("callerRole");
 
                     com.google.firebase.Timestamp ts = dc.getDocument().getTimestamp("createdAt");
-                    if (ts != null && ts.toDate().getTime() < serviceStartTime - 10000) {
+                    if (ts != null && ts.toDate().getTime() < System.currentTimeMillis() - 60000) {
                         continue;
                     }
 
@@ -320,8 +328,8 @@ public class FirestoreRealtimeService extends Service {
             ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
 
-        String displayName = callerName != null && !callerName.isEmpty() ? callerName : "Blind User";
-        String displayRole = callerRole != null && !callerRole.isEmpty() ? callerRole : "Blind User";
+        String displayName = callerName != null && !callerName.isEmpty() ? callerName : "Caller";
+        String displayRole = callerRole != null && !callerRole.isEmpty() ? callerRole : "User";
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_VOICE_CALLS)
                 .setSmallIcon(android.R.drawable.sym_call_incoming)

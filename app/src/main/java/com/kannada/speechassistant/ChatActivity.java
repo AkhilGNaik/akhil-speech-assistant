@@ -378,7 +378,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         // Hide SOS button for Admin/Caregiver users to avoid cluttering their screen
-        if (RoleManager.ROLE_ADMIN_CAREGIVER.equals(myRole)) {
+        if (isCaregiverRole(myRole)) {
             if (btnSendEmergency != null) btnSendEmergency.setVisibility(View.GONE);
             if (btnCall != null) btnCall.setVisibility(isReceiverDeafOrMute ? View.GONE : View.VISIBLE);
             if (layoutQuickPhrases != null) {
@@ -1366,9 +1366,68 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
+    private ListenerRegistration chatIncomingVoiceCallListener = null;
+    private final java.util.Set<String> chatHandledIncomingCallIds = new java.util.HashSet<>();
+
+    private void startChatIncomingVoiceCallListener() {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            if (sessionManager != null) {
+                currentUserId = sessionManager.getUserDetails().get(SessionManager.KEY_USER_UID);
+            }
+            if ((currentUserId == null || currentUserId.isEmpty()) && com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
+                currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+            }
+        }
+        if (currentUserId == null || currentUserId.isEmpty()) return;
+
+        if (chatIncomingVoiceCallListener != null) {
+            chatIncomingVoiceCallListener.remove();
+            chatIncomingVoiceCallListener = null;
+        }
+
+        chatIncomingVoiceCallListener = db.collection("voice_calls")
+                .whereEqualTo("calleeUid", currentUserId)
+                .whereEqualTo("status", "RINGING")
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
+                    for (com.google.firebase.firestore.DocumentChange dc : snapshots.getDocumentChanges()) {
+                        if (dc.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED || dc.getType() == com.google.firebase.firestore.DocumentChange.Type.MODIFIED) {
+                            DocumentSnapshot doc = dc.getDocument();
+                            String callId = doc.getId();
+                            if (chatHandledIncomingCallIds.contains(callId)) continue;
+
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                            if (ts != null && ts.toDate().getTime() < System.currentTimeMillis() - 60000) {
+                                continue;
+                            }
+                            chatHandledIncomingCallIds.add(callId);
+
+                            String callerUid = doc.getString("callerUid");
+                            String callerName = doc.getString("callerName");
+                            String callerRole = doc.getString("callerRole");
+
+                            try {
+                                WakeWordManager.getInstance(ChatActivity.this).pauseListening();
+                                AppVoiceAssistant.getInstance(ChatActivity.this).stopListening();
+                            } catch (Throwable ignored) {}
+
+                            Intent callIntent = new Intent(ChatActivity.this, IncomingCallActivity.class);
+                            callIntent.putExtra("callId", callId);
+                            callIntent.putExtra("callerUid", callerUid);
+                            callIntent.putExtra("callerName", callerName);
+                            callIntent.putExtra("callerRole", callerRole);
+                            callIntent.putExtra("calleeUid", currentUserId);
+                            callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            startActivity(callIntent);
+                        }
+                    }
+                });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        startChatIncomingVoiceCallListener();
         CaregiverSoundManager.stopNotificationSound(this);
         CaregiverSoundManager.stopEmergencySound(this);
         if (currentUserId != null) {
@@ -1384,6 +1443,10 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (chatIncomingVoiceCallListener != null) {
+            chatIncomingVoiceCallListener.remove();
+            chatIncomingVoiceCallListener = null;
+        }
         if (isChatAudioRecording) {
             cancelAudioRecording();
         }

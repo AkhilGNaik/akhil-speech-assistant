@@ -176,20 +176,20 @@ public class EmergencyAdapter extends RecyclerView.Adapter<EmergencyAdapter.Emer
             holder.animator = null;
         }
 
-        int surfaceColor = Color.parseColor("#1E293B"); // Dark card surface
+        int surfaceColor = holder.itemView.getContext().getResources().getColor(R.color.surface, holder.itemView.getContext().getTheme());
 
         // Bind Status Badge and Flashing Animator
         if ("NEW".equalsIgnoreCase(status)) {
-            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#F87171")); // Accessible Bright Red
-            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#450A0A"))); // Deep Red Tint
+            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#E11D48")); // Deep Rose Red
+            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFE4E6"))); // Light Rose Red
             
             // Show Acknowledge and View, hide Resolve
             holder.btnAcknowledgeAlert.setVisibility(View.VISIBLE);
             holder.btnResolveAlert.setVisibility(View.GONE);
             holder.btnViewAlert.setVisibility(View.VISIBLE);
 
-            // Start flashing animator: Deep Crimson Red -> Dark Slate Card Surface
-            holder.animator = ValueAnimator.ofArgb(Color.parseColor("#7F1D1D"), Color.parseColor("#1E293B"));
+            // Start flashing animator: Bright Red -> Dark Red -> Bright Red
+            holder.animator = ValueAnimator.ofArgb(Color.parseColor("#B91C1C"), Color.parseColor("#450A0A"));
             holder.animator.setDuration(800);
             holder.animator.setRepeatMode(ValueAnimator.REVERSE);
             holder.animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -201,8 +201,8 @@ public class EmergencyAdapter extends RecyclerView.Adapter<EmergencyAdapter.Emer
             holder.animator.start();
 
         } else if ("ACKNOWLEDGED".equalsIgnoreCase(status)) {
-            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#FBBF24")); // Accessible Amber
-            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#451A03"))); // Deep Amber Tint
+            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#F59E0B")); // Amber/Orange
+            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FEF3C7"))); // Light Amber
             holder.cardRoot.setCardBackgroundColor(surfaceColor);
 
             // Show Resolve and View, hide Acknowledge
@@ -211,8 +211,8 @@ public class EmergencyAdapter extends RecyclerView.Adapter<EmergencyAdapter.Emer
             holder.btnViewAlert.setVisibility(View.VISIBLE);
 
         } else { // RESOLVED
-            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#34D399")); // Accessible Emerald Green
-            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#064E3B"))); // Deep Green Tint
+            holder.txtEmergencyStatus.setTextColor(Color.parseColor("#059669")); // Deep Green
+            holder.txtEmergencyStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D1FAE5"))); // Light Green
             holder.cardRoot.setCardBackgroundColor(surfaceColor);
 
             // Hide both Acknowledge and Resolve, only show View

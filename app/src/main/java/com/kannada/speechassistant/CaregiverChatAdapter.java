@@ -163,13 +163,13 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
             holder.txtRightTime.setText(timeStr);
 
             if (isEmergency) {
-                holder.cardRightBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#DC2626")));
+                holder.cardRightBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#EF4444")));
                 holder.txtRightMessage.setTextColor(android.graphics.Color.parseColor("#FFFFFF"));
-                holder.txtRightTime.setTextColor(android.graphics.Color.parseColor("#FEE2E2"));
+                holder.txtRightTime.setTextColor(android.graphics.Color.parseColor("#FEF2F2"));
             } else {
-                holder.cardRightBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4F46E5")));
+                holder.cardRightBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#2563EB")));
                 holder.txtRightMessage.setTextColor(android.graphics.Color.parseColor("#FFFFFF"));
-                holder.txtRightTime.setTextColor(android.graphics.Color.parseColor("#C7D2FE"));
+                holder.txtRightTime.setTextColor(android.graphics.Color.parseColor("#94A3B8"));
             }
 
             holder.cardRightBubble.setOnClickListener(v -> {
@@ -233,13 +233,13 @@ public class CaregiverChatAdapter extends RecyclerView.Adapter<CaregiverChatAdap
             holder.txtLeftTime.setText(timeStr);
 
             if (isEmergency) {
-                holder.cardLeftBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#450A0A")));
-                holder.txtLeftMessage.setTextColor(android.graphics.Color.parseColor("#FCA5A5"));
-                holder.txtLeftTime.setTextColor(android.graphics.Color.parseColor("#F87171"));
+                holder.cardLeftBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FEE2E2")));
+                holder.txtLeftMessage.setTextColor(android.graphics.Color.parseColor("#991B1B"));
+                holder.txtLeftTime.setTextColor(android.graphics.Color.parseColor("#FCA5A5"));
             } else {
-                holder.cardLeftBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#334155")));
-                holder.txtLeftMessage.setTextColor(android.graphics.Color.parseColor("#F8FAFC"));
-                holder.txtLeftTime.setTextColor(android.graphics.Color.parseColor("#94A3B8"));
+                holder.cardLeftBubble.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E5E7EB")));
+                holder.txtLeftMessage.setTextColor(android.graphics.Color.parseColor("#1F2937"));
+                holder.txtLeftTime.setTextColor(android.graphics.Color.parseColor("#6B7280"));
             }
 
             holder.cardLeftBubble.setOnClickListener(v -> {
